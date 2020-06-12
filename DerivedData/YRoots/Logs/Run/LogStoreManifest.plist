@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>logFormatVersion</key>
+	<integer>10</integer>
+	<key>logs</key>
+	<dict>
+		<key>C30238BC-3268-481E-99F6-DAC7E6035CCF</key>
+		<dict>
+			<key>className</key>
+			<string>DBGConsoleLog</string>
+			<key>documentTypeString</key>
+			<string>com.apple.dt.IDE.DebuggerLogContentType</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.DebugLog</string>
+			<key>fileName</key>
+			<string>C30238BC-3268-481E-99F6-DAC7E6035CCF.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>YRoots project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>YRoots</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>0</integer>
+			<key>signature</key>
+			<string>Run YRoots</string>
+			<key>timeStartedRecording</key>
+			<real>613625040.76105499</real>
+			<key>timeStoppedRecording</key>
+			<real>613625044.34557402</real>
+			<key>title</key>
+			<string>Run YRoots</string>
+			<key>uniqueIdentifier</key>
+			<string>C30238BC-3268-481E-99F6-DAC7E6035CCF</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

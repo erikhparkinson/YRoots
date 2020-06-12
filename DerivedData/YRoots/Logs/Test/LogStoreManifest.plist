@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>logFormatVersion</key>
+	<integer>10</integer>
+	<key>logs</key>
+	<dict>
+		<key>E73AE705-413D-4F74-BC52-E3CCA38A0DC0</key>
+		<dict>
+			<key>auxiliaryLogUniqueIdentifier</key>
+			<string>6E963AD2-E9DD-4E81-A172-476DAB793CE6</string>
+			<key>auxiliaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+			</dict>
+			<key>className</key>
+			<string>IDESchemeActionsInvocationRecord</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>com.apple.dt.unit.cocoaUnitTest</string>
+			<key>fileName</key>
+			<string>Test-YRoots-2020.06.04_19-14-46--0500.xcresult</string>
+			<key>hasAuxiliaryLog</key>
+			<true/>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>YRoots project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>YRoots</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>0</integer>
+			<key>signature</key>
+			<string>Test YRoots</string>
+			<key>timeStartedRecording</key>
+			<real>613008886.12023401</real>
+			<key>timeStoppedRecording</key>
+			<real>0.0</real>
+			<key>title</key>
+			<string>Test YRoots</string>
+			<key>uniqueIdentifier</key>
+			<string>E73AE705-413D-4F74-BC52-E3CCA38A0DC0</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

@@ -1,0 +1,5 @@
+function f1,f2;
+variable_group x1,x2;
+f1 = 5 + x1^2 + x2;
+f2 = 1;
+END;
