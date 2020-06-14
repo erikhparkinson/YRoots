@@ -25,7 +25,7 @@ void IntervalApproximator<Dimension::Two>::printOutputArray()
 {
     for(size_t i = 0; i <= m_approximationDegree; i++) {
         for(size_t j = 0; j <= m_approximationDegree; j++) {
-            std::cout<<m_output[j*m_sideLength+i]<<" ";
+            std::cout<<m_output[i*m_sideLength+j]<<" ";
         }
         std::cout<<"\n";
     }
@@ -37,7 +37,7 @@ void IntervalApproximator<Dimension::Two>::printInputArray()
 {
     for(size_t i = 0; i <= m_approximationDegree; i++) {
         for(size_t j = 0; j <= m_approximationDegree; j++) {
-            std::cout<<m_input[j*m_sideLength+i]<<" ";
+            std::cout<<m_input[i*m_sideLength+j]<<" ";
         }
         std::cout<<"\n";
     }

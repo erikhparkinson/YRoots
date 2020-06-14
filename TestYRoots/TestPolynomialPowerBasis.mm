@@ -6,6 +6,9 @@
 //  Copyright © 2020 Erik Hales Parkinson. All rights reserved.
 //
 
+#ifndef TestPolynomialPowerBasis_mm
+#define TestPolynomialPowerBasis_mm
+
 #import <XCTest/XCTest.h>
 #include "PowerBasisPolynomial.h"
 #include <iostream>
@@ -24,6 +27,8 @@
     // Put teardown code here. This method is called after the invocation of each test method in the class.
 }
 
+ //TODO: Add tests with more complex monomials
+ 
 - (void)testBasic1D {
     std::vector<std::string> variableNames;
     variableNames.push_back("x0");
@@ -39,7 +44,7 @@
     XCTAssert(testPoly.evaluate(points) == 25);
 }
 
-- (void)testBasicHigherDimension1D {
+- (void)testBasicHigherDegree1D {
     std::vector<std::string> variableNames;
     variableNames.push_back("x0");
     std::string polynomialString = "5+2*x0-4*x0^3-x0^7+x0^8";
@@ -76,7 +81,7 @@
     XCTAssert(testPoly.evaluate(points) == 55);
 }
 
-- (void)testBasicHigherDimension2D {
+- (void)testBasicHigherDegree2D {
     // Test higher x0 power.
     std::vector<std::string> variableNames;
     variableNames.push_back("x0");
@@ -111,6 +116,28 @@
     XCTAssert(testPoly2.evaluate(points) == 28);
     points[1] = 10;
     XCTAssert(testPoly2.evaluate(points) == 325);
+}
+
+- (void)testComplex2D {
+    // Test higher x0 power.
+    std::vector<std::string> variableNames;
+    variableNames.push_back("x0");
+    variableNames.push_back("x1");
+    std::string polynomialString = "5+2*x0^2+3*x1-2*x0*x1";
+    PowerBasisPolynomial testPoly1(polynomialString, variableNames);
+    std::vector<double> points;
+    
+    points.push_back(0);
+    points.push_back(0);
+    XCTAssert(testPoly1.evaluate(points) == 5);
+    points[0] = 1;
+    XCTAssert(testPoly1.evaluate(points) == 7);
+    points[0] = 10;
+    XCTAssert(testPoly1.evaluate(points) == 205);
+    points[1] = 1;
+    XCTAssert(testPoly1.evaluate(points) == 188);
+    points[1] = 10;
+    XCTAssert(testPoly1.evaluate(points) == 35);
 }
 
 - (void)testBasicND {
@@ -159,3 +186,5 @@
 
 
 @end
+
+#endif

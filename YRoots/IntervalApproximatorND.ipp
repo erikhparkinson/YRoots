@@ -72,7 +72,7 @@ void IntervalApproximator<D>::preComputeEvaluationPointsPreTransform()
         number = i;
         for(size_t j = 0; j < m_rank; j++) {
             divisor /= m_sideLength;
-            m_evaluationPointsPreTransform[i][j] = chebyshevNodes[number/divisor];
+            m_evaluationPointsPreTransform[i][m_rank-j-1] = chebyshevNodes[number/divisor];
             number -= divisor*(number/divisor);
         }
     }
@@ -81,7 +81,47 @@ void IntervalApproximator<D>::preComputeEvaluationPointsPreTransform()
 template<Dimension D>
 void IntervalApproximator<D>::preComputeDivideByTwoPoints()
 {
+    size_t divisor, number;
+    size_t fixedNums = power(m_approximationDegree+1, m_rank-1);
+    
+    std::vector<size_t> powers;
+    size_t temp = 1;
+    for(size_t i = 0; i < m_rank; i++) {
+        powers.push_back(temp);
+        temp *= m_sideLength;
+    }
+    
+    std::vector<size_t> spots;
+    spots.resize(m_rank);
 
+    for(size_t fixedVar = 0; fixedVar < m_rank; fixedVar++) {
+        for(size_t i = 0; i < fixedNums; i++) {
+            divisor = fixedNums;
+            number = i;
+            for(size_t j = 0; j < m_rank; j++) {
+                if(j != fixedVar) {
+                    divisor /= (m_approximationDegree+1);
+                    spots[j] = number/divisor;
+                    number -= divisor*(number/divisor);
+                }
+            }
+            
+            //Add it
+            size_t result = 0;
+            spots[fixedVar] = 0;
+            for(size_t j =0; j < m_rank; j++) {
+                result += spots[j] * powers[j];
+            }
+            m_divideByTwoPoints.push_back(result);
+            
+            result = 0;
+            spots[fixedVar] = m_approximationDegree;
+            for(size_t j =0; j < m_rank; j++) {
+                result += spots[j] * powers[j];
+            }
+            m_divideByTwoPoints.push_back(result);
+        }
+    }
 }
 
 
@@ -96,7 +136,7 @@ void IntervalApproximator<D>::approximate(const Interval& _currentInterval)
             m_evaluationPoints[i][j] = (temp1*m_evaluationPointsPreTransform[i][j]+temp2)/2.0;
         }
     }
-        
+            
     //Evaluate the functions at the points
     m_function->evaluatePoints(m_evaluationPoints, m_input);
     //Divide all the inputs by degree**dimension
@@ -112,8 +152,6 @@ void IntervalApproximator<D>::approximate(const Interval& _currentInterval)
     for(size_t i = 0; i < m_divideByTwoPoints.size(); i++) {
         m_output[m_divideByTwoPoints[i]] /= 2;
     }
-    
-    printOutputArray();
 }
 
 template<Dimension D>
