@@ -10,19 +10,29 @@
 #define IntervalApproximator_ipp
 
 #include <fftw3.h>
+#include "Function.h"
 #include "utilities.h"
+#include <iostream>
 
 //TODO: Hold the function inside of here
 template <Dimension D>
 class IntervalApproximator
 {
 public:
-    IntervalApproximator(const std::unique_ptr<FunctionInterface>& _function, size_t approximationDegree);
+    IntervalApproximator(const std::unique_ptr<FunctionInterface>& _function, size_t _approximationDegree);
     IntervalApproximator(IntervalApproximator const&) = delete;
     IntervalApproximator& operator=(IntervalApproximator const&) = delete;
     ~IntervalApproximator();
     
     void approximate(const Interval& _currentInterval);
+
+    double* getOutput() {
+        return m_output;
+    }
+
+    double* getInput() {
+        return m_input;
+    }
 
 private:
     void preComputeEvaluationPointsPreTransform();

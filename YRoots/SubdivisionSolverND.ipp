@@ -31,7 +31,6 @@ void SubdivisionSolver<D>::solve(Interval _currentInterval, size_t currentLevel)
     //Get a chebyshev approximation
     std::cout<<m_functions[0]->to_string()<<"\n";
     m_chebyshevApproximators[0]->approximate(_currentInterval);
-    
 }
 
 
