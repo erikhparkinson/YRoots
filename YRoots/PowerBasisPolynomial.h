@@ -60,34 +60,11 @@ public:
             }
         }
         
-        //Make the permutation
-        for(size_t i = 0; i < m_dim; i++) {
-            m_dimPermutation.push_back(i);
-        }
-
-        //Sort the permutation
-        size_t perm1 = 0;
-        while(perm1 < m_dimPermutation.size()) {
-            size_t perm2 = perm1 + 1;
-            while(perm2 < m_dimPermutation.size()) {
-                if(m_matrixDim[m_dimPermutation[perm1]] < m_matrixDim[m_dimPermutation[perm2]]) {
-                    //Swap them
-                    size_t temp = m_dimPermutation[perm1];
-                    m_dimPermutation[perm1] = m_dimPermutation[perm2];
-                    m_dimPermutation[perm2] = temp;
-                }
-                else {
-                    perm2++;
-                }
-            }
-            perm1++;
-        }
-        
         //Remake the m_matrixDim
         std::vector<size_t> oldMatrixDim = m_matrixDim;
         m_matrixDim.clear();
         for(size_t i = 0; i < m_dim; i++) {
-            m_matrixDim.push_back(oldMatrixDim[m_dimPermutation[i]]);
+            m_matrixDim.push_back(oldMatrixDim[m_dim - i - 1]);
         }
         
         //Get the matrixDimProdects
@@ -188,7 +165,7 @@ public:
     size_t getArraySpot(std::vector<size_t> spots) {
         size_t val = 0;
         for(size_t i = 0; i < spots.size(); i++) {
-            val += spots[m_dimPermutation[i]] * m_matrixDimProducts[i];
+            val += spots[m_dim - i - 1] * m_matrixDimProducts[i];
         }
         return val;
     }
@@ -196,7 +173,7 @@ public:
     double evaluate(const std::vector<double>& inputPoints) override {
         size_t currDim = 0;
         while(currDim < m_dim) {
-            m_currPoint = inputPoints[m_dimPermutation[currDim]];
+            m_currPoint = inputPoints[m_dim - currDim - 1];
             size_t currArraySpot = m_arraySizes[currDim] - 1;
             int64_t nextArraySpot = m_arraySizes[currDim+1] - 1;
             while(nextArraySpot >= 0) {
@@ -218,9 +195,7 @@ private:
     size_t                  m_dim;
     std::vector<size_t>     m_matrixDim;
     std::vector<size_t>     m_matrixDimProducts;
-    
-    std::vector<size_t>     m_dimPermutation;
-    
+        
     //The coefficient array
     //TODO: This could maybe be sped up by making it just one array all next to each other.
     std::vector<size_t>     m_arraySizes;

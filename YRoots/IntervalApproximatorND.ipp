@@ -34,11 +34,11 @@ m_arrayLength(power(m_sideLength, m_rank))
     m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_MEASURE | FFTW_PRESERVE_INPUT);
 
     //Create the precomputed points.
-    m_evaluationPointsPreTransform.resize(m_arrayLength);
-    m_evaluationPoints.resize(m_arrayLength);
-    for(size_t i = 0; i < m_arrayLength; i++) {
-        m_evaluationPointsPreTransform[i].resize(m_rank);
-        m_evaluationPoints[i].resize(m_rank);
+    m_evaluationPointsPreTransform.resize(m_rank);
+    m_evaluationPoints.resize(m_rank);
+    for(size_t i = 0; i < m_rank; i++) {
+        m_evaluationPointsPreTransform[i].resize(m_sideLength);
+        m_evaluationPoints[i].resize(m_sideLength);
     }
     
     //Precompute the pre-transform points
@@ -62,18 +62,10 @@ IntervalApproximator<D>::~IntervalApproximator()
 template<Dimension D>
 void IntervalApproximator<D>::preComputeEvaluationPointsPreTransform()
 {
-    std::vector<double> chebyshevNodes;
     for(size_t i = 0; i < m_sideLength; i++) {
-        chebyshevNodes.push_back(cos(i*M_PI/m_approximationDegree));
-    }
-    size_t divisor, number;
-    for(size_t i = 0; i < m_arrayLength; i++) {
-        divisor = m_arrayLength;
-        number = i;
+        double val = cos(i*M_PI/m_approximationDegree);
         for(size_t j = 0; j < m_rank; j++) {
-            divisor /= m_sideLength;
-            m_evaluationPointsPreTransform[i][m_rank-j-1] = chebyshevNodes[number/divisor];
-            number -= divisor*(number/divisor);
+            m_evaluationPointsPreTransform[j][i] = val;
         }
     }
 }
@@ -132,13 +124,13 @@ void IntervalApproximator<D>::approximate(const Interval& _currentInterval)
     for(size_t j = 0; j < m_rank; j++) {
         double temp1 = _currentInterval.upperBounds[j]-_currentInterval.lowerBounds[j];
         double temp2 = _currentInterval.upperBounds[j]+_currentInterval.lowerBounds[j];
-        for(size_t i = 0; i < m_evaluationPoints.size(); i++) {
-            m_evaluationPoints[i][j] = (temp1*m_evaluationPointsPreTransform[i][j]+temp2)/2.0;
+        for(size_t i = 0; i < m_sideLength; i++) {
+            m_evaluationPoints[j][i] = (temp1*m_evaluationPointsPreTransform[j][i]+temp2)/2.0;
         }
     }
             
     //Evaluate the functions at the points
-    m_function->evaluatePoints(m_evaluationPoints, m_input);
+    m_function->evaluateGrid(m_evaluationPoints, m_input);
     //Divide all the inputs by degree**dimension
     size_t divisor = power(m_approximationDegree, m_rank);
     for(size_t i = 0; i < m_arrayLength; i++) {

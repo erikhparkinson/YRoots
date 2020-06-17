@@ -10,14 +10,6 @@
 #define IntervalApproximator1D_ipp
 
 template<>
-void IntervalApproximator<Dimension::One>::preComputeEvaluationPointsPreTransform()
-{
-    for(size_t i = 0; i < m_arrayLength; i++) {
-        m_evaluationPointsPreTransform[i][0] = cos(i*M_PI/m_approximationDegree);
-    }
-}
-
-template<>
 void IntervalApproximator<Dimension::One>::preComputeDivideByTwoPoints()
 {
     m_divideByTwoPoints.push_back(0);

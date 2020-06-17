@@ -29,6 +29,11 @@
 
  //TODO: Add tests with more complex monomials
  
+template<class T1, class T2>
+bool withinEpslion(T1 a, T2 b, double epsilon = 1.e-10) {
+    return std::abs(a-b) < epsilon;
+}
+
 - (void)testBasic1D {
     std::vector<std::string> variableNames;
     variableNames.push_back("x0");
@@ -37,11 +42,11 @@
     std::vector<double> points;
     
     points.push_back(0);
-    XCTAssert(testPoly.evaluate(points) == 5);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 5));
     points[0] = 1;
-    XCTAssert(testPoly.evaluate(points) == 7);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 7));
     points[0] = 10;
-    XCTAssert(testPoly.evaluate(points) == 25);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 25));
 }
 
 - (void)testBasicHigherDegree1D {
@@ -52,12 +57,11 @@
     std::vector<double> points;
     
     points.push_back(0);
-    XCTAssert(testPoly.evaluate(points) == 5);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 5));
     points[0] = 1;
-    XCTAssert(testPoly.evaluate(points) == 3);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 3));
     points[0] = 10;
-    std::cout<<testPoly.evaluate(points)<<"\n";
-    XCTAssert(testPoly.evaluate(points) == 89996025);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 89996025));
 }
 
 - (void)testBasic2D {
@@ -70,15 +74,15 @@
     
     points.push_back(0);
     points.push_back(0);
-    XCTAssert(testPoly.evaluate(points) == 5);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 5));
     points[0] = 1;
-    XCTAssert(testPoly.evaluate(points) == 7);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 7));
     points[0] = 10;
-    XCTAssert(testPoly.evaluate(points) == 25);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 25));
     points[1] = 1;
-    XCTAssert(testPoly.evaluate(points) == 28);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 28));
     points[1] = 10;
-    XCTAssert(testPoly.evaluate(points) == 55);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 55));
 }
 
 - (void)testBasicHigherDegree2D {
@@ -92,30 +96,30 @@
     
     points.push_back(0);
     points.push_back(0);
-    XCTAssert(testPoly1.evaluate(points) == 5);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 5));
     points[0] = 1;
-    XCTAssert(testPoly1.evaluate(points) == 7);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 7));
     points[0] = 10;
-    XCTAssert(testPoly1.evaluate(points) == 205);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 205));
     points[1] = 1;
-    XCTAssert(testPoly1.evaluate(points) == 208);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 208));
     points[1] = 10;
-    XCTAssert(testPoly1.evaluate(points) == 235);
-    
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 235));
+
     //Test higher x1 power
     polynomialString = "5+2*x0+3*x1^2";
     PowerBasisPolynomial testPoly2(polynomialString, variableNames);
     points[0] = 0;
     points[1] = 0;
-    XCTAssert(testPoly2.evaluate(points) == 5);
+    XCTAssert(withinEpslion(testPoly2.evaluate(points), 5));
     points[0] = 1;
-    XCTAssert(testPoly2.evaluate(points) == 7);
+    XCTAssert(withinEpslion(testPoly2.evaluate(points), 7));
     points[0] = 10;
-    XCTAssert(testPoly2.evaluate(points) == 25);
+    XCTAssert(withinEpslion(testPoly2.evaluate(points), 25));
     points[1] = 1;
-    XCTAssert(testPoly2.evaluate(points) == 28);
+    XCTAssert(withinEpslion(testPoly2.evaluate(points), 28));
     points[1] = 10;
-    XCTAssert(testPoly2.evaluate(points) == 325);
+    XCTAssert(withinEpslion(testPoly2.evaluate(points), 325));
 }
 
 - (void)testComplex2D {
@@ -129,15 +133,15 @@
     
     points.push_back(0);
     points.push_back(0);
-    XCTAssert(testPoly1.evaluate(points) == 5);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 5));
     points[0] = 1;
-    XCTAssert(testPoly1.evaluate(points) == 7);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 7));
     points[0] = 10;
-    XCTAssert(testPoly1.evaluate(points) == 205);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 205));
     points[1] = 1;
-    XCTAssert(testPoly1.evaluate(points) == 188);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 188));
     points[1] = 10;
-    XCTAssert(testPoly1.evaluate(points) == 35);
+    XCTAssert(withinEpslion(testPoly1.evaluate(points), 35));
 }
 
 - (void)testBasicND {
@@ -153,35 +157,35 @@
     PowerBasisPolynomial testPoly(polynomialString, variableNames);
     std::vector<double> points(7,0);
     
-    XCTAssert(testPoly.evaluate(points) == -10);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -10));
     points[0] = 1;
-    XCTAssert(testPoly.evaluate(points) == -8);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -8));
     points[0] = 10;
-    XCTAssert(testPoly.evaluate(points) == 10);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 10));
     points[1] = 1;
-    XCTAssert(testPoly.evaluate(points) == 7);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), 7));
     points[1] = 10;
-    XCTAssert(testPoly.evaluate(points) == -20);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -20));
     points[2] = 1;
-    XCTAssert(testPoly.evaluate(points) == -24);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -24));
     points[2] = 10;
-    XCTAssert(testPoly.evaluate(points) == -60);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -60));
     points[3] = -1;
-    XCTAssert(testPoly.evaluate(points) == -59);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -59));
     points[3] = -10;
-    XCTAssert(testPoly.evaluate(points) == -50);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -50));
     points[4] = -1;
-    XCTAssert(testPoly.evaluate(points) == -50.1);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -50.1));
     points[4] = -10;
-    XCTAssert(testPoly.evaluate(points) == -51);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -51));
     points[5] = -1;
-    XCTAssert(testPoly.evaluate(points) == -51.5);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -51.5));
     points[5] = -10;
-    XCTAssert(testPoly.evaluate(points) == -56);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -56));
     points[6] = -1;
-    XCTAssert(testPoly.evaluate(points) == -61);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -61));
     points[6] = -10;
-    XCTAssert(testPoly.evaluate(points) == -106);
+    XCTAssert(withinEpslion(testPoly.evaluate(points), -106));
 }
 
 
