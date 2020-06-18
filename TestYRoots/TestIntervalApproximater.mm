@@ -12,6 +12,7 @@
 #import <XCTest/XCTest.h>
 #include "IntervalApproximator.h"
 #include "PowerBasisPolynomial.h"
+#include <chrono>
 
 @interface TestIntervalApproximater : XCTestCase
 
@@ -126,6 +127,35 @@ bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
         XCTAssert(withinEpslion(intervalApproximator.getOutput()[i], 0.0));
     }
 }
+
+- (void)testTimingTemp {
+    std::vector<std::string> variablesNames;
+    variablesNames.push_back("x0");
+    variablesNames.push_back("x1");
+    variablesNames.push_back("x2");
+    std::string functionString = "1+x0^10*x1^10*x2^10";
+    size_t approximationDegree = 10;
+    
+    std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
+    IntervalApproximator<Dimension::Three> intervalApproximator(function, approximationDegree);
+    Interval currentInterval;
+    for(size_t i = 0; i < 3; i++) {
+        currentInterval.lowerBounds.push_back(-1.0);
+        currentInterval.upperBounds.push_back(1.0);
+    }
+
+    size_t trials = 1000;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
+    for(size_t i = 0; i < trials; i++) {
+        intervalApproximator.approximate(currentInterval);
+    }
+    std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+
+    uint64_t nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    
+    std::cout<<nanos/(trials*1000)<<"\n";
+}
+
 
 @end
 

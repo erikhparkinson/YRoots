@@ -170,6 +170,73 @@ public:
         return val;
     }
     
+    void evaluateGrid(const std::vector<std::vector<double>>& grid, double* results, double divisor = 1.0) override {
+        //Do nothing in the 0-dimensional case
+        size_t dimension = grid.size();
+        if(dimension == 0) {
+            return;
+        }
+        
+        //Set up the needed variables
+        size_t evalSpot = 0;
+        size_t numPoints = grid[0].size();
+        std::vector<size_t> inputSpot(dimension);
+        
+        //Set up the evaluation arrays
+        size_t currDim = 0;
+        while(currDim < m_dim) {
+            m_currPoint = grid[m_dim - currDim - 1][0];
+            size_t currArraySpot = m_arraySizes[currDim] - 1;
+            int64_t nextArraySpot = m_arraySizes[currDim+1] - 1;
+            while(nextArraySpot >= 0) {
+                m_currDouble = m_arrays[currDim][currArraySpot];
+                for(size_t i = 0; i + 1 < m_matrixDim[currDim]; i++) {
+                    currArraySpot--;
+                    m_currDouble = (m_currDouble*m_currPoint) + m_arrays[currDim][currArraySpot];
+                }
+                m_arrays[currDim + 1][nextArraySpot] = m_currDouble;
+                currArraySpot--;
+                nextArraySpot--;
+            }
+            currDim++;
+        }
+
+        //Iterate through all the combinations
+        size_t spotToInc = 0;
+        results[evalSpot++] = m_arrays[m_dim][0]/divisor;
+        while (spotToInc < dimension) {
+            bool firstPass = true;
+            while(++inputSpot[spotToInc] < numPoints) {
+                //Iterate through the needed array (or multiple arrays) and update everything
+                int64_t currDim = spotToInc;
+                while(currDim >= 0) {
+                    m_currPoint = grid[currDim][inputSpot[currDim]];
+                    size_t currArraySpot = m_arraySizes[m_dim - currDim - 1] - 1;
+                    int64_t nextArraySpot = m_arraySizes[m_dim - currDim] - 1;
+                    while(nextArraySpot >= 0) {
+                        m_currDouble = m_arrays[m_dim - currDim - 1][currArraySpot];
+                        for(size_t i = 0; i + 1 < m_matrixDim[m_dim - currDim - 1]; i++) {
+                            currArraySpot--;
+                            m_currDouble = (m_currDouble*m_currPoint) + m_arrays[m_dim - currDim - 1][currArraySpot];
+                        }
+                        m_arrays[m_dim - currDim][nextArraySpot] = m_currDouble;
+                        currArraySpot--;
+                        nextArraySpot--;
+                    }
+                    currDim--;
+                }
+                
+                results[evalSpot++] = m_arrays[m_dim][0]/divisor;
+                if(firstPass && spotToInc != 0) {
+                    spotToInc = 0;
+                }
+                firstPass = false;
+            }
+            inputSpot[spotToInc] = 0;
+            spotToInc++;
+        }
+    }
+    
     double evaluate(const std::vector<double>& inputPoints) override {
         size_t currDim = 0;
         while(currDim < m_dim) {

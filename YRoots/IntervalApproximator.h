@@ -37,6 +37,7 @@ public:
 private:
     void preComputeEvaluationPointsPreTransform();
     void preComputeDivideByTwoPoints();
+    void preComputePartialToFullTransition();
     void printOutputArray();
     void printInputArray();
     
@@ -50,8 +51,15 @@ private:
     double*         m_input;
     double*         m_output;
     fftw_r2r_kind*  m_kinds;
+    double*         m_inputPartial;
     fftw_plan       m_plan;
     
+    //For evaluating just part of the grid
+    size_t          m_partialSideLength;
+    size_t          m_partialArrayLength;
+    std::vector<size_t> m_partialToFullTransition;
+    
+    //Precomputed Points
     std::vector<std::vector<double>>    m_evaluationPointsPreTransform;
     std::vector<std::vector<double>>    m_evaluationPoints;
     std::vector<size_t>                 m_divideByTwoPoints;

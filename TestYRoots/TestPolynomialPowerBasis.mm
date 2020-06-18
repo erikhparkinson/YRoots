@@ -188,6 +188,28 @@ bool withinEpslion(T1 a, T2 b, double epsilon = 1.e-10) {
     XCTAssert(withinEpslion(testPoly.evaluate(points), -106));
 }
 
+- (void)testBasicEvvaluateGrid2D {
+    std::vector<std::string> variableNames;
+    variableNames.push_back("x0");
+    variableNames.push_back("x1");
+    std::string polynomialString = "5+2*x0+3*x1+x0*x1";
+    PowerBasisPolynomial testPoly(polynomialString, variableNames);
+    std::vector<std::vector<double>> grid;
+    grid.resize(2);
+    grid[0].resize(2);
+    grid[1].resize(2);
+    
+    grid[0][0] = 1;
+    grid[0][1] = 2;
+    grid[1][0] = 1;
+    grid[1][1] = 2;
+    double results[4];
+    testPoly.evaluateGrid(grid, results);
+    XCTAssert(withinEpslion(results[0], 11));
+    XCTAssert(withinEpslion(results[1], 14));
+    XCTAssert(withinEpslion(results[2], 15));
+    XCTAssert(withinEpslion(results[3], 19));
+}
 
 @end
 

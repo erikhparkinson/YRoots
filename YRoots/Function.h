@@ -26,7 +26,7 @@ public:
     
     virtual double evaluate(const std::vector<double>& inputPoints) = 0;
     
-    void evaluateGrid(const std::vector<std::vector<double>>& grid, double* results)
+    virtual void evaluateGrid(const std::vector<std::vector<double>>& grid, double* results, double divisor = 1.0)
     {
         //Do nothing in the 0-dimensional case
         size_t dimension = grid.size();
@@ -45,12 +45,12 @@ public:
         
         //Iterate through all the combinations
         size_t spotToInc = 0;
-        results[evalSpot++] = evaluate(inputPoints);
+        results[evalSpot++] = evaluate(inputPoints)/divisor;
         while (spotToInc < dimension) {
             bool firstPass = true;
             while(++inputSpot[spotToInc] < numPoints) {
                 inputPoints[spotToInc] = grid[spotToInc][inputSpot[spotToInc]];
-                results[evalSpot++] = evaluate(inputPoints);
+                results[evalSpot++] = evaluate(inputPoints)/divisor;
                 if(firstPass && spotToInc != 0) {
                     spotToInc = 0;
                 }
