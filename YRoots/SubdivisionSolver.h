@@ -10,6 +10,7 @@
 #define Subdivision_Solver_h
 
 #include "utilities.h"
+#include "IntervalChecker.h"
 #include "IntervalData.h"
 #include "ChebyshevApproximator.h"
 
