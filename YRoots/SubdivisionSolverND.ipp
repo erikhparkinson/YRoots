@@ -11,9 +11,10 @@
 
 template <Dimension D>
 SubdivisionSolver<D>::SubdivisionSolver(const std::vector<std::unique_ptr<FunctionInterface>>& _functions) :
-m_functions(_functions)
+m_functions(_functions),
+m_rank(m_functions.size())
 {
-    for(size_t i = 0; i<m_functions.size(); i++) {
+    for(size_t i = 0; i < m_rank; i++) {
         m_chebyshevApproximators.emplace_back(std::make_unique<ChebyshevApproximator<D>>(m_functions[i], m_subdivisionParameters.approximationDegree));
     }
 }
@@ -28,9 +29,19 @@ void SubdivisionSolver<D>::solve(Interval _currentInterval, size_t currentLevel)
         return;
     }
     
-    //Get a chebyshev approximation
-    std::cout<<m_functions[0]->to_string()<<"\n";
-    m_chebyshevApproximators[0]->approximate(_currentInterval);
+    for(size_t funcNum = 0; funcNum < m_rank; funcNum++) {
+        //Get a chebyshev approximation
+        m_chebyshevApproximators[funcNum]->approximate(_currentInterval);
+        if(!m_chebyshevApproximators[funcNum]->isGoodApproximation(m_subdivisionParameters)) {
+            //Subdivide and continue
+        }
+        else if(!m_chebyshevApproximators[funcNum]->hasSignChange()) {
+            //Run Checks
+        }
+    }
+    
+    //Trim the coeffs
+        
 }
 
 

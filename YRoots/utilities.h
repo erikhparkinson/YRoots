@@ -19,7 +19,7 @@
 
 //TODO: Make unit tests for these functions!
 
-inline std::vector<std::string> split(const std::string& string, const std::string& delimiter) {
+std::vector<std::string> split(const std::string& string, const std::string& delimiter) {
     std::vector<std::string> results;
     size_t last = 0;
     size_t next = 0;
@@ -31,12 +31,12 @@ inline std::vector<std::string> split(const std::string& string, const std::stri
     return results;
 }
 
-inline bool is_number(const std::string& s) {
+bool is_number(const std::string& s) {
     return( strspn( s.c_str(), "-.0123456789" ) == s.size() );
 }
 
 //TODO: Check for overflow!
-inline size_t power(size_t base, size_t exponent) {
+size_t power(size_t base, size_t exponent) {
     size_t result = 1;
     for(size_t i = 0; i < exponent; i++) {
         result *= base;
@@ -57,6 +57,23 @@ struct Interval {
     std::vector<double> upperBounds;
     
     Interval() {}
+};
+
+struct SubdivisionParameters {
+    double relApproxTol = 1.e-15;
+    double absApproxTol = 1.e-12;
+    double maxConditionNumber = 1e5;
+    double goodZerosFactor = 100;
+    double minGoodZerosTol = 1e-5;
+    bool checkEvaluationError = true;
+    size_t checkEvaluationFrequency = 1;
+    size_t approximationDegree = 3;
+    size_t targetDegree = 10;
+    size_t maxLevel = 999;
+    bool returnPotentials = false;
+    std::string method = "svd";
+    double targetTol = 1.e-15;
+    bool useTargetTol = true;
 };
 
 #endif /* utilities_h */

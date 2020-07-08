@@ -6,8 +6,8 @@
 //  Copyright © 2020 Erik Hales Parkinson. All rights reserved.
 //
 
-#ifndef IntervalApproximator_ipp
-#define IntervalApproximator_ipp
+#ifndef IntervalApproximator_hpp
+#define IntervalApproximator_hpp
 
 #include <fftw3.h>
 #include "Function.h"
@@ -24,8 +24,16 @@ public:
     IntervalApproximator& operator=(IntervalApproximator const&) = delete;
     ~IntervalApproximator();
     
-    void approximate(const Interval& _currentInterval);
+    void approximate(const Interval& _currentInterval, bool _findInfNorm);
 
+    bool getSignChange() {
+        return m_signChange;
+    }
+    
+    double getInfoNorm() {
+        return m_infNorm;
+    }
+    
     double* getOutput() {
         return m_output;
     }
@@ -63,10 +71,14 @@ private:
     std::vector<std::vector<double>>    m_evaluationPointsPreTransform;
     std::vector<std::vector<double>>    m_evaluationPoints;
     std::vector<size_t>                 m_divideByTwoPoints;
+    
+    //Other
+    double          m_infNorm;
+    bool            m_signChange;
 };
 
 #include "IntervalApproximator1D.ipp"
 #include "IntervalApproximator2D.ipp"
 #include "IntervalApproximatorND.ipp"
 
-#endif /* IntervalApproximator_ipp */
+#endif /* IntervalApproximator_hpp */

@@ -17,7 +17,9 @@ m_approximationDegree(_approximationDegree),
 m_sideLength(2*_approximationDegree),
 m_arrayLength(power(m_sideLength, m_rank)),
 m_partialSideLength(_approximationDegree + 1),
-m_partialArrayLength(power(m_partialSideLength, m_rank))
+m_partialArrayLength(power(m_partialSideLength, m_rank)),
+m_infNorm(0),
+m_signChange(false)
 {
     //Alllocate memory
     m_dimensions = (int*) malloc(m_rank * sizeof (int));
@@ -153,7 +155,7 @@ void IntervalApproximator<D>::preComputePartialToFullTransition()
 }
 
 template <Dimension D>
-void IntervalApproximator<D>::approximate(const Interval& _currentInterval)
+void IntervalApproximator<D>::approximate(const Interval& _currentInterval, bool _findInfNorm)
 {
     //Transform the evaluation points
     for(size_t j = 0; j < m_rank; j++) {
@@ -167,6 +169,20 @@ void IntervalApproximator<D>::approximate(const Interval& _currentInterval)
     //Evaluate the functions at the points
     double divisor = static_cast<double>(power(m_approximationDegree, m_rank));
     m_function->evaluateGrid(m_evaluationPoints, m_inputPartial, divisor);
+    
+    if(_findInfNorm) {
+        m_infNorm = 0;
+        bool hasPos = false;
+        bool hasNeg = false;
+        for(size_t i = 0; i < m_partialArrayLength; i++) {
+            m_infNorm = std::max(m_infNorm, std::abs(m_inputPartial[i]));
+            hasPos |= m_inputPartial[i] > 0;
+            hasNeg |= m_inputPartial[i] < 0;
+        }
+        m_signChange = hasPos && hasNeg;
+        m_infNorm *= divisor;
+    }
+    
     //Fill in the full input
     for(size_t i = 0; i < m_arrayLength; i++) {
         m_input[i] = m_inputPartial[m_partialToFullTransition[i]];

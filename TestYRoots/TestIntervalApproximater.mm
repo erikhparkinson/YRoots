@@ -10,6 +10,7 @@
 #define TestIntervalApproximater_mm
 
 #import <XCTest/XCTest.h>
+#include "TestUtils.h"
 #include "IntervalApproximator.h"
 #include "PowerBasisPolynomial.h"
 #include <chrono>
@@ -44,7 +45,7 @@ bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0);
-    intervalApproximator.approximate(currentInterval);
+    intervalApproximator.approximate(currentInterval, true);
 
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[0], 5.5));
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[1], 0.0));
@@ -64,7 +65,7 @@ bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0);
-    intervalApproximator.approximate(currentInterval);
+    intervalApproximator.approximate(currentInterval, true);
 
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[0], 5.5));
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[1], 0.0));
@@ -95,7 +96,7 @@ bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0);
-    intervalApproximator.approximate(currentInterval);
+    intervalApproximator.approximate(currentInterval, true);
     
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[0], 5.5));
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[1], 0.0));
@@ -147,7 +148,7 @@ bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
     size_t trials = 1000;
     std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
     for(size_t i = 0; i < trials; i++) {
-        intervalApproximator.approximate(currentInterval);
+        intervalApproximator.approximate(currentInterval, true);
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 

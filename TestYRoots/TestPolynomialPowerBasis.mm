@@ -10,8 +10,8 @@
 #define TestPolynomialPowerBasis_mm
 
 #import <XCTest/XCTest.h>
+#include "TestUtils.h"
 #include "PowerBasisPolynomial.h"
-#include <iostream>
 
 @interface TestPolynomialPowerBasis : XCTestCase
 
@@ -29,11 +29,6 @@
 
  //TODO: Add tests with more complex monomials
  
-template<class T1, class T2>
-bool withinEpslion(T1 a, T2 b, double epsilon = 1.e-10) {
-    return std::abs(a-b) < epsilon;
-}
-
 - (void)testBasic1D {
     std::vector<std::string> variableNames;
     variableNames.push_back("x0");

@@ -13,23 +13,6 @@
 #include "IntervalData.h"
 #include "ChebyshevApproximator.h"
 
-struct SubdivisionParameters {
-    double relApproxTol = 1.e-15;
-    double absApproxTol = 1.e-12;
-    double maxConditionNumber = 1e5;
-    double goodZerosFactor = 100;
-    double minGoodZerosTol = 1e-5;
-    bool checkEvaluationError = true;
-    size_t checkEvaluationFrequency = 1;
-    size_t approximationDegree = 3;
-    size_t targetDegree = 10;
-    size_t maxLevel = 999;
-    bool returnPotentials = false;
-    std::string method = "svd";
-    double targetTol = 1.e-15;
-    bool useTargetTol = true;
-};
-
 template <Dimension D>
 class SubdivisionSolver
 {
@@ -39,10 +22,11 @@ public:
     void solve(Interval _currentInterval, size_t currentLevel);
     
 private:
-    const std::vector<std::unique_ptr<FunctionInterface>>& m_functions;
-    SubdivisionParameters m_subdivisionParameters;
-    IntervalData        m_intervalData;
-    std::vector<std::unique_ptr<ChebyshevApproximator<D>>> m_chebyshevApproximators;
+    const std::vector<std::unique_ptr<FunctionInterface>>&  m_functions;
+    SubdivisionParameters                                   m_subdivisionParameters;
+    IntervalData                                            m_intervalData;
+    std::vector<std::unique_ptr<ChebyshevApproximator<D>>>  m_chebyshevApproximators;
+    size_t                                                  m_rank;
     
     
     //TODO: Create Interval Data Class
