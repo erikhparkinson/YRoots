@@ -17,7 +17,8 @@ public:
     IntervalChecker() {
         
     }
-        
+    
+    
 private:
     
 };

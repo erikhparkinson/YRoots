@@ -10,33 +10,31 @@
 #define IntervalApproximatorND_ipp
 
 template <Dimension D>
-IntervalApproximator<D>::IntervalApproximator(const std::unique_ptr<FunctionInterface>& _function, size_t _approximationDegree):
-m_function(_function),
-m_rank(m_function->getDimension()),
+IntervalApproximator<D>::IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, double* _inputPartial):
+m_rank(_rank),
 m_approximationDegree(_approximationDegree),
 m_sideLength(2*_approximationDegree),
 m_arrayLength(power(m_sideLength, m_rank)),
 m_partialSideLength(_approximationDegree + 1),
 m_partialArrayLength(power(m_partialSideLength, m_rank)),
+m_input(_input),
+m_output(_output),
+m_kinds(_kinds),
+m_inputPartial(_inputPartial),
 m_infNorm(0),
 m_signChange(false)
 {
     //Alllocate memory
     m_dimensions = (int*) malloc(m_rank * sizeof (int));
-    m_input = fftw_alloc_real(m_arrayLength);
-    m_output= fftw_alloc_real(m_arrayLength);
-    m_kinds = (fftw_r2r_kind*) malloc(m_rank * sizeof (fftw_r2r_kind));
-    m_inputPartial = fftw_alloc_real(m_partialArrayLength);
     
-    //Define the dimensions and kinds
+    //Define the dimensions
     for(size_t i = 0; i < m_rank; i++) {
         m_dimensions[i] = int(m_sideLength);
-        m_kinds[i] = FFTW_R2HC;
     }
 
     //Crete the plan
     //Options FFTW_EXHAUSTIVE, FFTW_PATIENT, FFTW_MEASURE, FFTW_ESTIMATE. See http://www.fftw.org/fftw3_doc/Planner-Flags.html#Planner-Flags.
-    m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_EXHAUSTIVE | FFTW_DESTROY_INPUT);
+    m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
 
     //Create the precomputed points.
     m_evaluationPointsPreTransform.resize(m_rank);
@@ -61,10 +59,6 @@ IntervalApproximator<D>::~IntervalApproximator()
 {
     //Deallocate everything
     fftw_destroy_plan(m_plan);
-    fftw_free(m_inputPartial);
-    free(m_kinds);
-    fftw_free(m_output);
-    fftw_free(m_input);
     free(m_dimensions);
 }
 
@@ -155,7 +149,7 @@ void IntervalApproximator<D>::preComputePartialToFullTransition()
 }
 
 template <Dimension D>
-void IntervalApproximator<D>::approximate(const Interval& _currentInterval, bool _findInfNorm)
+void IntervalApproximator<D>::approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, bool _findInfNorm)
 {
     //Transform the evaluation points
     for(size_t j = 0; j < m_rank; j++) {
@@ -168,7 +162,7 @@ void IntervalApproximator<D>::approximate(const Interval& _currentInterval, bool
             
     //Evaluate the functions at the points
     double divisor = static_cast<double>(power(m_approximationDegree, m_rank));
-    m_function->evaluateGrid(m_evaluationPoints, m_inputPartial, divisor);
+    _function->evaluateGrid(m_evaluationPoints, m_inputPartial, divisor);
     
     if(_findInfNorm) {
         m_infNorm = 0;

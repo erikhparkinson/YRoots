@@ -31,13 +31,13 @@
     size_t approximationDegree = 3;
     
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
-    ChebyshevApproximator<Dimension::One> chebyshevApproximator(function, approximationDegree);
+    ChebyshevApproximator<Dimension::One> chebyshevApproximator(1, approximationDegree);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0);
-    chebyshevApproximator.approximate(currentInterval);
+    chebyshevApproximator.approximate(function, currentInterval, approximationDegree);
 
-    double* approximation = chebyshevApproximator.getApproximation();
+    double* approximation = chebyshevApproximator.getApproximation().getArray();
     
     XCTAssert(withinEpslion(approximation[0], 5.5));
     XCTAssert(withinEpslion(approximation[1], 0.0));
@@ -58,14 +58,14 @@
     size_t approximationDegree = 3;
     
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
-    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(function, approximationDegree);
+    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(2, approximationDegree);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0);
-    chebyshevApproximator.approximate(currentInterval);
+    chebyshevApproximator.approximate(function, currentInterval, approximationDegree);
 
-    double* approximation = chebyshevApproximator.getApproximation();
-    
+    double* approximation = chebyshevApproximator.getApproximation().getArray();
+        
     XCTAssert(withinEpslion(approximation[0], 5.5));
     XCTAssert(withinEpslion(approximation[1], 0.0));
     XCTAssert(withinEpslion(approximation[2], 0.5));
@@ -86,5 +86,43 @@
     subdivisionParameters.absApproxTol = 1e-15;
     XCTAssertTrue(chebyshevApproximator.isGoodApproximation(subdivisionParameters));
 }
+
+- (void)testTimingTemp {
+    size_t rank = 2;
+    size_t approximationDegree = 5;
+    allocateMemory();
+    
+    size_t degreePoly = 40;
+
+    std::vector<std::string> variablesNames;
+    std::string functionString = "1+";
+    for(size_t i = 0; i < rank; i++) {
+        variablesNames.push_back("x" + std::to_string(i));
+        functionString += "x" + std::to_string(i) + "^" + std::to_string(degreePoly);
+        if (i+1 != rank) {
+            functionString += "*";
+        }
+    }
+
+    std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
+    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(rank, approximationDegree);
+    Interval currentInterval;
+    for(size_t i = 0; i < rank; i++) {
+        currentInterval.lowerBounds.push_back(-1.0);
+        currentInterval.upperBounds.push_back(1.0);
+    }
+
+    size_t trials = 1000;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
+    for(size_t i = 0; i < trials; i++) {
+        chebyshevApproximator.approximate(function, currentInterval, approximationDegree);
+    }
+    std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+
+    uint64_t nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    
+    std::cout<<nanos/(trials*1000)<<"\n";
+}
+
 
 @end

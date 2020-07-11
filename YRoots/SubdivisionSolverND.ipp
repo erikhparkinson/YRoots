@@ -15,7 +15,7 @@ m_functions(_functions),
 m_rank(m_functions.size())
 {
     for(size_t i = 0; i < m_rank; i++) {
-        m_chebyshevApproximators.emplace_back(std::make_unique<ChebyshevApproximator<D>>(m_functions[i], m_subdivisionParameters.approximationDegree));
+        m_chebyshevApproximators.emplace_back(std::make_unique<ChebyshevApproximator<D>>(m_rank, m_subdivisionParameters.approximationDegree));
     }
 }
 
@@ -31,7 +31,7 @@ void SubdivisionSolver<D>::solve(Interval _currentInterval, size_t currentLevel)
     
     for(size_t funcNum = 0; funcNum < m_rank; funcNum++) {
         //Get a chebyshev approximation
-        m_chebyshevApproximators[funcNum]->approximate(_currentInterval);
+        m_chebyshevApproximators[funcNum]->approximate(m_functions[funcNum], _currentInterval, m_subdivisionParameters.approximationDegree);
         if(!m_chebyshevApproximators[funcNum]->isGoodApproximation(m_subdivisionParameters)) {
             //Subdivide and continue
         }
