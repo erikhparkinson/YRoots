@@ -26,7 +26,44 @@ public:
     
     virtual double evaluate(const std::vector<double>& inputPoints) = 0;
     
-    void evaluatePoints(const std::vector<std::vector<double>>& inputPoints, double* results) {
+    virtual void evaluateGrid(const std::vector<std::vector<double>>& grid, double* results, double divisor = 1.0)
+    {
+        //Do nothing in the 0-dimensional case
+        size_t dimension = grid.size();
+        if(dimension == 0) {
+            return;
+        }
+        
+        //Set up the needed variables
+        size_t evalSpot = 0;
+        size_t numPoints = grid[0].size();
+        std::vector<double> inputPoints(dimension, 0.0);
+        std::vector<size_t> inputSpot(dimension);
+        for(size_t i = 0; i < dimension; i++) {
+            inputPoints[i] = grid[i][0];
+        }
+        
+        //Iterate through all the combinations
+        size_t spotToInc = 0;
+        results[evalSpot++] = evaluate(inputPoints)/divisor;
+        while (spotToInc < dimension) {
+            bool firstPass = true;
+            while(++inputSpot[spotToInc] < numPoints) {
+                inputPoints[spotToInc] = grid[spotToInc][inputSpot[spotToInc]];
+                results[evalSpot++] = evaluate(inputPoints)/divisor;
+                if(firstPass && spotToInc != 0) {
+                    spotToInc = 0;
+                }
+                firstPass = false;
+            }
+            inputSpot[spotToInc] = 0;
+            inputPoints[spotToInc] = grid[spotToInc][0];
+            spotToInc++;
+        }
+    }
+    
+    void evaluatePoints(const std::vector<std::vector<double>>& inputPoints, double* results)
+    {
         //TODO: Make a better call to this. Have a specific evaluate grid function.
         for(size_t i = 0; i < inputPoints.size(); i++) {
             results[i] = evaluate(inputPoints[i]);

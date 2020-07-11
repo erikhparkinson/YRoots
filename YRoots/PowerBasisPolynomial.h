@@ -60,34 +60,11 @@ public:
             }
         }
         
-        //Make the permutation
-        for(size_t i = 0; i < m_dim; i++) {
-            m_dimPermutation.push_back(i);
-        }
-
-        //Sort the permutation
-        size_t perm1 = 0;
-        while(perm1 < m_dimPermutation.size()) {
-            size_t perm2 = perm1 + 1;
-            while(perm2 < m_dimPermutation.size()) {
-                if(m_matrixDim[m_dimPermutation[perm1]] < m_matrixDim[m_dimPermutation[perm2]]) {
-                    //Swap them
-                    size_t temp = m_dimPermutation[perm1];
-                    m_dimPermutation[perm1] = m_dimPermutation[perm2];
-                    m_dimPermutation[perm2] = temp;
-                }
-                else {
-                    perm2++;
-                }
-            }
-            perm1++;
-        }
-        
         //Remake the m_matrixDim
         std::vector<size_t> oldMatrixDim = m_matrixDim;
         m_matrixDim.clear();
         for(size_t i = 0; i < m_dim; i++) {
-            m_matrixDim.push_back(oldMatrixDim[m_dimPermutation[i]]);
+            m_matrixDim.push_back(oldMatrixDim[m_dim - i - 1]);
         }
         
         //Get the matrixDimProdects
@@ -188,15 +165,82 @@ public:
     size_t getArraySpot(std::vector<size_t> spots) {
         size_t val = 0;
         for(size_t i = 0; i < spots.size(); i++) {
-            val += spots[m_dimPermutation[i]] * m_matrixDimProducts[i];
+            val += spots[m_dim - i - 1] * m_matrixDimProducts[i];
         }
         return val;
+    }
+    
+    void evaluateGrid(const std::vector<std::vector<double>>& grid, double* results, double divisor = 1.0) override {
+        //Do nothing in the 0-dimensional case
+        size_t dimension = grid.size();
+        if(dimension == 0) {
+            return;
+        }
+        
+        //Set up the needed variables
+        size_t evalSpot = 0;
+        size_t numPoints = grid[0].size();
+        std::vector<size_t> inputSpot(dimension);
+        
+        //Set up the evaluation arrays
+        size_t currDim = 0;
+        while(currDim < m_dim) {
+            m_currPoint = grid[m_dim - currDim - 1][0];
+            size_t currArraySpot = m_arraySizes[currDim] - 1;
+            int64_t nextArraySpot = m_arraySizes[currDim+1] - 1;
+            while(nextArraySpot >= 0) {
+                m_currDouble = m_arrays[currDim][currArraySpot];
+                for(size_t i = 0; i + 1 < m_matrixDim[currDim]; i++) {
+                    currArraySpot--;
+                    m_currDouble = (m_currDouble*m_currPoint) + m_arrays[currDim][currArraySpot];
+                }
+                m_arrays[currDim + 1][nextArraySpot] = m_currDouble;
+                currArraySpot--;
+                nextArraySpot--;
+            }
+            currDim++;
+        }
+
+        //Iterate through all the combinations
+        size_t spotToInc = 0;
+        results[evalSpot++] = m_arrays[m_dim][0]/divisor;
+        while (spotToInc < dimension) {
+            bool firstPass = true;
+            while(++inputSpot[spotToInc] < numPoints) {
+                //Iterate through the needed array (or multiple arrays) and update everything
+                int64_t currDim = spotToInc;
+                while(currDim >= 0) {
+                    m_currPoint = grid[currDim][inputSpot[currDim]];
+                    size_t currArraySpot = m_arraySizes[m_dim - currDim - 1] - 1;
+                    int64_t nextArraySpot = m_arraySizes[m_dim - currDim] - 1;
+                    while(nextArraySpot >= 0) {
+                        m_currDouble = m_arrays[m_dim - currDim - 1][currArraySpot];
+                        for(size_t i = 0; i + 1 < m_matrixDim[m_dim - currDim - 1]; i++) {
+                            currArraySpot--;
+                            m_currDouble = (m_currDouble*m_currPoint) + m_arrays[m_dim - currDim - 1][currArraySpot];
+                        }
+                        m_arrays[m_dim - currDim][nextArraySpot] = m_currDouble;
+                        currArraySpot--;
+                        nextArraySpot--;
+                    }
+                    currDim--;
+                }
+                
+                results[evalSpot++] = m_arrays[m_dim][0]/divisor;
+                if(firstPass && spotToInc != 0) {
+                    spotToInc = 0;
+                }
+                firstPass = false;
+            }
+            inputSpot[spotToInc] = 0;
+            spotToInc++;
+        }
     }
     
     double evaluate(const std::vector<double>& inputPoints) override {
         size_t currDim = 0;
         while(currDim < m_dim) {
-            m_currPoint = inputPoints[m_dimPermutation[currDim]];
+            m_currPoint = inputPoints[m_dim - currDim - 1];
             size_t currArraySpot = m_arraySizes[currDim] - 1;
             int64_t nextArraySpot = m_arraySizes[currDim+1] - 1;
             while(nextArraySpot >= 0) {
@@ -218,9 +262,7 @@ private:
     size_t                  m_dim;
     std::vector<size_t>     m_matrixDim;
     std::vector<size_t>     m_matrixDimProducts;
-    
-    std::vector<size_t>     m_dimPermutation;
-    
+        
     //The coefficient array
     //TODO: This could maybe be sped up by making it just one array all next to each other.
     std::vector<size_t>     m_arraySizes;

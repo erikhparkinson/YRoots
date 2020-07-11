@@ -10,23 +10,55 @@
 #define ChebyshevApproximator_h
 
 #include "IntervalApproximator.h"
+#include "ChebyshevApproximation.hpp"
 
 template <Dimension D>
 class ChebyshevApproximator
 {
 public:
-    ChebyshevApproximator(const std::unique_ptr<FunctionInterface>& _function, size_t approximationDegree);
+    ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree);
     ~ChebyshevApproximator();
     
-    void approximate(const Interval& _currentInterval);
+    void approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, size_t _approximationDegree);
+    bool isGoodApproximation(SubdivisionParameters& _subdivisionParameters);
+    
+    bool hasSignChange() {
+        return m_signChange;
+    }
+    
+    ChebyshevApproximation& getApproximation() {
+        return m_approximation;
+    }
+
+private:
+    void calculateApproximationError();
     
 private:
-    IntervalApproximator<D> m_intervalApproximator1;
-    IntervalApproximator<D> m_intervalApproximator2;
+    size_t                                  m_rank;
+    size_t                                  m_maxApproximationDegree;
+    
+    double*                                 m_input;
+    double*                                 m_output1;
+    double*                                 m_output2;
+    fftw_r2r_kind*                          m_kinds;
+    double*                                 m_inputPartial;
+    
+    std::vector<std::unique_ptr<IntervalApproximator<D>>>    m_intervalApproximators;
+    size_t                                  m_firstApproximator;
+    size_t                                  m_secondApproximator;
+    size_t                                  m_sideLength1;
+    size_t                                  m_sideLength2;
+    size_t                                  m_approxLength1;
+    size_t                                  m_approxLength2;
+
+    double                                  m_infNorm;
+    bool                                    m_signChange;
+    double                                  m_approximationError;
+    
+    ChebyshevApproximation                  m_approximation;
 };
 
     
-#include "ChebyshevApproximator1D.ipp"
 #include "ChebyshevApproximatorND.ipp"
 
 #endif /* ChebyshevApproximator_h */

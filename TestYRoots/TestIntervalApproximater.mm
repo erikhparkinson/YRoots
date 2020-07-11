@@ -10,8 +10,10 @@
 #define TestIntervalApproximater_mm
 
 #import <XCTest/XCTest.h>
+#include "TestUtils.h"
 #include "IntervalApproximator.h"
 #include "PowerBasisPolynomial.h"
+#include <chrono>
 
 @interface TestIntervalApproximater : XCTestCase
 
@@ -19,31 +21,71 @@
 
 @implementation TestIntervalApproximater
 
+size_t              m_rank;
+size_t              m_approximationDegree;
+size_t              m_sideLength;
+size_t              m_arrayLength;
+size_t              m_partialSideLength;
+size_t              m_partialArrayLength;
+
+bool                m_allocated;
+double*             m_input;
+double*             m_output;
+fftw_r2r_kind*      m_kinds;
+double*             m_inputPartial;
+
 - (void)setUp {
-    // Put setup code here. This method is called before the invocation of each test method in the class.
+    m_allocated = false;
 }
 
 - (void)tearDown {
-    // Put teardown code here. This method is called after the invocation of each test method in the class.
+    if(m_allocated) {
+        //Deallocate everything
+        fftw_free(m_inputPartial);
+        free(m_kinds);
+        fftw_free(m_output);
+        fftw_free(m_input);
+        m_allocated = false;
+    }
 }
 
-template<class T>
-bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
-    return std::abs(a-b) < epsilon;
+void allocateMemory()
+{
+    m_allocated = true;
+    
+    //Allocate the memory for the test once m_rank and m_approximationDegree have been set
+    m_sideLength = 2*m_approximationDegree;
+    m_arrayLength = power(m_sideLength, m_rank);
+    m_partialSideLength = m_approximationDegree + 1;
+    m_partialArrayLength = power(m_partialSideLength, m_rank);
+    
+    //Alllocate memory
+    m_input = fftw_alloc_real(m_arrayLength);
+    m_output= fftw_alloc_real(m_arrayLength);
+    m_kinds = (fftw_r2r_kind*) malloc(m_rank * sizeof (fftw_r2r_kind));
+    m_inputPartial = fftw_alloc_real(m_partialArrayLength);
+
+    //Define the kinds
+    for(size_t i = 0; i < m_rank; i++) {
+        m_kinds[i] = FFTW_R2HC;
+    }
 }
 
 - (void)testBasic1D {
+    m_rank = 1;
+    m_approximationDegree = 3;
+    allocateMemory();
+    
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
     std::string functionString = "5+x1^2";
-    size_t approximationDegree = 3;
     
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
-    IntervalApproximator<Dimension::One> intervalApproximator(function, approximationDegree);
+    IntervalApproximator<Dimension::One> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_inputPartial);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0);
-    intervalApproximator.approximate(currentInterval);
+    intervalApproximator.approximate(function, currentInterval, true);
 
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[0], 5.5));
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[1], 0.0));
@@ -52,18 +94,21 @@ bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
 }
 
 - (void)testBasic2D {
+    m_rank = 2;
+    m_approximationDegree = 3;
+    allocateMemory();
+
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
     variablesNames.push_back("x2");
     std::string functionString = "5+x1^2+x2";
-    size_t approximationDegree = 3;
     
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
-    IntervalApproximator<Dimension::Two> intervalApproximator(function, approximationDegree);
+    IntervalApproximator<Dimension::Two> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_inputPartial);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0);
-    intervalApproximator.approximate(currentInterval);
+    intervalApproximator.approximate(function, currentInterval, true);
 
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[0], 5.5));
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[1], 0.0));
@@ -82,19 +127,22 @@ bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
 }
 
 - (void)testBasic3D {
+    m_rank = 3;
+    m_approximationDegree = 2;
+    allocateMemory();
+
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
     variablesNames.push_back("x2");
     variablesNames.push_back("x3");
     std::string functionString = "5+x1^2+x2+5*x1*x2*x3";
-    size_t approximationDegree = 2;
     
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
-    IntervalApproximator<Dimension::Three> intervalApproximator(function, approximationDegree);
+    IntervalApproximator<Dimension::Three> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_inputPartial);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0);
-    intervalApproximator.approximate(currentInterval);
+    intervalApproximator.approximate(function, currentInterval, true);
     
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[0], 5.5));
     XCTAssert(withinEpslion(intervalApproximator.getOutput()[1], 0.0));
@@ -126,6 +174,44 @@ bool withinEpslion(T a, T b, double epsilon = 1.e-10) {
         XCTAssert(withinEpslion(intervalApproximator.getOutput()[i], 0.0));
     }
 }
+
+- (void)testTimingTemp {
+    m_rank = 2;
+    m_approximationDegree = 40;
+    allocateMemory();
+    
+    size_t degreePoly = 10;
+
+    std::vector<std::string> variablesNames;
+    std::string functionString = "1+";
+    for(size_t i = 0; i < m_rank; i++) {
+        variablesNames.push_back("x" + std::to_string(i));
+        functionString += "x" + std::to_string(i) + "^" + std::to_string(degreePoly);
+        if (i+1 != m_rank) {
+            functionString += "*";
+        }
+    }
+    
+    std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
+    IntervalApproximator<Dimension::Two> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_inputPartial);
+    Interval currentInterval;
+    for(size_t i = 0; i < m_rank; i++) {
+        currentInterval.lowerBounds.push_back(-1.0);
+        currentInterval.upperBounds.push_back(1.0);
+    }
+
+    size_t trials = 1000;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
+    for(size_t i = 0; i < trials; i++) {
+        intervalApproximator.approximate(function, currentInterval, true);
+    }
+    std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+
+    uint64_t nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    
+    std::cout<<nanos/(trials*1000)<<"\n";
+}
+
 
 @end
 
