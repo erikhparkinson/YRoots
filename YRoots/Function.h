@@ -61,15 +61,7 @@ public:
             spotToInc++;
         }
     }
-    
-    void evaluatePoints(const std::vector<std::vector<double>>& inputPoints, double* results)
-    {
-        //TODO: Make a better call to this. Have a specific evaluate grid function.
-        for(size_t i = 0; i < inputPoints.size(); i++) {
-            results[i] = evaluate(inputPoints[i]);
-        }
-    }
-    
+        
     std::string to_string() {
         return m_functionString;
     }

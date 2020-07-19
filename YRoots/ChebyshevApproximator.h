@@ -16,7 +16,7 @@ template <Dimension D>
 class ChebyshevApproximator
 {
 public:
-    ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree);
+    ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree, ChebyshevApproximation<D>& _approximation);
     ~ChebyshevApproximator();
     
     void approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, size_t _approximationDegree);
@@ -26,7 +26,7 @@ public:
         return m_signChange;
     }
     
-    ChebyshevApproximation& getApproximation() {
+    ChebyshevApproximation<D>& getApproximation() {
         return m_approximation;
     }
 
@@ -55,7 +55,7 @@ private:
     bool                                    m_signChange;
     double                                  m_approximationError;
     
-    ChebyshevApproximation                  m_approximation;
+    ChebyshevApproximation<D>&              m_approximation;
 };
 
     

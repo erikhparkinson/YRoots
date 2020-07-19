@@ -14,7 +14,6 @@
 #include "utilities.h"
 #include <iostream>
 
-//TODO: Hold the function inside of here
 template <Dimension D>
 class IntervalApproximator
 {

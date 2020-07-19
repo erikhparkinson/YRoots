@@ -18,28 +18,25 @@ template <Dimension D>
 class SubdivisionSolver
 {
 public:
-    SubdivisionSolver(const std::vector<std::unique_ptr<FunctionInterface>>& _functions);
-    
-    void solve(Interval _currentInterval, size_t currentLevel);
+    SubdivisionSolver(const std::vector<std::unique_ptr<FunctionInterface>>& _functions, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun);
+    ~SubdivisionSolver();
+
+    void solve(SolveParameters& _parameters);
     
 private:
+    void subdivide(SolveParameters& _parameters, size_t _numGoodApproximations);
+        
+private:
+    size_t                                                  m_rank;
     const std::vector<std::unique_ptr<FunctionInterface>>&  m_functions;
+    tbb::strict_ppl::concurrent_queue<SolveParameters>&     m_intervalsToRun;
     SubdivisionParameters                                   m_subdivisionParameters;
     IntervalData                                            m_intervalData;
+    std::vector<ChebyshevApproximation<D>>                  m_chebyshevApproximations;
     std::vector<std::unique_ptr<ChebyshevApproximator<D>>>  m_chebyshevApproximators;
-    size_t                                                  m_rank;
-    
-    
-    //TODO: Create Interval Data Class
-    //TODO: Create objects to handle root tracking
-    //TODO: Pass in the tolerances
-    //TODO: Make a class for FFTs
-    //
-    
-    
+    IntervalChecker<D>                                      m_intervalChecker;
 };
 
-#include "SubdivisionSolver1D.ipp"
 #include "SubdivisionSolverND.ipp"
 
 #endif /* Subdivision_Solver_h */

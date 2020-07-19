@@ -76,4 +76,20 @@ struct SubdivisionParameters {
     bool useTargetTol = true;
 };
 
+struct SolveParameters {
+    Interval interval;
+    size_t currentLevel;
+    
+    SolveParameters() : currentLevel(0) {
+        
+    }
+    
+    SolveParameters(Interval _interval, size_t _currentLevel) :
+    interval(_interval),
+    currentLevel(_currentLevel)
+    {
+        
+    }
+};
+
 #endif /* utilities_h */

@@ -82,17 +82,9 @@ public:
             arraySize *= m_matrixDim[i];
         }
         
-        //Allocate the Array Memory
-        double* coeffArray = (double*) malloc(arraySize * sizeof (double));
-        if (!coeffArray) {
-            throw std::runtime_error("Memory Allocation Failed!");
-        }
-        
-        //Zero out the array
-        for(size_t i = 0; i < arraySize; i++) {
-            coeffArray[i] = 0;
-        }
-        
+        //Make the array
+        std::vector<double> coeffArray(arraySize, 0.0);
+                
         //Put the data in the array
         for(size_t i = 0; i < coeffs.size(); i++) {
             coeffArray[getArraySpot(coeffs[i].second)] = coeffs[i].first;
@@ -106,24 +98,12 @@ public:
         for(size_t i = 0; i < m_dim; i++) {
             reductionSize /= m_matrixDim[i];
             m_arraySizes.push_back(reductionSize);
-            double* reductionArray = (double*) malloc(reductionSize * sizeof (double));
-            if (!reductionArray) {
-                free(reductionArray);
-                throw std::runtime_error("Memory Allocation Failed!");
-            }
+            std::vector<double> reductionArray(reductionSize, 0.0);
             m_arrays.push_back(reductionArray);
         }
     }
-    
-    PowerBasisPolynomial(PowerBasisPolynomial const&) = delete;
-    PowerBasisPolynomial& operator=(PowerBasisPolynomial const&) = delete;
-    
-    ~PowerBasisPolynomial()
-    {
-        for(size_t i = 0; i < m_arrays.size(); i++){
-            free(m_arrays[i]);
-        }
-    }
+        
+    ~PowerBasisPolynomial() {}
     
     std::pair<double, std::vector<size_t>> getMonomial(double sign, std::string monomial, const std::vector<std::string>& variableNames) {
         double coeff = 1;
@@ -263,10 +243,9 @@ private:
     std::vector<size_t>     m_matrixDim;
     std::vector<size_t>     m_matrixDimProducts;
         
-    //The coefficient array
-    //TODO: This could maybe be sped up by making it just one array all next to each other.
-    std::vector<size_t>     m_arraySizes;
-    std::vector<double*>    m_arrays;
+    //The coefficient arrays
+    std::vector<size_t>                 m_arraySizes;
+    std::vector<std::vector<double>>    m_arrays;
     
     //For evaluation
     double                  m_currPoint;

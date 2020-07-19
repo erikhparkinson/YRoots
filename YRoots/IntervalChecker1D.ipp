@@ -6,13 +6,7 @@
 //  Copyright © 2020 Erik Hales Parkinson. All rights reserved.
 //
 
-#ifndef IntervalChecker_ipp
-#define IntervalChecker_ipp
+#ifndef IntervalChecker1D_ipp
+#define IntervalChecker1D_ipp
 
-template <Dimension D>
-IntervalChecker<D>::IntervalChecker()
-{
-
-}
-
-#endif /* IntervalChecker_ipp */
+#endif /* IntervalChecker1D_ipp */
