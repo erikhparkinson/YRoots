@@ -11,48 +11,41 @@
 
 #include <stdio.h>
 
+template <Dimension D>
 class ChebyshevApproximation
 {
 public:
-    ChebyshevApproximation() :
-    m_rank(0),
-    m_degree(0),
-    m_sideLength(0),
-    m_approxLength(0),
-    m_appoximation(nullptr),
-    m_infNorm(0),
-    m_signChange(false),
-    m_approximationError(0)
-    {
+    ChebyshevApproximation();
+    
+    void setApproximation(size_t _rank, size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError);
         
+    void sumAbsValues();
+    
+    double* getArray();
+    
+    double getSumAbsVal() {
+        return m_sumAbsVal;
     }
     
-    void setApproximation(size_t _rank, size_t _degree, size_t _sideLength, size_t _approxLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError)
-    {
-        m_rank = _rank;
-        m_degree = _degree;
-        m_sideLength = _sideLength;
-        m_approxLength = _approxLength;
-        m_appoximation = _appoximation;
-        m_infNorm = _infNorm;
-        m_signChange = _signChange;
-        m_approximationError = _approximationError;
-    }
-    
-    double* getArray() {
-        return m_appoximation;
+    double getApproximationError() {
+        return m_approximationError;
     }
     
 private:
     size_t      m_rank;
     size_t      m_degree;
     size_t      m_sideLength;
-    size_t      m_approxLength;
-    double*     m_appoximation;
+    double*     m_approximation;
     
-    double m_infNorm;
-    bool m_signChange;
-    double m_approximationError;
+    double      m_infNorm;
+    bool        m_signChange;
+    double      m_approximationError;
+    
+    bool        m_absValWasSummed;
+    double      m_sumAbsVal;
 };
+
+#include "ChebyshevApproximation1D.ipp"
+#include "ChebyshevApproximationND.ipp"
 
 #endif /* ChebyshevApproximation_hpp */

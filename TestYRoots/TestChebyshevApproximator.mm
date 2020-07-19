@@ -31,13 +31,14 @@
     size_t approximationDegree = 3;
     
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
-    ChebyshevApproximator<Dimension::One> chebyshevApproximator(1, approximationDegree);
+    ChebyshevApproximation<Dimension::One> chebApproximation;
+    ChebyshevApproximator<Dimension::One> chebyshevApproximator(1, approximationDegree, chebApproximation);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0);
     chebyshevApproximator.approximate(function, currentInterval, approximationDegree);
 
-    double* approximation = chebyshevApproximator.getApproximation().getArray();
+    double* approximation = chebApproximation.getArray();
     
     XCTAssert(withinEpslion(approximation[0], 5.5));
     XCTAssert(withinEpslion(approximation[1], 0.0));
@@ -58,13 +59,14 @@
     size_t approximationDegree = 3;
     
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
-    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(2, approximationDegree);
+    ChebyshevApproximation<Dimension::Two> chebApproximation;
+    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(2, approximationDegree, chebApproximation);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0);
     chebyshevApproximator.approximate(function, currentInterval, approximationDegree);
 
-    double* approximation = chebyshevApproximator.getApproximation().getArray();
+    double* approximation = chebApproximation.getArray();
         
     XCTAssert(withinEpslion(approximation[0], 5.5));
     XCTAssert(withinEpslion(approximation[1], 0.0));
@@ -105,7 +107,8 @@
     }
 
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
-    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(rank, approximationDegree);
+    ChebyshevApproximation<Dimension::Two> chebApproximation;
+    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(rank, approximationDegree, chebApproximation);
     Interval currentInterval;
     for(size_t i = 0; i < rank; i++) {
         currentInterval.lowerBounds.push_back(-1.0);

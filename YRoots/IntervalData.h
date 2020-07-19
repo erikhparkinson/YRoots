@@ -11,6 +11,8 @@
 
 #include "utilities.h"
 
+//TODO: Change the how found to an enum so it isn't copying strings all over the place!!
+
 struct IntervalResult {
     Interval    m_interval;
     std::string m_howFound;

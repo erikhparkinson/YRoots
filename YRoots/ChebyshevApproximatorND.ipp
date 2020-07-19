@@ -10,9 +10,10 @@
 #define ChebyshevApproximatorND_ipp
 
 template <Dimension D>
-ChebyshevApproximator<D>::ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree):
+ChebyshevApproximator<D>::ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree, ChebyshevApproximation<D>& _approximation):
 m_rank(_rank),
-m_maxApproximationDegree(2*_maxApproximationDegree) //We will always double the approximation given
+m_maxApproximationDegree(2*_maxApproximationDegree), //We will always double the approximation given
+m_approximation(_approximation)
 {
     size_t sideLength1 = m_maxApproximationDegree;
     size_t arrayLength1 = power(sideLength1, m_rank);
@@ -83,7 +84,7 @@ void ChebyshevApproximator<D>::approximate(const std::unique_ptr<FunctionInterfa
     m_infNorm = m_intervalApproximators[m_secondApproximator]->getInfoNorm();
     m_signChange = m_intervalApproximators[m_secondApproximator]->getSignChange();
     calculateApproximationError();
-    m_approximation.setApproximation(m_rank, _approximationDegree, m_sideLength1, m_approxLength1, m_intervalApproximators[m_firstApproximator]->getOutput(), m_infNorm, m_signChange, m_approximationError);
+    m_approximation.setApproximation(m_rank, _approximationDegree, m_sideLength1, m_intervalApproximators[m_firstApproximator]->getOutput(), m_infNorm, m_signChange, m_approximationError);
 }
 
 template <Dimension D>

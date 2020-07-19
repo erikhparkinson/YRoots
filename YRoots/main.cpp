@@ -10,7 +10,8 @@
 #include <fstream>
 #include <vector>
 #include "InputFileParser.h"
-#include "SubdivisionSolver.h"
+#include "ThreadedSolver.h"
+#include "thread"
 
 int main(int argc, const char * argv[]) {
     if(argc != 3) {
@@ -23,7 +24,10 @@ int main(int argc, const char * argv[]) {
     
     InputFileParser inputParser (inputFileName);
     
-    std::vector<std::unique_ptr<FunctionInterface>> functions = inputParser.parseFunctions();
+    //TODO: Have an input for number of threads
+    size_t numThreads = 1;
+    
+    std::vector<std::vector<std::unique_ptr<FunctionInterface>>> functions = inputParser.parseFunctions(numThreads);
     
     //TODO: Have an input for the search interval
     Interval interval;
@@ -31,7 +35,7 @@ int main(int argc, const char * argv[]) {
         interval.lowerBounds.push_back(-1.0);
         interval.upperBounds.push_back(1.0);
     }
-    
+        
     //TODO: Check that the number of dimensions equals the number of variables
     switch(functions.size()) {
         case 0:
@@ -39,20 +43,17 @@ int main(int argc, const char * argv[]) {
             break;
         case 1:
         {
-            SubdivisionSolver<Dimension::One> subdivisionSolver(functions);
-            subdivisionSolver.solve(interval, 0);
+            ThreadedSolver<Dimension::One> threadedSolver(functions, numThreads, interval);
             break;
         }
         case 2:
         {
-            SubdivisionSolver<Dimension::Two> subdivisionSolver(functions);
-            subdivisionSolver.solve(interval, 0);
+            ThreadedSolver<Dimension::Two> threadedSolver(functions, numThreads, interval);
             break;
         }
         default:
         {
-            SubdivisionSolver<Dimension::NDim> subdivisionSolver(functions);
-            subdivisionSolver.solve(interval, 0);
+            ThreadedSolver<Dimension::NDim> threadedSolver(functions, numThreads, interval);
             break;
         }
     }

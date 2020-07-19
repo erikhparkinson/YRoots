@@ -9,19 +9,33 @@
 #ifndef IntervalChecker_h
 #define IntervalChecker_h
 
-#include "utilities.h"
+#include "ChebyshevApproximation.hpp"
+#include "IntervalData.h"
 
 template <Dimension D>
 class IntervalChecker {
 public:
-    IntervalChecker() {
-        
-    }
+    IntervalChecker(IntervalData& _intervalData, size_t _rank, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun);
     
+    bool runIntervalChecks(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval);
+    void runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters& _currentParameters, size_t _numGoodApproximations);
     
 private:
+    bool runConstantTermCheck(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval);
+    bool runQuadraticCheck(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval);
+
+private:
+    size_t                  m_rank;
+    IntervalData&           m_intervalData;
+    double                  m_randomIntervalDivider;
+    std::vector<Interval>   m_scaledSubIntervals;
     
+    tbb::strict_ppl::concurrent_queue<SolveParameters>&     m_intervalsToRun;
 };
 
+#include "IntervalChecker1D.ipp"
+#include "IntervalChecker2D.ipp"
+#include "IntervalChecker3D.ipp"
+#include "IntervalCheckerND.ipp"
 
 #endif /* IntervalChecker_h */

@@ -22,8 +22,8 @@ public:
     m_filename(_filename)
     {}
     
-    std::vector<std::unique_ptr<FunctionInterface>> parseFunctions() {
-        std::vector<std::unique_ptr<FunctionInterface>> functions;
+    std::vector<std::vector<std::unique_ptr<FunctionInterface>>> parseFunctions(size_t _numThreads) {
+        std::vector<std::vector<std::unique_ptr<FunctionInterface>>> functions(_numThreads);
         
         //Read the whole file into a string
         std::ifstream inputFile;
@@ -75,7 +75,9 @@ public:
                 throw std::runtime_error("Subfunctions not implemented!");
             }
             else {
-                functions.push_back(std::make_unique<PowerBasisPolynomial>(functionData[1], variableNames));
+                for(size_t i = 0 ; i < _numThreads; i++) {
+                    functions[i].push_back(std::make_unique<PowerBasisPolynomial>(functionData[1], variableNames));
+                }
                 functionNames.erase(nameFind);
             }
         }
