@@ -10,6 +10,7 @@
 #include "TestPolynomialPowerBasis.mm"
 #include "TestIntervalApproximater.mm"
 #include "TestChebyshevApproximator.mm"
+#include "TestThreadedSolver.mm"
 
 @interface TestMain : XCTestCase
 

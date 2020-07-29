@@ -52,6 +52,14 @@ enum Dimension {
     Four
 };
 
+enum SolveMethod {
+    ConstantTermCheck = 0,
+    QuadrticCheck = 1,
+    LinearSolve = 2,
+    SpectralSolve = 3,
+    TooDeep = 4
+};
+
 struct Interval {
     std::vector<double> lowerBounds;
     std::vector<double> upperBounds;
@@ -60,18 +68,17 @@ struct Interval {
 };
 
 struct SubdivisionParameters {
-    double relApproxTol = 1.e-15;
-    double absApproxTol = 1.e-12;
+    double relApproxTol = 1.e-10;
+    double absApproxTol = 1.e-10;
     double maxConditionNumber = 1e5;
     double goodZerosFactor = 100;
     double minGoodZerosTol = 1e-5;
     bool checkEvaluationError = true;
     size_t checkEvaluationFrequency = 1;
-    size_t approximationDegree = 3;
-    size_t targetDegree = 10;
+    size_t approximationDegree = 10;
+    size_t targetDegree = 1;
     size_t maxLevel = 999;
     bool returnPotentials = false;
-    std::string method = "svd";
     double targetTol = 1.e-15;
     bool useTargetTol = true;
 };
@@ -79,14 +86,16 @@ struct SubdivisionParameters {
 struct SolveParameters {
     Interval interval;
     size_t currentLevel;
+    std::vector<size_t> goodDegrees;
     
     SolveParameters() : currentLevel(0) {
         
     }
     
-    SolveParameters(Interval _interval, size_t _currentLevel) :
+    SolveParameters(Interval _interval, size_t _currentLevel, std::vector<size_t> _goodDegrees) :
     interval(_interval),
-    currentLevel(_currentLevel)
+    currentLevel(_currentLevel),
+    goodDegrees(_goodDegrees)
     {
         
     }

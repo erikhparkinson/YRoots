@@ -44,16 +44,19 @@ int main(int argc, const char * argv[]) {
         case 1:
         {
             ThreadedSolver<Dimension::One> threadedSolver(functions, numThreads, interval);
+            threadedSolver.solve();
             break;
         }
         case 2:
         {
             ThreadedSolver<Dimension::Two> threadedSolver(functions, numThreads, interval);
+            threadedSolver.solve();
             break;
         }
         default:
         {
             ThreadedSolver<Dimension::NDim> threadedSolver(functions, numThreads, interval);
+            threadedSolver.solve();
             break;
         }
     }

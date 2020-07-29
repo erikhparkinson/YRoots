@@ -10,9 +10,9 @@
 #define IntervalCheckerND_h
 
 template <Dimension D>
-IntervalChecker<D>::IntervalChecker(IntervalData& _intervalData, size_t _rank, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun):
+IntervalChecker<D>::IntervalChecker(IntervalTracker& _intervalTracker, size_t _rank, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun):
 m_rank(_rank),
-m_intervalData(_intervalData),
+m_intervalTracker(_intervalTracker),
 m_randomIntervalDivider(0.5139303900908738),
 m_intervalsToRun(_intervalsToRun)
 {
@@ -40,7 +40,7 @@ bool IntervalChecker<D>::runIntervalChecks(ChebyshevApproximation<D>& _approxima
 {
     //Returns true if we need to keep the interval
     if(!runConstantTermCheck(_approximation, _currentInterval)) {
-        m_intervalData.storeResult(_currentInterval, "ConstantTermCheck");
+        m_intervalTracker.storeResult(_currentInterval, SolveMethod::ConstantTermCheck);
         return false;
     }
     else {
@@ -51,6 +51,30 @@ bool IntervalChecker<D>::runIntervalChecks(ChebyshevApproximation<D>& _approxima
 template <Dimension D>
 void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters& _currentParameters, size_t _numGoodApproximations)
 {
+    for(size_t intervalNum = 0; intervalNum < m_scaledSubIntervals.size(); intervalNum++) {
+        SolveParameters _nextParameters = _currentParameters;
+        _nextParameters.currentLevel++;
+        
+        //Transform this interval onto m_scaledSubIntervals[intervalNum]
+        for(size_t i = 0; i < m_rank; i++) {
+            
+            //TODO: Make some function for projections. Make this more efficient.
+            double temp1 = _currentParameters.interval.upperBounds[i] - _currentParameters.interval.lowerBounds[i];
+            double temp2 = _currentParameters.interval.upperBounds[i] + _currentParameters.interval.lowerBounds[i];
+
+            _nextParameters.interval.lowerBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].lowerBounds[i]) + temp2) /2.0;
+            _nextParameters.interval.upperBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].upperBounds[i]) + temp2) /2.0;
+        }
+        
+        //TODO: Run the checks here
+        //It's probably the most efficient to run the checks on all the intervals at the same time to avoid
+        //repeating calculations. Either that, or find a way to store calculations inside of the ChebyshevApproximation.
+        
+        m_intervalsToRun.push(_nextParameters);
+    }
+    
+    
+    //TODO: Write this function!
     //TODO: Have this class hold a reference to interval data and store the result
     /*size_t currSpot = 0;
     while (currSpot < _subIntervals.size()) {
@@ -88,13 +112,14 @@ bool IntervalChecker<D>::runConstantTermCheck(ChebyshevApproximation<D>& _approx
 {
     //Returns true if we need to keep the interval
     _approximation.sumAbsValues();
-    return _approximation.getSumAbsVal() + _approximation.getApproximationError() > 2*_approximation.getArray()[0];
+    return _approximation.getSumAbsVal() + _approximation.getApproximationError() > std::abs(2*_approximation.getArray()[0]);
 }
 
 template <Dimension D>
 bool IntervalChecker<D>::runQuadraticCheck(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval)
 {
     //Returns true if we need to keep the interval
+    //TODO: Write this function!
     return true;
 }
 

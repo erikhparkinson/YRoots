@@ -135,11 +135,4 @@ void ChebyshevApproximator<D>::calculateApproximationError()
     }
 }
 
-
-template <Dimension D>
-bool ChebyshevApproximator<D>::isGoodApproximation(SubdivisionParameters& _subdivisionParameters) {
-    return m_approximationError < (_subdivisionParameters.absApproxTol + _subdivisionParameters.relApproxTol*m_infNorm);
-}
-
-
 #endif /* ChebyshevApproximatorND_ipp */

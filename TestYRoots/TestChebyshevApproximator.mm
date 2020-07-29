@@ -45,10 +45,7 @@
     XCTAssert(withinEpslion(approximation[2], 0.5));
     XCTAssert(withinEpslion(approximation[3], 0.0));
     
-    SubdivisionParameters subdivisionParameters;
-    subdivisionParameters.relApproxTol = 1e-15;
-    subdivisionParameters.absApproxTol = 1e-15;
-    XCTAssertTrue(chebyshevApproximator.isGoodApproximation(subdivisionParameters));
+    XCTAssertTrue(chebApproximation.isGoodApproximation(1e-15, 1e-15));
 }
 
 - (void)testBasic2D {
@@ -83,10 +80,7 @@
         XCTAssert(withinEpslion(approximation[i], 0.0));
     }
     
-    SubdivisionParameters subdivisionParameters;
-    subdivisionParameters.relApproxTol = 1e-15;
-    subdivisionParameters.absApproxTol = 1e-15;
-    XCTAssertTrue(chebyshevApproximator.isGoodApproximation(subdivisionParameters));
+    XCTAssertTrue(chebApproximation.isGoodApproximation(1e-15, 1e-15));
 }
 
 - (void)testTimingTemp {

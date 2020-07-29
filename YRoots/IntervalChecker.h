@@ -10,12 +10,12 @@
 #define IntervalChecker_h
 
 #include "ChebyshevApproximation.hpp"
-#include "IntervalData.h"
+#include "IntervalTracker.h"
 
 template <Dimension D>
 class IntervalChecker {
 public:
-    IntervalChecker(IntervalData& _intervalData, size_t _rank, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun);
+    IntervalChecker(IntervalTracker& _intervalTracker, size_t _rank, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun);
     
     bool runIntervalChecks(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval);
     void runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters& _currentParameters, size_t _numGoodApproximations);
@@ -26,7 +26,7 @@ private:
 
 private:
     size_t                  m_rank;
-    IntervalData&           m_intervalData;
+    IntervalTracker&        m_intervalTracker;
     double                  m_randomIntervalDivider;
     std::vector<Interval>   m_scaledSubIntervals;
     

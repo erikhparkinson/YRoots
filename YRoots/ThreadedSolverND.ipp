@@ -12,23 +12,48 @@
 template <Dimension D>
 ThreadedSolver<D>::ThreadedSolver(const std::vector<std::vector<std::unique_ptr<FunctionInterface>>>& _allFunctions, size_t _numThreads, Interval& startInterval) :
 m_allFunctions(_allFunctions),
-m_numThreads(_numThreads)
+m_numThreads(_numThreads),
+m_intervalTracker(false),
+m_rootTracker()
 {
     //Limited the number of threads by the hardware amount
     m_numThreads = std::min(m_numThreads, (size_t)std::thread::hardware_concurrency());
+    m_numRunningThreads.store(0);
+    
+    //TODO: Parse these parameters
+    SubdivisionParameters subdivisionParameters;
     
     //Push back the first interval
-    SolveParameters firstSolveParameters(startInterval, 0);
-    m_intervalsToRun.push(firstSolveParameters);
+    SolveParameters firstSolveParameters(startInterval, 0, std::vector<size_t>(_allFunctions[0].size(), subdivisionParameters.approximationDegree));
+    m_firstSolveParameters = firstSolveParameters;
+    //m_intervalsToRun.push(firstSolveParameters);
     
     m_killThreads.store(false);
-    for(int threadNum = 0; threadNum < m_numThreads; threadNum++) {
+    for(int threadNum = 0; threadNum < m_numThreads - 1; threadNum++) {
         //Create the solver
-        m_subdivisionSolvers.emplace_back(std::make_unique<SubdivisionSolver<D>>(m_allFunctions[threadNum], m_intervalsToRun));
+        m_subdivisionSolvers.emplace_back(std::make_unique<SubdivisionSolver<D>>(m_allFunctions[threadNum], m_intervalsToRun, subdivisionParameters, m_intervalTracker, m_rootTracker));
 
         //Create the threads
-        m_threadPool.push_back(std::thread(&ThreadedSolver<D>::runThread, this, threadNum));
+        //m_threadPool.push_back(std::thread(&ThreadedSolver<D>::runThread, this, threadNum));
     }
+    
+    //Run the main thread as well
+    int threadNum = static_cast<int>(m_numThreads - 1);
+    //Create the solver
+    m_subdivisionSolvers.emplace_back(std::make_unique<SubdivisionSolver<D>>(m_allFunctions[threadNum], m_intervalsToRun, subdivisionParameters, m_intervalTracker, m_rootTracker));
+
+    //Create the threads
+    //runThread(threadNum);
+    
+    //Wait for the other threads to join
+    for(std::thread &thread : m_threadPool) {
+        thread.join();
+    }
+    m_threadPool.clear();
+    
+    //TODO: Have these print to a file
+    //m_rootTracker.printResults();
+    //m_intervalTracker.printResults();
 }
 
 template <Dimension D>
@@ -41,6 +66,25 @@ ThreadedSolver<D>::~ThreadedSolver() {
     }
     m_threadPool.clear();
 }
+
+template <Dimension D>
+void ThreadedSolver<D>::solve() {
+    m_intervalsToRun.push(m_firstSolveParameters);
+    for(int threadNum = 0; threadNum < m_numThreads - 1; threadNum++) {
+        //Create the threads
+        m_threadPool.push_back(std::thread(&ThreadedSolver<D>::runThread, this, threadNum));
+    }
+    int threadNum = static_cast<int>(m_numThreads - 1);
+    runThread(threadNum);
+    for(std::thread &thread : m_threadPool) {
+        thread.join();
+    }
+    m_threadPool.clear();
+    
+    m_rootTracker.printResults();
+    m_intervalTracker.printResults();
+}
+
 
 template <Dimension D>
 void ThreadedSolver<D>::runThread(size_t threadNum){

@@ -19,9 +19,10 @@ m_infNorm(0),
 m_signChange(false),
 m_approximationError(0),
 m_absValWasSummed(false),
-m_sumAbsVal(0)
+m_sumAbsVal(0),
+m_goodDegree(std::numeric_limits<size_t>::max())
 {
-    
+    clear();
 }
 
 template <Dimension D>
@@ -34,7 +35,16 @@ void ChebyshevApproximation<D>::setApproximation(size_t _rank, size_t _degree, s
     m_infNorm = _infNorm;
     m_signChange = _signChange;
     m_approximationError = _approximationError;
+    clear();
 }
+
+template <Dimension D>
+void ChebyshevApproximation<D>::clear() {
+    m_absValWasSummed = false;
+    m_sumAbsVal = 0;
+    m_goodDegree = std::numeric_limits<size_t>::max();
+}
+
 
 template <Dimension D>
 double* ChebyshevApproximation<D>::getArray() {
@@ -76,5 +86,25 @@ void ChebyshevApproximation<D>::sumAbsValues() {
     }
 }
 
+template <Dimension D>
+inline bool ChebyshevApproximation<D>::isGoodApproximation(double absApproxTol, double relApproxTol) {
+    //TODO: Hve a version of this that doesn't set goodDegree. We will probably want to call that faster version sometimes.
+    if(m_approximationError < (absApproxTol + relApproxTol*m_infNorm)) {
+        m_goodDegree = m_degree;
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+template <Dimension D>
+bool ChebyshevApproximation<D>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
+    //TODO: Write this
+    //Have it update m_sumAbsVal
+    //Have it update the approximation error
+    //Precompute the points that need to be looked at for each degree in a vector.
+    return true;
+}
 
 #endif /* ChebyshevApproximationND_ipp */

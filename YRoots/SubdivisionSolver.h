@@ -11,14 +11,16 @@
 
 #include "utilities.h"
 #include "IntervalChecker.h"
-#include "IntervalData.h"
+#include "IntervalTracker.h"
+#include "RootTracker.h"
 #include "ChebyshevApproximator.h"
+#include "LinearSolver.h"
 
 template <Dimension D>
 class SubdivisionSolver
 {
 public:
-    SubdivisionSolver(const std::vector<std::unique_ptr<FunctionInterface>>& _functions, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun);
+    SubdivisionSolver(const std::vector<std::unique_ptr<FunctionInterface>>& _functions, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun, SubdivisionParameters _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
     ~SubdivisionSolver();
 
     void solve(SolveParameters& _parameters);
@@ -31,10 +33,12 @@ private:
     const std::vector<std::unique_ptr<FunctionInterface>>&  m_functions;
     tbb::strict_ppl::concurrent_queue<SolveParameters>&     m_intervalsToRun;
     SubdivisionParameters                                   m_subdivisionParameters;
-    IntervalData                                            m_intervalData;
+    IntervalTracker&                                        m_intervalTracker;
+    RootTracker&                                            m_rootTracker;
     std::vector<ChebyshevApproximation<D>>                  m_chebyshevApproximations;
     std::vector<std::unique_ptr<ChebyshevApproximator<D>>>  m_chebyshevApproximators;
     IntervalChecker<D>                                      m_intervalChecker;
+    LinearSolver<D>                                         m_linearSolver;
 };
 
 #include "SubdivisionSolverND.ipp"
