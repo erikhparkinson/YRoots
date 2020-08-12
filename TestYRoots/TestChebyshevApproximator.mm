@@ -45,10 +45,7 @@
     XCTAssert(withinEpslion(approximation[2], 0.5));
     XCTAssert(withinEpslion(approximation[3], 0.0));
     
-    SubdivisionParameters subdivisionParameters;
-    subdivisionParameters.relApproxTol = 1e-15;
-    subdivisionParameters.absApproxTol = 1e-15;
-    XCTAssertTrue(chebyshevApproximator.isGoodApproximation(subdivisionParameters));
+    XCTAssertTrue(chebApproximation.isGoodApproximation(1e-15, 1e-15));
 }
 
 - (void)testBasic2D {
@@ -83,10 +80,7 @@
         XCTAssert(withinEpslion(approximation[i], 0.0));
     }
     
-    SubdivisionParameters subdivisionParameters;
-    subdivisionParameters.relApproxTol = 1e-15;
-    subdivisionParameters.absApproxTol = 1e-15;
-    XCTAssertTrue(chebyshevApproximator.isGoodApproximation(subdivisionParameters));
+    XCTAssertTrue(chebApproximation.isGoodApproximation(1e-15, 1e-15));
 }
 
 - (void)testTimingTemp {
@@ -122,9 +116,9 @@
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 
-    uint64_t nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout<<nanos/(trials*1000)<<"\n";
+    std::cout << "\nCreating a " << approximationDegree << " degree chebyshev approximaiton for a Degree " << degreePoly << " Dimension " << rank << " Polynomial takes " <<nanos/(trials*1000)<< "us.\n\n";
 }
 
 

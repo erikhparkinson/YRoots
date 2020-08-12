@@ -19,17 +19,19 @@ public:
     
     void setApproximation(size_t _rank, size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError);
         
-    void sumAbsValues();
+    inline bool isGoodApproximation(double absApproxTol, double relApproxTol);
+    inline bool isGoodApproximationSetDegree(double absApproxTol, double relApproxTol);
     
+    bool trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree);
+    
+    void    sumAbsValues();
     double* getArray();
-    
-    double getSumAbsVal() {
-        return m_sumAbsVal;
-    }
-    
-    double getApproximationError() {
-        return m_approximationError;
-    }
+    bool    isLinear();
+    double  getSumAbsVal();
+    bool    hasSignChange();
+    double  getApproximationError();
+    size_t  getGoodDegree();
+    void    clear();
     
 private:
     size_t      m_rank;
@@ -43,6 +45,7 @@ private:
     
     bool        m_absValWasSummed;
     double      m_sumAbsVal;
+    size_t      m_goodDegree;
 };
 
 #include "ChebyshevApproximation1D.ipp"

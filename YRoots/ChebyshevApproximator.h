@@ -20,7 +20,6 @@ public:
     ~ChebyshevApproximator();
     
     void approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, size_t _approximationDegree);
-    bool isGoodApproximation(SubdivisionParameters& _subdivisionParameters);
     
     bool hasSignChange() {
         return m_signChange;

@@ -45,4 +45,22 @@ void ChebyshevApproximation<Dimension::Three>::sumAbsValues() {
     }
 }
 
+template <>
+bool ChebyshevApproximation<Dimension::One>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
+    //Continue while the approximation is good. This call updates goodDegree as well.
+    while(isGoodApproximationSetDegree(_absApproxTol, _relApproxTol)) {
+        if(m_degree <= _targetDegree) {
+            return true;
+        }
+        if(m_absValWasSummed) {
+            m_sumAbsVal -= std::abs(m_approximation[m_degree]);
+        }
+        m_approximationError += std::abs(m_approximation[m_degree]);
+        m_approximation[m_degree] = 0;
+        m_degree--;
+    }
+    return false;
+}
+
+
 #endif /* ChebyshevApproximation1D_ipp */
