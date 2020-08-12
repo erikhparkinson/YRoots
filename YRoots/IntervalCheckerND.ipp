@@ -10,11 +10,13 @@
 #define IntervalCheckerND_h
 
 template <Dimension D>
-IntervalChecker<D>::IntervalChecker(IntervalTracker& _intervalTracker, size_t _rank, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun):
+IntervalChecker<D>::IntervalChecker(size_t _rank, IntervalTracker& _intervalTracker, size_t _threadNum, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool):
 m_rank(_rank),
 m_intervalTracker(_intervalTracker),
 m_randomIntervalDivider(0.5139303900908738),
-m_intervalsToRun(_intervalsToRun)
+m_threadNum(_threadNum),
+m_intervalsToRun(_intervalsToRun),
+m_solveParametersPool(_solveParametersPool)
 {
     //Create the scaled subintervals
     double midPoint = 2*m_randomIntervalDivider - 1;
@@ -40,7 +42,7 @@ bool IntervalChecker<D>::runIntervalChecks(ChebyshevApproximation<D>& _approxima
 {
     //Returns true if we need to keep the interval
     if(!runConstantTermCheck(_approximation, _currentInterval)) {
-        m_intervalTracker.storeResult(_currentInterval, SolveMethod::ConstantTermCheck);
+        m_intervalTracker.storeResult(m_threadNum, _currentInterval, SolveMethod::ConstantTermCheck);
         return false;
     }
     else {
@@ -49,28 +51,33 @@ bool IntervalChecker<D>::runIntervalChecks(ChebyshevApproximation<D>& _approxima
 }
 
 template <Dimension D>
-void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters& _currentParameters, size_t _numGoodApproximations)
+void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters* _currentParameters, size_t _numGoodApproximations)
 {
     for(size_t intervalNum = 0; intervalNum < m_scaledSubIntervals.size(); intervalNum++) {
-        SolveParameters _nextParameters = _currentParameters;
-        _nextParameters.currentLevel++;
+        //Get the next parameter pointer and populate it
+        SolveParameters* _nextParameters = m_solveParametersPool.pop();
+        _nextParameters->currentLevel = _currentParameters->currentLevel+1;
+        for(size_t i = 0; i < _nextParameters->goodDegrees.size(); i++) {
+            _nextParameters->goodDegrees[i] = _currentParameters->goodDegrees[i];
+        }
+        
         
         //Transform this interval onto m_scaledSubIntervals[intervalNum]
         for(size_t i = 0; i < m_rank; i++) {
             
             //TODO: Make some function for projections. Make this more efficient.
-            double temp1 = _currentParameters.interval.upperBounds[i] - _currentParameters.interval.lowerBounds[i];
-            double temp2 = _currentParameters.interval.upperBounds[i] + _currentParameters.interval.lowerBounds[i];
+            double temp1 = _currentParameters->interval.upperBounds[i] - _currentParameters->interval.lowerBounds[i];
+            double temp2 = _currentParameters->interval.upperBounds[i] + _currentParameters->interval.lowerBounds[i];
 
-            _nextParameters.interval.lowerBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].lowerBounds[i]) + temp2) /2.0;
-            _nextParameters.interval.upperBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].upperBounds[i]) + temp2) /2.0;
+            _nextParameters->interval.lowerBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].lowerBounds[i]) + temp2) /2.0;
+            _nextParameters->interval.upperBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].upperBounds[i]) + temp2) /2.0;
         }
         
         //TODO: Run the checks here
         //It's probably the most efficient to run the checks on all the intervals at the same time to avoid
         //repeating calculations. Either that, or find a way to store calculations inside of the ChebyshevApproximation.
         
-        m_intervalsToRun.push(_nextParameters);
+        m_intervalsToRun.push(m_threadNum, _nextParameters);
     }
     
     

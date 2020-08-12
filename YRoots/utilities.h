@@ -9,12 +9,12 @@
 #ifndef utilities_h
 #define utilities_h
 
+#include "macros.h"
+
 #include <vector>
 #include <string>
 #include <math.h>
 #include <iostream>
-
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 //TODO: Make unit tests for these functions!

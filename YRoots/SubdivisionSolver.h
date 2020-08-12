@@ -15,23 +15,27 @@
 #include "RootTracker.h"
 #include "ChebyshevApproximator.h"
 #include "LinearSolver.h"
+#include "MultiPool.h"
+#include "ConcurrentStack.h"
 
 template <Dimension D>
 class SubdivisionSolver
 {
 public:
-    SubdivisionSolver(const std::vector<std::unique_ptr<FunctionInterface>>& _functions, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun, SubdivisionParameters _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
+    SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<FunctionInterface>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
     ~SubdivisionSolver();
 
-    void solve(SolveParameters& _parameters);
+    void solve(SolveParameters* _parameters);
     
 private:
-    void subdivide(SolveParameters& _parameters, size_t _numGoodApproximations);
+    void subdivide(SolveParameters* _parameters, size_t _numGoodApproximations);
         
 private:
+    size_t                                                  m_threadNum;
     size_t                                                  m_rank;
     const std::vector<std::unique_ptr<FunctionInterface>>&  m_functions;
-    tbb::strict_ppl::concurrent_queue<SolveParameters>&     m_intervalsToRun;
+    ConcurrentStack<SolveParameters>&                       m_intervalsToRun;
+    ObjectPool<SolveParameters>&                            m_solveParametersPool;
     SubdivisionParameters                                   m_subdivisionParameters;
     IntervalTracker&                                        m_intervalTracker;
     RootTracker&                                            m_rootTracker;

@@ -11,14 +11,16 @@
 
 #include "ChebyshevApproximation.hpp"
 #include "IntervalTracker.h"
+#include "MultiPool.h"
+#include "ConcurrentStack.h"
 
 template <Dimension D>
 class IntervalChecker {
 public:
-    IntervalChecker(IntervalTracker& _intervalTracker, size_t _rank, tbb::strict_ppl::concurrent_queue<SolveParameters>& _intervalsToRun);
+    IntervalChecker(size_t _rank, IntervalTracker& _intervalTracker, size_t _threadNum, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>&        _solveParametersPool);
     
     bool runIntervalChecks(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval);
-    void runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters& _currentParameters, size_t _numGoodApproximations);
+    void runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters* _currentParameters, size_t _numGoodApproximations);
     
 private:
     bool runConstantTermCheck(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval);
@@ -30,7 +32,12 @@ private:
     double                  m_randomIntervalDivider;
     std::vector<Interval>   m_scaledSubIntervals;
     
-    tbb::strict_ppl::concurrent_queue<SolveParameters>&     m_intervalsToRun;
+    //Multithreading objects
+    size_t                              m_threadNum;
+    ConcurrentStack<SolveParameters>&   m_intervalsToRun;
+    ObjectPool<SolveParameters>&        m_solveParametersPool;
+
+    
 };
 
 #include "IntervalChecker1D.ipp"

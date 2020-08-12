@@ -11,6 +11,7 @@
 #include "TestIntervalApproximater.mm"
 #include "TestChebyshevApproximator.mm"
 #include "TestThreadedSolver.mm"
+#include "TestConcurrent.mm"
 
 @interface TestMain : XCTestCase
 

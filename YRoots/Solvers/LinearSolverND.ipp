@@ -10,7 +10,8 @@
 #define LinearSolverND_ipp
 
 template <Dimension D>
-LinearSolver<D>::LinearSolver(size_t _rank, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
+LinearSolver<D>::LinearSolver(size_t _threadNum, size_t _rank, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
+m_threadNum(_threadNum),
 m_rank(_rank),
 m_intervalTracker(_intervalTracker),
 m_rootTracker(_rootTracker)

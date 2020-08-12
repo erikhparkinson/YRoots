@@ -10,9 +10,6 @@
 #define IntervalData_h
 
 #include "utilities.h"
-#include <tbb/concurrent_vector.h>
-
-//THIS CLASS MUST BE THREAD SAFE
 
 struct IntervalResult {
     Interval    m_interval;
@@ -27,36 +24,28 @@ struct IntervalResult {
 
 class IntervalTracker {
 public:
-    IntervalTracker(bool _enabled): m_enabled(_enabled) {
-        
+    IntervalTracker(size_t _numThreads, bool _enabled): m_numThreads(_numThreads), m_enabled(_enabled)
+    {
+        m_intervalResults.resize(m_numThreads);
     }
     
-    void storeResult(Interval& _interval, SolveMethod _howFound) {
+    void storeResult(size_t _threadNum, Interval& _interval, SolveMethod _howFound) {
         if (m_enabled) {
-            m_intervalResults.emplace_back(_interval, _howFound);
+            m_intervalResults[_threadNum].emplace_back(_interval, _howFound);
         }
     }
     
     void printResults() {
-        std::cout<< m_intervalResults.size() << " Intervals Used:\n";
-        return;
-        for(size_t intervalNum = 0; intervalNum < m_intervalResults.size(); intervalNum++) {
-            for(size_t i = 0; i < m_intervalResults[intervalNum].m_interval.lowerBounds.size(); i++) {
-                std::cout<<m_intervalResults[intervalNum].m_interval.lowerBounds[i]<<",";
-            }
-            std::cout<<";\t";
-            for(size_t i = 0; i < m_intervalResults[intervalNum].m_interval.upperBounds.size(); i++) {
-                std::cout<<m_intervalResults[intervalNum].m_interval.upperBounds[i]<<",";
-            }
-            std::cout<<";\t";
-            
-            std::cout<<m_intervalResults[intervalNum].m_howFound<<"\n";
+        for(size_t i = 0; i < m_numThreads; i++) {
+            std::cout<< "Thread " << i << " solved " << m_intervalResults[i].size() << " intervals\n";
         }
+        return;
     }
     
 private:
-    bool                                         m_enabled;
-    tbb::concurrent_vector<IntervalResult>       m_intervalResults;
+    size_t                                      m_numThreads;
+    bool                                        m_enabled;
+    std::vector<std::vector<IntervalResult>>    m_intervalResults;
     
 };
 

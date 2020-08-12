@@ -31,10 +31,10 @@
     
     std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
     Interval startInterval;
-    startInterval.lowerBounds.push_back(-2.0);
-    startInterval.upperBounds.push_back(2.0);
+    startInterval.lowerBounds.push_back(-1.0);
+    startInterval.upperBounds.push_back(1.0);
     
-    size_t numThreads = 1;
+    for(size_t numThreads = 1; numThreads <= 4; numThreads++) {
         
     std::vector<std::vector<std::unique_ptr<FunctionInterface>>> allFunctions;
     allFunctions.resize(numThreads);
@@ -50,11 +50,12 @@
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 
-    uint64_t nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout<<nanos/(1000000)<<"\n";
-    
+    std::cout << "Solve with " << numThreads << " threads takes " <<nanos/(trials * 1000000)<< "ms.\n";
+
     XCTAssert(true);
+    }
 }
 
 @end

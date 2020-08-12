@@ -20,11 +20,12 @@
 template <Dimension D>
 class LinearSolver {
 public:
-    LinearSolver(size_t _rank, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
+    LinearSolver(size_t _threadNum, size_t _rank, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
     
     void solve(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, Interval& _interval, double _goodZerosTol);
 
 private:
+    size_t                  m_threadNum;
     size_t                  m_rank;
     IntervalTracker&        m_intervalTracker;
     RootTracker&            m_rootTracker;
