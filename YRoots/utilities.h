@@ -36,8 +36,9 @@ bool is_number(const std::string& s) {
 }
 
 //TODO: Check for overflow!
-size_t power(size_t base, size_t exponent) {
-    size_t result = 1;
+template<typename T>
+T power(T base, size_t exponent) {
+    T result = 1;
     for(size_t i = 0; i < exponent; i++) {
         result *= base;
     }

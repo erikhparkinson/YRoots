@@ -64,7 +64,7 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
         else if(!m_chebyshevApproximations[funcNum].hasSignChange()) {
             //Run Checks
             if(!m_intervalChecker.runIntervalChecks(m_chebyshevApproximations[funcNum], _parameters->interval)){
-                //return;
+                return;
             }
         }
         //Update the good degree

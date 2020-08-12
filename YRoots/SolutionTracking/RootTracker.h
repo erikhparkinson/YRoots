@@ -66,6 +66,16 @@ public:
             std::cout<<"\n";
         }
     }
+    
+    std::vector<FoundRoot> getRoots() {
+        std::vector<FoundRoot> allRoots;
+        for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
+            for(size_t rootNum = 0; rootNum < m_foundRoots[threadNum].size(); rootNum++) {
+                allRoots.push_back(m_foundRoots[threadNum][rootNum]);
+            }
+        }
+        return allRoots;
+    }
 
 private:
     size_t                               m_numThreads;

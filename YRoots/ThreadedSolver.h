@@ -24,6 +24,10 @@ public:
     
     void solve();
     
+    std::vector<FoundRoot> getRoots() {
+        return m_rootTracker.getRoots();
+    }
+    
     ~ThreadedSolver();
     
 private:
