@@ -34,6 +34,7 @@
     startInterval.lowerBounds.push_back(-1.0);
     startInterval.upperBounds.push_back(1.0);
     
+    std::cout<<"\n";
     for(size_t numThreads = 1; numThreads <= 4; numThreads++) {
         std::vector<std::vector<std::unique_ptr<FunctionInterface>>> allFunctions;
         allFunctions.resize(numThreads);
@@ -51,13 +52,14 @@
 
         double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-        std::cout << "Solve with " << numThreads << " threads takes " <<nanos/(trials * 1000000)<< "ms.\n";
+        std::cout << "Solve with " << numThreads << " threads takes " <<nanos/(trials * 1000)<< "us.\n";
 
         std::vector<FoundRoot> foundRoots =  solver.getRoots();
         for(FoundRoot& root : foundRoots) {
             XCTAssert(withinEpslion(power(root.root[0], 20), 0.5));
         }
     }
+    std::cout<<"\n";
 }
 
 @end

@@ -177,10 +177,10 @@ void allocateMemory()
 
 - (void)testTimingTemp {
     m_rank = 2;
-    m_approximationDegree = 40;
+    m_approximationDegree = 5;
     allocateMemory();
     
-    size_t degreePoly = 10;
+    size_t degreePoly = 40;
 
     std::vector<std::string> variablesNames;
     std::string functionString = "1+";
@@ -207,9 +207,9 @@ void allocateMemory()
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 
-    uint64_t nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout<<nanos/(trials*1000)<<"\n";
+    std::cout << "\nApproximating a Degree " << degreePoly << " Dimension " << m_rank << " Polynomial to degree " << m_approximationDegree << " takes " <<nanos/(trials*1000)<< "us.\n\n";
 }
 
 

@@ -48,7 +48,7 @@ void ChebyshevApproximation<Dimension::Three>::sumAbsValues() {
 template <>
 bool ChebyshevApproximation<Dimension::One>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
     //Continue while the approximation is good. This call updates goodDegree as well.
-    while(isGoodApproximation(_absApproxTol, _relApproxTol)) {
+    while(isGoodApproximationSetDegree(_absApproxTol, _relApproxTol)) {
         if(m_degree <= _targetDegree) {
             return true;
         }

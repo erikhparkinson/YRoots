@@ -35,7 +35,6 @@ bool is_number(const std::string& s) {
     return( strspn( s.c_str(), "-.0123456789" ) == s.size() );
 }
 
-//TODO: Check for overflow!
 template<typename T>
 T power(T base, size_t exponent) {
     T result = 1;

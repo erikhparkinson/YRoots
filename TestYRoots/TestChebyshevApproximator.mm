@@ -116,9 +116,9 @@
     }
     std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 
-    uint64_t nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout<<nanos/(trials*1000)<<"\n";
+    std::cout << "\nCreating a " << approximationDegree << " degree chebyshev approximaiton for a Degree " << degreePoly << " Dimension " << rank << " Polynomial takes " <<nanos/(trials*1000)<< "us.\n\n";
 }
 
 

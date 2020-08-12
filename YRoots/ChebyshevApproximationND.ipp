@@ -87,8 +87,7 @@ void ChebyshevApproximation<D>::sumAbsValues() {
 }
 
 template <Dimension D>
-inline bool ChebyshevApproximation<D>::isGoodApproximation(double absApproxTol, double relApproxTol) {
-    //TODO: Hve a version of this that doesn't set goodDegree. We will probably want to call that faster version sometimes.
+inline bool ChebyshevApproximation<D>::isGoodApproximationSetDegree(double absApproxTol, double relApproxTol) {
     if(m_approximationError < (absApproxTol + relApproxTol*m_infNorm)) {
         m_goodDegree = m_degree;
         return true;
@@ -99,6 +98,11 @@ inline bool ChebyshevApproximation<D>::isGoodApproximation(double absApproxTol, 
 }
 
 template <Dimension D>
+inline bool ChebyshevApproximation<D>::isGoodApproximation(double absApproxTol, double relApproxTol) {
+    return m_approximationError < (absApproxTol + relApproxTol*m_infNorm);
+}
+
+template <Dimension D>
 bool ChebyshevApproximation<D>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
     //TODO: Write this
     //Have it update m_sumAbsVal
@@ -106,5 +110,31 @@ bool ChebyshevApproximation<D>::trimCoefficients(double _absApproxTol, double _r
     //Precompute the points that need to be looked at for each degree in a vector.
     return true;
 }
+
+template <Dimension D>
+bool ChebyshevApproximation<D>::isLinear() {
+    return m_degree == 1;
+}
+
+template <Dimension D>
+double ChebyshevApproximation<D>::getSumAbsVal() {
+    return m_sumAbsVal;
+}
+
+template <Dimension D>
+bool ChebyshevApproximation<D>::hasSignChange() {
+    return m_signChange;
+}
+
+template <Dimension D>
+double ChebyshevApproximation<D>::getApproximationError() {
+    return m_approximationError;
+}
+
+template <Dimension D>
+size_t ChebyshevApproximation<D>::getGoodDegree() {
+    return m_goodDegree;
+}
+
 
 #endif /* ChebyshevApproximationND_ipp */
