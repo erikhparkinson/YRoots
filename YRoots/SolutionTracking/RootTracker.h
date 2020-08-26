@@ -11,6 +11,7 @@
 
 #include "utilities.h"
 #include <complex>
+#include <fstream>
 
 struct FoundRoot {
     std::vector<double> root;
@@ -24,6 +25,7 @@ public:
     RootTracker(size_t _numThreads) : m_numThreads(_numThreads)
     {
         m_foundRoots.resize(m_numThreads);
+        m_outputFile = "roots.txt";
     }
     
     void storeRoot(size_t threadNum, std::vector<std::complex<double>>& _root, Interval& _interval, SolveMethod _howFound, double _conditionNumber, double _goodZerosTol) {
@@ -67,6 +69,30 @@ public:
         }
     }
     
+    void logResults() {
+        std::ofstream file;
+        int precision = std::numeric_limits<double>::digits10 + 1;
+        file.open (m_outputFile);
+        for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
+            file<<"Thread " << threadNum << " found " << m_foundRoots[threadNum].size() << " roots.\n";
+            for(size_t rootNum = 0; rootNum < m_foundRoots[threadNum].size(); rootNum++) {
+                for(size_t i = 0; i < m_foundRoots[threadNum][rootNum].root.size(); i++) {
+                    file<<std::setprecision(precision)<<m_foundRoots[threadNum][rootNum].root[i];
+                    if(i + 1 < m_foundRoots[threadNum][rootNum].root.size()){
+                        file<<"\t";
+                    }
+                }
+                if(rootNum + 1 < m_foundRoots[threadNum].size()){
+                    file<<"\n";
+                }
+            }
+            if(threadNum + 1 < m_numThreads){
+                file<<"\n";
+            }
+        }
+        file.close();
+    }
+    
     std::vector<FoundRoot> getRoots() {
         std::vector<FoundRoot> allRoots;
         for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
@@ -78,8 +104,9 @@ public:
     }
 
 private:
-    size_t                               m_numThreads;
-    std::vector<std::vector<FoundRoot>>  m_foundRoots;
+    size_t                                  m_numThreads;
+    std::vector<std::vector<FoundRoot>>     m_foundRoots;
+    std::string                             m_outputFile;
 };
 
 

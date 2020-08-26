@@ -66,10 +66,14 @@ template <Dimension D>
 void ChebyshevApproximator<D>::approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, size_t _approximationDegree)
 {
     if(_approximationDegree > m_intervalApproximators.size()) {
-        throw std::runtime_error("Approximation Degree is too large!");
+        std::string errorMessage = "Approximation Degree is too large!";
+        std::cout<<errorMessage<<"\n";
+        throw std::runtime_error(errorMessage);
     }
     else if(_approximationDegree == 0) {
-        throw std::runtime_error("Approximation Degree can not be 0!");
+        std::string errorMessage = "Approximation Degree can not be 0!";
+        std::cout<<errorMessage<<"\n";
+        throw std::runtime_error(errorMessage);
     }
     
     m_firstApproximator = _approximationDegree-1;
@@ -84,7 +88,8 @@ void ChebyshevApproximator<D>::approximate(const std::unique_ptr<FunctionInterfa
     m_infNorm = m_intervalApproximators[m_secondApproximator]->getInfoNorm();
     m_signChange = m_intervalApproximators[m_secondApproximator]->getSignChange();
     calculateApproximationError();
-    m_approximation.setApproximation(m_rank, _approximationDegree, m_sideLength1, m_intervalApproximators[m_firstApproximator]->getOutput(), m_infNorm, m_signChange, m_approximationError);
+    
+    m_approximation.setApproximation(_approximationDegree, m_sideLength1, m_intervalApproximators[m_firstApproximator]->getOutput(), m_infNorm, m_signChange, m_approximationError);
 }
 
 template <Dimension D>

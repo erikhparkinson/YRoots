@@ -16,8 +16,26 @@
 #include <math.h>
 #include <iostream>
 #include <cmath>
+#include <Eigen/Core>
 
 //TODO: Make unit tests for these functions!
+
+void printMatrix(Eigen::MatrixXd& matrix) {
+    for(size_t i = 0; i < matrix.rows(); i++) {
+        for(size_t j = 0; j < matrix.cols(); j++) {
+            std::cout<<matrix(i,j)<<"\t";
+        }
+        std::cout<<"\n";
+    }
+    std::cout<<"\n";
+}
+
+void printVector(Eigen::VectorXd& vector) {
+    for(size_t i = 0; i < vector.rows(); i++) {
+        std::cout<<vector(i)<<"\t";
+    }
+    std::cout<<"\n\n";
+}
 
 std::vector<std::string> split(const std::string& string, const std::string& delimiter) {
     std::vector<std::string> results;

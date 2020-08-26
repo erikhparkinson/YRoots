@@ -35,11 +35,14 @@ int main(int argc, const char * argv[]) {
         interval.lowerBounds.push_back(-1.0);
         interval.upperBounds.push_back(1.0);
     }
-        
+    
+    std::string errorMessage;
     //TODO: Check that the number of dimensions equals the number of variables
     switch(functions.size()) {
         case 0:
-            throw std::runtime_error("No functions found!");
+            errorMessage = "No functions found!";
+            std::cout<<errorMessage<<"\n";
+            throw std::runtime_error(errorMessage);
             break;
         case 1:
         {

@@ -21,19 +21,6 @@
 
 @implementation TestIntervalApproximater
 
-size_t              m_rank;
-size_t              m_approximationDegree;
-size_t              m_sideLength;
-size_t              m_arrayLength;
-size_t              m_partialSideLength;
-size_t              m_partialArrayLength;
-
-bool                m_allocated;
-double*             m_input;
-double*             m_output;
-fftw_r2r_kind*      m_kinds;
-double*             m_inputPartial;
-
 - (void)setUp {
     m_allocated = false;
 }
@@ -49,7 +36,7 @@ double*             m_inputPartial;
     }
 }
 
-void allocateMemory()
+void allocateMemoryTestIntervalApproximater()
 {
     m_allocated = true;
     
@@ -74,7 +61,7 @@ void allocateMemory()
 - (void)testBasic1D {
     m_rank = 1;
     m_approximationDegree = 3;
-    allocateMemory();
+    allocateMemoryTestIntervalApproximater();
     
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
@@ -96,7 +83,7 @@ void allocateMemory()
 - (void)testBasic2D {
     m_rank = 2;
     m_approximationDegree = 3;
-    allocateMemory();
+    allocateMemoryTestIntervalApproximater();
 
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
@@ -129,7 +116,7 @@ void allocateMemory()
 - (void)testBasic3D {
     m_rank = 3;
     m_approximationDegree = 2;
-    allocateMemory();
+    allocateMemoryTestIntervalApproximater();
 
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
@@ -178,7 +165,7 @@ void allocateMemory()
 - (void)testTimingTemp {
     m_rank = 2;
     m_approximationDegree = 5;
-    allocateMemory();
+    allocateMemoryTestIntervalApproximater();
     
     size_t degreePoly = 40;
 

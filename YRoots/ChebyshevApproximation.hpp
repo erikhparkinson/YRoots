@@ -15,9 +15,9 @@ template <Dimension D>
 class ChebyshevApproximation
 {
 public:
-    ChebyshevApproximation();
+    ChebyshevApproximation(size_t _rank);
     
-    void setApproximation(size_t _rank, size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError);
+    void setApproximation(size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError);
         
     inline bool isGoodApproximation(double absApproxTol, double relApproxTol);
     inline bool isGoodApproximationSetDegree(double absApproxTol, double relApproxTol);
@@ -31,10 +31,15 @@ public:
     bool    hasSignChange();
     double  getApproximationError();
     size_t  getGoodDegree();
+    size_t  getSideLength();
     void    clear();
     
 private:
+    void setDegreeSpots(size_t index);
+    
+private:
     size_t      m_rank;
+    size_t      m_partialSideLength;
     size_t      m_degree;
     size_t      m_sideLength;
     double*     m_approximation;
@@ -46,6 +51,8 @@ private:
     bool        m_absValWasSummed;
     double      m_sumAbsVal;
     size_t      m_goodDegree;
+    
+    std::vector<std::vector<std::vector<size_t>>>    m_degreeSpots;
 };
 
 #include "ChebyshevApproximation1D.ipp"

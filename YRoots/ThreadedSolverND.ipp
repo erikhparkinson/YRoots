@@ -79,9 +79,8 @@ void ThreadedSolver<D>::solve() {
     }
     m_threadPool.clear();
     
-    //TODO: Have these print to a file
-    //m_rootTracker.printResults();
-    //m_intervalTracker.printResults();
+    //m_rootTracker.logResults();
+    //m_intervalTracker.logResults();
 }
 
 template <Dimension D>

@@ -10,8 +10,9 @@
 #define ChebyshevApproximationND_ipp
 
 template <Dimension D>
-ChebyshevApproximation<D>::ChebyshevApproximation():
-m_rank(0),
+ChebyshevApproximation<D>::ChebyshevApproximation(size_t _rank):
+m_rank(_rank),
+m_partialSideLength(0),
 m_degree(0),
 m_sideLength(0),
 m_approximation(nullptr),
@@ -26,29 +27,26 @@ m_goodDegree(std::numeric_limits<size_t>::max())
 }
 
 template <Dimension D>
-void ChebyshevApproximation<D>::setApproximation(size_t _rank, size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError)
+void ChebyshevApproximation<D>::setApproximation(size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError)
 {
-    m_rank = _rank;
-    m_degree = _degree;
+    m_partialSideLength = _degree+1;
+    m_degree = _degree*m_rank;
     m_sideLength = _sideLength;
     m_approximation = _appoximation;
     m_infNorm = _infNorm;
     m_signChange = _signChange;
     m_approximationError = _approximationError;
     clear();
-}
-
-template <Dimension D>
-void ChebyshevApproximation<D>::clear() {
-    m_absValWasSummed = false;
-    m_sumAbsVal = 0;
-    m_goodDegree = std::numeric_limits<size_t>::max();
-}
-
-
-template <Dimension D>
-double* ChebyshevApproximation<D>::getArray() {
-    return m_approximation;
+    
+    //Degree will never be smaller than 1 so we never need to access anything in the first two spots.
+    size_t oldSize = std::max((size_t)2, m_degreeSpots.size());
+    if(unlikely(m_partialSideLength + 1 > oldSize)) {
+        m_degreeSpots.resize(m_partialSideLength + 1);
+    }
+    if(unlikely(m_degreeSpots[m_partialSideLength].size() == 0)) {
+        m_degreeSpots[m_partialSideLength].resize(m_degree+1);
+        setDegreeSpots(m_partialSideLength);
+    }
 }
 
 template <Dimension D>
@@ -66,7 +64,7 @@ void ChebyshevApproximation<D>::sumAbsValues() {
         m_sumAbsVal += std::abs(m_approximation[0]);
         while (spotToInc < m_rank) {
             bool firstPass = true;
-            while(++inputSpot[spotToInc] < m_degree+1) {
+            while(++inputSpot[spotToInc] < m_partialSideLength) {
                 size_t spot = 0;
                 for (size_t i = 0; i < m_rank; i++) {
                     spot += inputSpot[i]*multipliers[i];
@@ -103,12 +101,73 @@ inline bool ChebyshevApproximation<D>::isGoodApproximation(double absApproxTol, 
 }
 
 template <Dimension D>
+void ChebyshevApproximation<D>::setDegreeSpots(size_t index) {
+    size_t degree = index-1;
+    
+    //Set up the needed variables
+    std::vector<size_t> inputSpot(m_rank,0);
+    std::vector<size_t> multipliers(m_rank, 1);
+    for(size_t i = 1; i < m_rank; i++) {
+        multipliers[i] = 2*degree*multipliers[i-1];
+    }
+    
+    //Iterate through all the tuples of size m_rank with size up to degree.
+    //Push the index of that tuple in the approximation array back into
+    //m_degreeSpots at the index of the sum of the tuple.
+    size_t spotToInc = 0;
+    m_degreeSpots[index][0].push_back(0);
+    while (spotToInc < m_rank) {
+        bool firstPass = true;
+        while(++inputSpot[spotToInc] <= degree) {
+            //Find the array index and sum of the tuple
+            size_t arrayIndex = 0;
+            size_t tupleSum = 0;
+            for (size_t i = 0; i < m_rank; i++) {
+                arrayIndex += inputSpot[i]*multipliers[i];
+                tupleSum += inputSpot[i];
+            }
+            //Find the sum of the tuple
+            m_degreeSpots[index][tupleSum].push_back(arrayIndex);
+            
+            if(firstPass && spotToInc != 0) {
+                spotToInc = 0;
+            }
+            firstPass = false;
+        }
+        inputSpot[spotToInc] = 0;
+        spotToInc++;
+    }
+}
+
+template <Dimension D>
 bool ChebyshevApproximation<D>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
-    //TODO: Write this
-    //Have it update m_sumAbsVal
-    //Have it update the approximation error
-    //Precompute the points that need to be looked at for each degree in a vector.
-    return true;
+    while(isGoodApproximationSetDegree(_absApproxTol, _relApproxTol)) {
+        if(m_degree <= _targetDegree) {
+            return true;
+        }
+        for(size_t& spot : m_degreeSpots[m_partialSideLength][m_degree]) {
+            if(m_absValWasSummed) {
+                m_sumAbsVal -= std::abs(m_approximation[spot]);
+            }
+            m_approximationError += std::abs(m_approximation[spot]);
+            m_approximation[spot] = 0;
+        }
+        m_degree--;
+    }
+    return false;
+}
+
+template <Dimension D>
+void ChebyshevApproximation<D>::clear() {
+    m_absValWasSummed = false;
+    m_sumAbsVal = 0;
+    m_goodDegree = std::numeric_limits<size_t>::max();
+}
+
+
+template <Dimension D>
+double* ChebyshevApproximation<D>::getArray() {
+    return m_approximation;
 }
 
 template <Dimension D>
@@ -129,6 +188,11 @@ bool ChebyshevApproximation<D>::hasSignChange() {
 template <Dimension D>
 double ChebyshevApproximation<D>::getApproximationError() {
     return m_approximationError;
+}
+
+template <Dimension D>
+size_t ChebyshevApproximation<D>::getSideLength() {
+    return m_sideLength;
 }
 
 template <Dimension D>

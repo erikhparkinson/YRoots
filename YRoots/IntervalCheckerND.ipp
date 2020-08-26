@@ -61,14 +61,11 @@ void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation
             _nextParameters->goodDegrees[i] = _currentParameters->goodDegrees[i];
         }
         
-        
         //Transform this interval onto m_scaledSubIntervals[intervalNum]
         for(size_t i = 0; i < m_rank; i++) {
-            
             //TODO: Make some function for projections. Make this more efficient.
             double temp1 = _currentParameters->interval.upperBounds[i] - _currentParameters->interval.lowerBounds[i];
             double temp2 = _currentParameters->interval.upperBounds[i] + _currentParameters->interval.lowerBounds[i];
-
             _nextParameters->interval.lowerBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].lowerBounds[i]) + temp2) /2.0;
             _nextParameters->interval.upperBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].upperBounds[i]) + temp2) /2.0;
         }
@@ -79,7 +76,6 @@ void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation
         
         m_intervalsToRun.push(m_threadNum, _nextParameters);
     }
-    
     
     //TODO: Write this function!
     //TODO: Have this class hold a reference to interval data and store the result

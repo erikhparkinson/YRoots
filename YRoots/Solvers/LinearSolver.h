@@ -16,6 +16,7 @@
 #include "RootTracker.h"
 
 #include <Eigen/Core>
+#include <Eigen/Dense>
 
 template <Dimension D>
 class LinearSolver {
