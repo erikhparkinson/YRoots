@@ -10,7 +10,7 @@
 #define SubdivisionSolverND_ipp
 
 template <Dimension D>
-SubdivisionSolver<D>::SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<FunctionInterface>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
+SubdivisionSolver<D>::SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<Function>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
 m_threadNum(_threadNum),
 m_rank(_functions.size()),
 m_functions(_functions),
@@ -108,6 +108,7 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
     }
     else {
         //TODO: Sove using spectral methods
+        return subdivide(_parameters, m_functions.size());
     }
 }
 

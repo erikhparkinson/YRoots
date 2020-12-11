@@ -52,6 +52,8 @@ m_signChange(false)
     
     //Precompute the partial to full transition
     preComputePartialToFullTransition();
+        
+    m_timer.registerTimer(m_timerIntervalApproximatorIndex, "Interval Approximator");
 }
 
 template <Dimension D>
@@ -149,14 +151,16 @@ void IntervalApproximator<D>::preComputePartialToFullTransition()
 }
 
 template <Dimension D>
-void IntervalApproximator<D>::approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, bool _findInfNorm)
+void IntervalApproximator<D>::approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, bool _findInfNorm)
 {
+    m_timer.startTimer(m_timerIntervalApproximatorIndex);
+
     //Transform the evaluation points
     for(size_t j = 0; j < m_rank; j++) {
-        double temp1 = _currentInterval.upperBounds[j]-_currentInterval.lowerBounds[j];
-        double temp2 = _currentInterval.upperBounds[j]+_currentInterval.lowerBounds[j];
+        double temp1 = _currentInterval.upperBounds[j] - _currentInterval.lowerBounds[j];
+        double temp2 = _currentInterval.upperBounds[j] + _currentInterval.lowerBounds[j];
         for(size_t i = 0; i < m_partialSideLength; i++) {
-            m_evaluationPoints[j][i] = (temp1*m_evaluationPointsPreTransform[j][i]+temp2)/2.0;
+            m_evaluationPoints[j][i] = (temp1*m_evaluationPointsPreTransform[j][i] + temp2)/2.0;
         }
     }
             
@@ -189,6 +193,8 @@ void IntervalApproximator<D>::approximate(const std::unique_ptr<FunctionInterfac
     for(size_t i = 0; i < m_divideByTwoPoints.size(); i++) {
         m_output[m_divideByTwoPoints[i]] /= 2;
     }
+        
+    m_timer.stopTimer(m_timerIntervalApproximatorIndex);
 }
 
 template<Dimension D>

@@ -19,7 +19,7 @@ public:
     ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree, ChebyshevApproximation<D>& _approximation);
     ~ChebyshevApproximator();
     
-    void approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, size_t _approximationDegree);
+    void approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, size_t _approximationDegree);
     
     bool hasSignChange() {
         return m_signChange;

@@ -23,7 +23,7 @@ public:
     IntervalApproximator& operator=(IntervalApproximator const&) = delete;
     ~IntervalApproximator();
     
-    void approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, bool _findInfNorm);
+    void approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, bool _findInfNorm);
 
     bool getSignChange() {
         return m_signChange;
@@ -74,6 +74,9 @@ private:
     //Other
     double          m_infNorm;
     bool            m_signChange;
+    
+    static const size_t     m_timerIntervalApproximatorIndex = 2;
+    Timer&                  m_timer = Timer::getInstance();
 };
 
 #include "IntervalApproximator1D.ipp"

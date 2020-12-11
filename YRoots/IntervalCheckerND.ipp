@@ -13,12 +13,17 @@ template <Dimension D>
 IntervalChecker<D>::IntervalChecker(size_t _rank, IntervalTracker& _intervalTracker, size_t _threadNum, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool):
 m_rank(_rank),
 m_intervalTracker(_intervalTracker),
-m_randomIntervalDivider(0.5139303900908738),
 m_threadNum(_threadNum),
 m_intervalsToRun(_intervalsToRun),
 m_solveParametersPool(_solveParametersPool)
 {
     //Create the scaled subintervals
+    //[-,-,...,-,-]
+    //[-,-,...,-,+]
+    //[-,-,...,+,-]
+    //[-,-,...,+,+]
+    //............
+    //[+,+,...,+,+]
     double midPoint = 2*m_randomIntervalDivider - 1;
     size_t numIntervals = (1 << m_rank);
     for(size_t i = 0 ; i < numIntervals; i++) {
@@ -34,14 +39,26 @@ m_solveParametersPool(_solveParametersPool)
             }
         }
         m_scaledSubIntervals.push_back(tempInterval);
+        m_intervalMask.push_back(false);
+        m_throwOutMask.push_back(false);
     }
+    //Initialize the boudning interval
+    for(size_t i = 0; i < m_rank; i++) {
+        m_boundingInterval.lowerBounds.push_back(0.0);
+        m_boundingInterval.upperBounds.push_back(0.0);
+        m_tempInterval.lowerBounds.push_back(0.0);
+        m_tempInterval.upperBounds.push_back(0.0);
+    }
+    
+    m_timer.registerTimer(m_timerBoundingIntervalIndex, "Bounding Interval");
+    m_timer.registerTimer(m_timerQuadraticCheckIndex, "Quadratic Check");
 }
 
 template <Dimension D>
 bool IntervalChecker<D>::runIntervalChecks(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval)
 {
     //Returns true if we need to keep the interval
-    if(!runConstantTermCheck(_approximation, _currentInterval)) {
+    if(!runConstantTermCheck(_approximation)) {
         m_intervalTracker.storeResult(m_threadNum, _currentInterval, SolveMethod::ConstantTermCheck);
         return false;
     }
@@ -53,65 +70,65 @@ bool IntervalChecker<D>::runIntervalChecks(ChebyshevApproximation<D>& _approxima
 template <Dimension D>
 void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters* _currentParameters, size_t _numGoodApproximations)
 {
-    for(size_t intervalNum = 0; intervalNum < m_scaledSubIntervals.size(); intervalNum++) {
-        //Get the next parameter pointer and populate it
-        SolveParameters* _nextParameters = m_solveParametersPool.pop();
-        _nextParameters->currentLevel = _currentParameters->currentLevel+1;
-        for(size_t i = 0; i < _nextParameters->goodDegrees.size(); i++) {
-            _nextParameters->goodDegrees[i] = _currentParameters->goodDegrees[i];
-        }
-        
-        //Transform this interval onto m_scaledSubIntervals[intervalNum]
-        for(size_t i = 0; i < m_rank; i++) {
-            //TODO: Make some function for projections. Make this more efficient.
-            double temp1 = _currentParameters->interval.upperBounds[i] - _currentParameters->interval.lowerBounds[i];
-            double temp2 = _currentParameters->interval.upperBounds[i] + _currentParameters->interval.lowerBounds[i];
-            _nextParameters->interval.lowerBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].lowerBounds[i]) + temp2) /2.0;
-            _nextParameters->interval.upperBounds[i] = ((temp1 * m_scaledSubIntervals[intervalNum].upperBounds[i]) + temp2) /2.0;
-        }
-        
-        //TODO: Run the checks here
-        //It's probably the most efficient to run the checks on all the intervals at the same time to avoid
-        //repeating calculations. Either that, or find a way to store calculations inside of the ChebyshevApproximation.
-        
-        m_intervalsToRun.push(m_threadNum, _nextParameters);
+    //TODO: Do I need this or should I just use the size in the Interval???
+    m_timer.startTimer(m_timerBoundingIntervalIndex);
+    double boundingIntervalSize = getBoundingInterval(_chebyshevApproximations);
+    m_timer.stopTimer(m_timerBoundingIntervalIndex);
+    
+    if(boundingIntervalSize == 0.0) {
+        //Track the interval and return
+        m_intervalTracker.storeResult(m_threadNum, _currentParameters->interval, SolveMethod::BoundingInterval);
+        return;
+    }
+    else if(boundingIntervalSize < 1.0) {
+        //Track it and push it
+        m_intervalTracker.storeResult(m_threadNum, _currentParameters->interval, SolveMethod::BoundingInterval, boundingIntervalSize);
+        pushIntervalToSolve(_currentParameters, m_boundingInterval);
+        return;
     }
     
-    //TODO: Write this function!
-    //TODO: Have this class hold a reference to interval data and store the result
-    /*size_t currSpot = 0;
-    while (currSpot < _subIntervals.size()) {
-        if(!runQuadraticCheck(_approximation, _subIntervals[currSpot])) {
-            m_intervalData.storeResult(_subIntervals[currSpot], "QuadraticCheck");
-            _subIntervals.erase(_subIntervals.begin() + currSpot);
+    //Reset the mask
+    for(size_t i = 0; i < m_scaledSubIntervals.size(); i++) {
+        m_intervalMask[i] = false;
+    }
+    
+    //Run the quad checks
+    for(size_t i = 0; i < _numGoodApproximations; i++) {
+        m_timer.startTimer(m_timerQuadraticCheckIndex);
+        runQuadraticCheck(_chebyshevApproximations[i]);
+        m_timer.stopTimer(m_timerQuadraticCheckIndex);
+    }
+    
+    //Check how many intervals we are running
+    size_t intervalsToKeep = 0;
+    for(size_t i = 0; i < m_intervalMask.size(); i++) {
+        intervalsToKeep += m_intervalMask[i];
+    }
+    
+    //Use the bounding interval if it's better
+    if(boundingIntervalSize < intervalsToKeep && boundingIntervalSize < 1.5) {
+        //Track it and push it
+        m_intervalTracker.storeResult(m_threadNum, _currentParameters->interval, SolveMethod::BoundingInterval, boundingIntervalSize);
+        pushIntervalToSolve(_currentParameters, m_boundingInterval);
+        return;
+    }
+
+    //Subdivide the intervals left over from the checks
+    for(size_t intervalNum = 0; intervalNum < m_scaledSubIntervals.size(); intervalNum++) {
+        if(m_intervalMask[intervalNum]) {
+            //Get the projected interval and store it
+            projectInterval(m_tempInterval, _currentParameters->interval, m_scaledSubIntervals[intervalNum]);
+            m_intervalTracker.storeResult(m_threadNum, m_tempInterval, SolveMethod::QuadrticCheck);
         }
         else {
-            currSpot++;
+            //Push it to subdivision
+            pushIntervalToSolve(_currentParameters, m_scaledSubIntervals[intervalNum]);
         }
-    }*/
-    
-    
-    
-    //for(size_t i = 0; i < m_scaledSubIntervals.size(); i++) {
-        //Construct the new interval
-        //Interval newInterval;
-        /*for(size_t j = 0; j < m_rank; j++) {
-            newInterval.lowerBounds.push_back(_currentInterval.lowerBounds[j]*m_scaledSubIntervals[i].lowerBounds[j]);
-            newInterval.upperBounds.push_back(_currentInterval.upperBounds[j]*m_scaledSubIntervals[i].upperBounds[j]);
-        }*/
-        //Run the subinterval tests
-        //if(!m_intervalChecker.runSubintervalChecks(m_chebyshevApproximators[funcNum]->getApproximation(), _currentInterval)) {
-        //    solve(_currentInterval, _currentLevel+1);
-        //}
-    //}
-    
-    //Run subinterval the tests on it.
-    //Subdivide if needed.
-
+    }
 }
 
 template <Dimension D>
-bool IntervalChecker<D>::runConstantTermCheck(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval)
+bool IntervalChecker<D>::runConstantTermCheck(ChebyshevApproximation<D>& _approximation)
 {
     //Returns true if we need to keep the interval
     _approximation.sumAbsValues();
@@ -119,13 +136,32 @@ bool IntervalChecker<D>::runConstantTermCheck(ChebyshevApproximation<D>& _approx
 }
 
 template <Dimension D>
-bool IntervalChecker<D>::runQuadraticCheck(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval)
+void IntervalChecker<D>::runQuadraticCheck(ChebyshevApproximation<D>& _approximation)
 {
-    //Returns true if we need to keep the interval
-    //TODO: Write this function!
-    return true;
+    //TODO: Updates m_intervalMask to false for each interval we should remove
 }
 
+template <Dimension D>
+double IntervalChecker<D>::getBoundingInterval(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations) {
+    //TODO: Updates m_boundingInterval. Returns the size of the bounding interval
+    return std::numeric_limits<double>::max();
+}
+
+template <Dimension D>
+void IntervalChecker<D>::pushIntervalToSolve(SolveParameters* _currentParameters, Interval& _newInterval) {
+    SolveParameters* _nextParameters = m_solveParametersPool.pop();
+    //Get the projected interval
+    projectInterval(_nextParameters->interval, _currentParameters->interval, _newInterval);
+
+    //Populate the other details
+    _nextParameters->currentLevel = _currentParameters->currentLevel+1;
+    for(size_t i = 0; i < _nextParameters->goodDegrees.size(); i++) {
+        _nextParameters->goodDegrees[i] = _currentParameters->goodDegrees[i];
+    }
+    
+    //Push the new interval
+    m_intervalsToRun.push(m_threadNum, _nextParameters);
+}
 
 
 #endif /* IntervalCheckerND_h */

@@ -63,7 +63,7 @@ ChebyshevApproximator<D>::~ChebyshevApproximator()
 
 
 template <Dimension D>
-void ChebyshevApproximator<D>::approximate(const std::unique_ptr<FunctionInterface>& _function, const Interval& _currentInterval, size_t _approximationDegree)
+void ChebyshevApproximator<D>::approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, size_t _approximationDegree)
 {
     if(_approximationDegree > m_intervalApproximators.size()) {
         std::string errorMessage = "Approximation Degree is too large!";

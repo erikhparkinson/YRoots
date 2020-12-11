@@ -200,5 +200,14 @@ size_t ChebyshevApproximation<D>::getGoodDegree() {
     return m_goodDegree;
 }
 
+template <Dimension D>
+size_t ChebyshevApproximation<D>::getDegree() {
+    return m_degree;
+}
+
+template <Dimension D>
+size_t ChebyshevApproximation<D>::getPartialSideLength() {
+    return m_partialSideLength;
+}
 
 #endif /* ChebyshevApproximationND_ipp */

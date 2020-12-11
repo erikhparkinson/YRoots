@@ -65,9 +65,10 @@ void allocateMemoryTestIntervalApproximater()
     
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
+    std::vector<std::string> subfunctionNames;
     std::string functionString = "5+x1^2";
     
-    std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
+    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctionNames);
     IntervalApproximator<Dimension::One> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_inputPartial);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0);
@@ -88,9 +89,10 @@ void allocateMemoryTestIntervalApproximater()
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
     variablesNames.push_back("x2");
+    std::vector<std::string> subfunctionNames;
     std::string functionString = "5+x1^2+x2";
     
-    std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
+    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctionNames);
     IntervalApproximator<Dimension::Two> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_inputPartial);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
@@ -122,9 +124,10 @@ void allocateMemoryTestIntervalApproximater()
     variablesNames.push_back("x1");
     variablesNames.push_back("x2");
     variablesNames.push_back("x3");
+    std::vector<std::string> subfunctionNames;
     std::string functionString = "5+x1^2+x2+5*x1*x2*x3";
     
-    std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
+    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctionNames);
     IntervalApproximator<Dimension::Three> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_inputPartial);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
@@ -170,6 +173,7 @@ void allocateMemoryTestIntervalApproximater()
     size_t degreePoly = 40;
 
     std::vector<std::string> variablesNames;
+    std::vector<std::string> subfunctionNames;
     std::string functionString = "1+";
     for(size_t i = 0; i < m_rank; i++) {
         variablesNames.push_back("x" + std::to_string(i));
@@ -179,7 +183,7 @@ void allocateMemoryTestIntervalApproximater()
         }
     }
     
-    std::unique_ptr<FunctionInterface> function = std::make_unique<PowerBasisPolynomial>(functionString, variablesNames);
+    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctionNames);
     IntervalApproximator<Dimension::Two> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_inputPartial);
     Interval currentInterval;
     for(size_t i = 0; i < m_rank; i++) {

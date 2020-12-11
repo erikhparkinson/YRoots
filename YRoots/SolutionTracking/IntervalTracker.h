@@ -25,14 +25,22 @@ struct IntervalResult {
 
 class IntervalTracker {
 public:
-    IntervalTracker(size_t _numThreads, bool _enabled): m_numThreads(_numThreads), m_enabled(_enabled)
+    IntervalTracker(size_t _numThreads, bool _enabled, double totalArea):
+    m_numThreads(_numThreads),
+    m_enabled(_enabled),
+    m_totalArea(totalArea),
+    m_areaSolved(0)
     {
         m_intervalResults.resize(m_numThreads);
         m_outputFile = "intervals.txt";
     }
     
-    void storeResult(size_t _threadNum, Interval& _interval, SolveMethod _howFound) {
+    void storeResult(size_t _threadNum, Interval& _interval, SolveMethod _howFound, double newSize = 0.0) {
+        //TODO: Have this be two seperate levels of enabled
         if (m_enabled) {
+            m_areaSolved += _interval.getArea() - newSize;
+            //Also, maybe have an option that counts intervals but doesn't store them.
+            //I could even template the IntervalTracker of the trackingLevel to avoid checking m_enabled each time
             m_intervalResults[_threadNum].emplace_back(_interval, _howFound);
         }
     }
@@ -42,6 +50,23 @@ public:
             std::cout<< "Thread " << i << " solved " << m_intervalResults[i].size() << " intervals\n";
         }
         return;
+    }
+    
+    void printResults2() {
+        std::vector<size_t> reasons;
+        for(size_t i = 0; i < 10; i++) {
+            reasons.push_back(0);
+        }
+        
+        for(size_t i = 0; i < m_numThreads; i++) {
+            for(size_t j = 0; j < m_intervalResults[i].size(); j++) {
+                reasons[m_intervalResults[i][j].m_howFound]++;
+            }
+        }
+        
+        for(size_t i = 0; i < 10; i++) {
+            std::cout<<"Reason "<<i<<" count "<<reasons[i]<<"\n";
+        }
     }
     
     void logResults() {
@@ -82,6 +107,8 @@ private:
     bool                                        m_enabled;
     std::vector<std::vector<IntervalResult>>    m_intervalResults;
     std::string                                 m_outputFile;
+    double                                      m_totalArea;
+    double                                      m_areaSolved;
 };
 
 #endif /* IntervalData_h */

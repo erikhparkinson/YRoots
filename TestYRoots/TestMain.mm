@@ -6,6 +6,8 @@
 //  Copyright © 2020 Erik Hales Parkinson. All rights reserved.
 //
 
+#define USE_TIMING
+
 #import <XCTest/XCTest.h>
 #include <fftw3.h>
 
@@ -48,3 +50,5 @@ double*             m_approximation;
 #include "TestConcurrent.mm"
 #include "TestChebyshevApproximation.mm"
 #include "TestIntervalChecker.mm"
+#include "TestFunction.mm"
+#include "TestQuadraticCheck.mm"

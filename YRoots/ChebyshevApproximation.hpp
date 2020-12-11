@@ -31,7 +31,9 @@ public:
     bool    hasSignChange();
     double  getApproximationError();
     size_t  getGoodDegree();
-    size_t  getSideLength();
+    size_t  getSideLength(); //Spot getSideLength() starts the second dimension
+    size_t  getDegree();
+    size_t  getPartialSideLength(); //Spots 0 through getPartialSideLength()-1 are good values
     void    clear();
     
 private:
