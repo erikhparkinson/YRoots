@@ -27,7 +27,7 @@ int main(int argc, const char * argv[]) {
     //TODO: Have an input for number of threads
     size_t numThreads = 1;
     
-    std::vector<std::vector<std::unique_ptr<FunctionInterface>>> functions = inputParser.parseFunctions(numThreads);
+    std::vector<std::unique_ptr<Function>> functions = inputParser.parseFunctions();
     
     //TODO: Have an input for the search interval
     Interval interval;
@@ -35,12 +35,14 @@ int main(int argc, const char * argv[]) {
         interval.lowerBounds.push_back(-1.0);
         interval.upperBounds.push_back(1.0);
     }
-        
+    
+    std::string errorMessage;
     //TODO: Check that the number of dimensions equals the number of variables
     switch(functions.size()) {
-        case 0:
-            throw std::runtime_error("No functions found!");
+        case 0: {
+            printAndThrowRuntimeError("No functions found!");
             break;
+        }
         case 1:
         {
             ThreadedSolver<Dimension::One> threadedSolver(functions, numThreads, interval);
@@ -50,6 +52,12 @@ int main(int argc, const char * argv[]) {
         case 2:
         {
             ThreadedSolver<Dimension::Two> threadedSolver(functions, numThreads, interval);
+            threadedSolver.solve();
+            break;
+        }
+        case 3:
+        {
+            ThreadedSolver<Dimension::Three> threadedSolver(functions, numThreads, interval);
             threadedSolver.solve();
             break;
         }

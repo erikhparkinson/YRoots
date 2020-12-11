@@ -12,7 +12,7 @@
 template <>
 void ChebyshevApproximation<Dimension::One>::sumAbsValues() {
     if(!m_absValWasSummed){
-        for(size_t i = 0; i < m_degree+1; i++) {
+        for(size_t i = 0; i < m_partialSideLength; i++) {
             m_sumAbsVal += std::abs(m_approximation[i]);
         }
         m_absValWasSummed = true;
@@ -22,8 +22,8 @@ void ChebyshevApproximation<Dimension::One>::sumAbsValues() {
 template <>
 void ChebyshevApproximation<Dimension::Two>::sumAbsValues() {
     if(!m_absValWasSummed){
-        for(size_t i = 0; i < m_degree+1; i++) {
-            for(size_t j = 0; j < m_degree+1; j++) {
+        for(size_t i = 0; i < m_partialSideLength; i++) {
+            for(size_t j = 0; j < m_partialSideLength; j++) {
                 m_sumAbsVal += std::abs(m_approximation[i + m_sideLength*j]);
             }
         }
@@ -34,15 +34,29 @@ void ChebyshevApproximation<Dimension::Two>::sumAbsValues() {
 template <>
 void ChebyshevApproximation<Dimension::Three>::sumAbsValues() {
     if(!m_absValWasSummed){
-        for(size_t i = 0; i < m_degree+1; i++) {
-            for(size_t j = 0; j < m_degree+1; j++) {
-                for(size_t k = 0; k < m_degree+1; k++) {
+        for(size_t i = 0; i < m_partialSideLength; i++) {
+            for(size_t j = 0; j < m_partialSideLength; j++) {
+                for(size_t k = 0; k < m_partialSideLength; k++) {
                     m_sumAbsVal += std::abs(m_approximation[i + m_sideLength*(j + m_sideLength*k)]);
                 }
             }
         }
         m_absValWasSummed = true;
     }
+}
+
+template <>
+void ChebyshevApproximation<Dimension::One>::setApproximation(size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError)
+{
+    //Specialized to not set m_degreeSpots as they aren't used.
+    m_partialSideLength = _degree+1;
+    m_degree = _degree*m_rank;
+    m_sideLength = _sideLength;
+    m_approximation = _appoximation;
+    m_infNorm = _infNorm;
+    m_signChange = _signChange;
+    m_approximationError = _approximationError;
+    clear();
 }
 
 template <>

@@ -22,7 +22,7 @@ template <Dimension D>
 class SubdivisionSolver
 {
 public:
-    SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<FunctionInterface>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
+    SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<Function>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
     ~SubdivisionSolver();
 
     void solve(SolveParameters* _parameters);
@@ -33,7 +33,7 @@ private:
 private:
     size_t                                                  m_threadNum;
     size_t                                                  m_rank;
-    const std::vector<std::unique_ptr<FunctionInterface>>&  m_functions;
+    const std::vector<std::unique_ptr<Function>>&           m_functions;
     ConcurrentStack<SolveParameters>&                       m_intervalsToRun;
     ObjectPool<SolveParameters>&                            m_solveParametersPool;
     SubdivisionParameters                                   m_subdivisionParameters;

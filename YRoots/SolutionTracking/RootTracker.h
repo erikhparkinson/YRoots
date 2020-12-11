@@ -11,12 +11,50 @@
 
 #include "utilities.h"
 #include <complex>
+#include <fstream>
 
 struct FoundRoot {
     std::vector<double> root;
     SolveMethod         solveMethod;
     Interval            interval;
     double              conditionNumber;
+    
+    bool operator < (const FoundRoot &otherRoot)
+    {
+        for(size_t i = 0; i < root.size(); i++) {
+            if(root[i] < otherRoot.root[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool operator == (const FoundRoot &otherRoot)
+    {
+        for(size_t i = 0; i < root.size(); i++) {
+            if(root[i] != otherRoot.root[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool operator != (const FoundRoot &otherRoot)
+    {
+        return !(*this == otherRoot);
+    }
+
+    friend std::ostream& operator<<(std::ostream& stream, const FoundRoot& foundRoots) {
+        int precision = std::numeric_limits<double>::digits10 + 1;
+        
+        for(size_t i = 0; i < foundRoots.root.size(); i++) {
+            stream<<std::setprecision(precision)<<foundRoots.root[i];
+            if(i+1 < foundRoots.root.size()){
+                stream<<"\t";
+            }
+        }
+        return stream;
+    }
 };
 
 class RootTracker {
@@ -24,6 +62,7 @@ public:
     RootTracker(size_t _numThreads) : m_numThreads(_numThreads)
     {
         m_foundRoots.resize(m_numThreads);
+        m_outputFile = "roots.txt";
     }
     
     void storeRoot(size_t threadNum, std::vector<std::complex<double>>& _root, Interval& _interval, SolveMethod _howFound, double _conditionNumber, double _goodZerosTol) {
@@ -67,6 +106,70 @@ public:
         }
     }
     
+    //For testing right now
+    void sortRoots() {
+        //Get all the roots
+        std::vector<FoundRoot> allRoots;
+        for(size_t i = 0; i < m_foundRoots.size(); i++) {
+            for(size_t j = 0; j < m_foundRoots[i].size(); j++) {
+                allRoots.push_back(m_foundRoots[i][j]);
+            }
+        }
+        
+        //Sort the roots
+        size_t i = 0;
+        while(i + 1 < allRoots.size()) {
+            if(allRoots[i] < allRoots[i+1]) {
+                i++;
+            }
+            else if(allRoots[i] == allRoots[i+1]) {
+                i++;
+            }
+            else {
+                //Swap roots
+                FoundRoot temp = allRoots[i+1];
+                allRoots[i+1] = allRoots[i];
+                allRoots[i] = temp;
+                if(i == 0) {
+                    i++;
+                }
+                else {
+                    i--;
+                }
+            }
+        }
+        
+        //Print the roots
+        for(size_t i = 0; i < allRoots.size(); i++) {
+            std::cout<<allRoots[i]<<"\n";
+        }
+        
+    }
+    
+    void logResults() {
+        std::ofstream file;
+        int precision = std::numeric_limits<double>::digits10 + 1;
+        file.open (m_outputFile);
+        for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
+            file<<"Thread " << threadNum << " found " << m_foundRoots[threadNum].size() << " roots.\n";
+            for(size_t rootNum = 0; rootNum < m_foundRoots[threadNum].size(); rootNum++) {
+                for(size_t i = 0; i < m_foundRoots[threadNum][rootNum].root.size(); i++) {
+                    file<<std::setprecision(precision)<<m_foundRoots[threadNum][rootNum].root[i];
+                    if(i + 1 < m_foundRoots[threadNum][rootNum].root.size()){
+                        file<<"\t";
+                    }
+                }
+                if(rootNum + 1 < m_foundRoots[threadNum].size()){
+                    file<<"\n";
+                }
+            }
+            if(threadNum + 1 < m_numThreads){
+                file<<"\n";
+            }
+        }
+        file.close();
+    }
+    
     std::vector<FoundRoot> getRoots() {
         std::vector<FoundRoot> allRoots;
         for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
@@ -78,8 +181,9 @@ public:
     }
 
 private:
-    size_t                               m_numThreads;
-    std::vector<std::vector<FoundRoot>>  m_foundRoots;
+    size_t                                  m_numThreads;
+    std::vector<std::vector<FoundRoot>>     m_foundRoots;
+    std::string                             m_outputFile;
 };
 
 

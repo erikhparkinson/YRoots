@@ -20,7 +20,7 @@
 template <Dimension D>
 class ThreadedSolver {
 public:
-    ThreadedSolver(const std::vector<std::vector<std::unique_ptr<FunctionInterface>>>& _allFunctions, size_t _numThreads, Interval& startInterval);
+    ThreadedSolver(std::vector<std::unique_ptr<Function>>& _functions, size_t _numThreads, Interval& _startInterval);
     
     void solve();
     
@@ -34,7 +34,7 @@ private:
     void runThread(size_t _threadNum);
     
 private:
-    const std::vector<std::vector<std::unique_ptr<FunctionInterface>>>&   m_allFunctions;
+    std::vector<std::vector<std::unique_ptr<Function>>>     m_allFunctions;
     size_t                                                  m_numThreads;
     std::atomic<bool>                                       m_killThreads;
     std::atomic<size_t>                                     m_numRunningThreads;

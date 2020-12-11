@@ -10,7 +10,7 @@
 #define SubdivisionSolverND_ipp
 
 template <Dimension D>
-SubdivisionSolver<D>::SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<FunctionInterface>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
+SubdivisionSolver<D>::SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<Function>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
 m_threadNum(_threadNum),
 m_rank(_functions.size()),
 m_functions(_functions),
@@ -24,8 +24,10 @@ m_linearSolver(m_threadNum, m_rank, m_intervalTracker, m_rootTracker)
 {
     for(size_t i = 0; i < m_functions.size(); i++) {
         //Create the Chebyshev Approximations
-        m_chebyshevApproximations.emplace_back();
+        m_chebyshevApproximations.emplace_back(m_rank);
+    }
 
+    for(size_t i = 0; i < m_functions.size(); i++) {
         //Create the Chebyshev Approximators
         m_chebyshevApproximators.emplace_back(std::make_unique<ChebyshevApproximator<D>>(m_rank, m_subdivisionParameters.approximationDegree, m_chebyshevApproximations[i]));
     }
@@ -45,13 +47,20 @@ void SubdivisionSolver<D>::subdivide(SolveParameters* _parameters, size_t _numGo
 template <Dimension D>
 void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
 {
+    //Figure out how a speicific number is being solved
+    /*if(_parameters->interval.lowerBounds[0] > 0.5176325837886175 || _parameters->interval.upperBounds[0] < 0.5176325837886175) {
+        return;
+    }
+    if(_parameters->interval.lowerBounds[1] > 0.9659361387156291 || _parameters->interval.upperBounds[1] < 0.9659361387156291) {
+        return;
+    }*/
+
     //If we are too deep, track that and return.
     if (_parameters->currentLevel > m_subdivisionParameters.maxLevel)
     {
         m_intervalTracker.storeResult(m_threadNum, _parameters->interval, SolveMethod::TooDeep);
         return;
     }
-    
     for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {
         //Get a chebyshev approximation
         m_chebyshevApproximators[funcNum]->approximate(m_functions[funcNum], _parameters->interval, _parameters->goodDegrees[funcNum]);
@@ -68,7 +77,7 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
             }
         }
         //Update the good degree
-        _parameters->goodDegrees[funcNum] = m_chebyshevApproximations[funcNum].getGoodDegree();
+        _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum], m_chebyshevApproximations[funcNum].getGoodDegree());
     }
     
     //Trim the coeffs
@@ -93,13 +102,13 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
         goodZerosTol += m_chebyshevApproximations[funcNum].getApproximationError();
     }
     goodZerosTol = std::max(m_subdivisionParameters.minGoodZerosTol, goodZerosTol*m_subdivisionParameters.goodZerosFactor);
-    
     //Solve
     if(isLinear) {
         return m_linearSolver.solve(m_chebyshevApproximations, _parameters->interval, goodZerosTol);
     }
     else {
         //TODO: Sove using spectral methods
+        return subdivide(_parameters, m_functions.size());
     }
 }
 

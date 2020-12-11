@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 #include <set>
-#include "PowerBasisPolynomial.h"
+#include "Function.h"
 
 class InputFileParser {
 public:
@@ -22,8 +22,8 @@ public:
     m_filename(_filename)
     {}
     
-    std::vector<std::vector<std::unique_ptr<FunctionInterface>>> parseFunctions(size_t _numThreads) {
-        std::vector<std::vector<std::unique_ptr<FunctionInterface>>> functions(_numThreads);
+    std::vector<std::unique_ptr<Function>> parseFunctions() {
+        std::vector<std::unique_ptr<Function>> functions;
         
         //Read the whole file into a string
         std::ifstream inputFile;
@@ -44,12 +44,12 @@ public:
         
         //Make sure the end line is there
         if(lines.size()  == 0 || lines[lines.size() - 1] != "END") {
-            throw std::runtime_error("Incorrect input format! END not found!");
+            printAndThrowRuntimeError("Incorrect input format! END not found!");
         }
         
         //Get the function names
         if(lines.size() == 0 || lines[0].substr(0,8) != "function") {
-            throw std::runtime_error("function definitions not found!");
+            printAndThrowRuntimeError("Function definitions not found!");
         }
         std::set<std::string> functionNames;
         std::vector<std::string> functionNamesVector = split(lines[0].substr(8), ",");
@@ -59,33 +59,33 @@ public:
         
         //Get the variable names
         if(lines.size() == 1 || lines[1].substr(0,14) != "variable_group") {
-            throw std::runtime_error("function definition not found!");
+            printAndThrowRuntimeError("Function definition not found!");
         }
         std::vector<std::string> variableNames = split(lines[1].substr(14), ",");
+        std::vector<std::string> subfunctionNames;
         
         //Get the individual functions
         for(size_t lineNum = 2; lineNum  + 1 < lines.size(); lineNum++) {
             std::vector<std::string> functionData = split(lines[lineNum], "=");
             if(functionData.size() != 2) {
-                throw std::runtime_error("Incorrect function definition format!");
+                printAndThrowRuntimeError("Incorrect function definition format!");
             }
             std::string functionName = functionData[0];
             std::set<std::string>::iterator nameFind = functionNames.find(functionName);
             if (nameFind == functionNames.end()) {
-                throw std::runtime_error("Subfunctions not implemented!");
+                printAndThrowRuntimeError("Subfunctions not implemented!");
             }
             else {
-                for(size_t i = 0 ; i < _numThreads; i++) {
-                    functions[i].push_back(std::make_unique<PowerBasisPolynomial>(functionData[1], variableNames));
-                }
+                functions.push_back(std::make_unique<Function>(functionData[1], variableNames, subfunctionNames));
                 functionNames.erase(nameFind);
             }
         }
         if(functionNames.size() != 0) {
+            std::string errorMessage = "No definition found for function ";
             for(std::set<std::string>::iterator it = functionNames.begin(); it != functionNames.end(); it++) {
-                std::cout<<"No definition found for function " + *it + "\n";
+                errorMessage += *it + ", ";
             }
-            throw std::runtime_error("Missing Function Definitions!");
+            printAndThrowRuntimeError(errorMessage);
         }
         
         return functions;

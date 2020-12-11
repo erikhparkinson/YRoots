@@ -10,16 +10,28 @@
 #define ThreadedSolverND_ipp
 
 template <Dimension D>
-ThreadedSolver<D>::ThreadedSolver(const std::vector<std::vector<std::unique_ptr<FunctionInterface>>>& _allFunctions, size_t _numThreads, Interval& startInterval) :
-m_allFunctions(_allFunctions),
+ThreadedSolver<D>::ThreadedSolver(std::vector<std::unique_ptr<Function>>& _functions, size_t _numThreads, Interval& _startInterval) :
 m_numThreads(_numThreads),
 m_intervalsToRun(m_numThreads),
-m_intervalTracker(m_numThreads, false), //TODO: Whether to store should be a parameter
+m_intervalTracker(m_numThreads, true, _startInterval.getArea()), //TODO: Whether to store should be a parameter
 m_rootTracker(m_numThreads)
 {
     //Limited the number of threads by the hardware amount
     m_numThreads = std::min(m_numThreads, (size_t)std::thread::hardware_concurrency());
     m_numRunningThreads.store(0);
+
+    //Make m_allFunctions
+    m_allFunctions.resize(m_numThreads);
+    for(size_t allFuncNum = 0; allFuncNum + 1 < m_numThreads; allFuncNum++) {
+        for(size_t funcNum = 0; funcNum < _functions.size(); funcNum++) {
+            m_allFunctions[allFuncNum].emplace_back(std::make_unique<Function>(*_functions[funcNum].get()));
+        }
+    }
+    //This final function we just move the pointer over to avoid an unneeded copy
+    for(size_t funcNum = 0; funcNum < _functions.size(); funcNum++) {
+        m_allFunctions[m_allFunctions.size() - 1].emplace_back(_functions[funcNum].release());
+    }
+
     
     //TODO: Parse these parameters
     SubdivisionParameters subdivisionParameters;
@@ -28,7 +40,7 @@ m_rootTracker(m_numThreads)
     m_killThreads.store(false);
     
     //Create the Solve Parameters Pool
-    size_t rank = m_allFunctions[0].size();
+    size_t rank = _functions.size();
     SolveParameters defaultSolveParameters;
     defaultSolveParameters.interval.lowerBounds.resize(rank);
     defaultSolveParameters.interval.upperBounds.resize(rank);
@@ -39,7 +51,7 @@ m_rootTracker(m_numThreads)
     
     //Create the first solve parameters
     m_firstSolveParameters = m_solveParametersPool[0].pop();
-    m_firstSolveParameters->interval = startInterval;
+    m_firstSolveParameters->interval = _startInterval;
     std::fill(m_firstSolveParameters->goodDegrees.begin(), m_firstSolveParameters->goodDegrees.end(), subdivisionParameters.approximationDegree);
     m_firstSolveParameters->currentLevel = 0;
 
@@ -79,9 +91,8 @@ void ThreadedSolver<D>::solve() {
     }
     m_threadPool.clear();
     
-    //TODO: Have these print to a file
-    //m_rootTracker.printResults();
-    //m_intervalTracker.printResults();
+    //m_rootTracker.logResults();
+    //m_intervalTracker.logResults();
 }
 
 template <Dimension D>

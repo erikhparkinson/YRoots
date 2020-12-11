@@ -109,7 +109,9 @@ public:
         double coeff = 1;
         std::vector<std::string> variablesParts = split(monomial, "*");
         if(variablesParts.size() == 0) {
-            throw std::runtime_error("Failure parsing function!");
+            std::string errorMessage = "Failure parsing function!";
+            std::cout<<errorMessage<<"\n";
+            throw std::runtime_error(errorMessage);
         }
         
         std::vector<std::vector<std::string>> monomialPowers;
