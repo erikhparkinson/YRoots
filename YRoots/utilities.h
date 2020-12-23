@@ -84,6 +84,11 @@ std::string toLowerSubstring(std::string _input, size_t _start, size_t _numChars
     return output;
 }
 
+template<typename T1, typename T2>
+inline T1 power(T1 base, T2 exponent) {
+    return std::pow(base, exponent);
+}
+
 template<typename T>
 T power(T base, size_t exponent) {
     //Base Cases

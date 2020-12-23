@@ -18,7 +18,7 @@ template <Dimension D>
 class IntervalApproximator
 {
 public:
-    IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, double* _inputPartial);
+    IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, size_t _inputPartialSize);
     IntervalApproximator(IntervalApproximator const&) = delete;
     IntervalApproximator& operator=(IntervalApproximator const&) = delete;
     ~IntervalApproximator();
@@ -60,7 +60,7 @@ private:
     double*         m_input;
     double*         m_output;
     fftw_r2r_kind*  m_kinds;
-    double*         m_inputPartial;
+    std::vector<double> m_inputPartial;
     fftw_plan       m_plan;
     
     //For evaluating just part of the grid
@@ -76,6 +76,7 @@ private:
     bool            m_signChange;
     
     static const size_t     m_timerIntervalApproximatorIndex = 2;
+    static const size_t     m_timerFFT = 3;
     Timer&                  m_timer = Timer::getInstance();
 };
 

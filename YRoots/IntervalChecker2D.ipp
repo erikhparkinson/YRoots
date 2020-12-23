@@ -231,7 +231,7 @@ template <>
 double IntervalChecker<Dimension::Two>::getBoundingInterval(std::vector<ChebyshevApproximation<Dimension::Two>>& _chebyshevApproximations) {
     //TODO: Updates m_boundingInterval. Returns the size of the bounding interval
     
-    double* array1 = _chebyshevApproximations[0].getArray();
+    /*double* array1 = _chebyshevApproximations[0].getArray();
     double* array2 = _chebyshevApproximations[1].getArray();
     size_t arraySize1 = _chebyshevApproximations[0].getPartialSideLength();
     size_t arraySize2 = _chebyshevApproximations[1].getPartialSideLength();
@@ -241,7 +241,7 @@ double IntervalChecker<Dimension::Two>::getBoundingInterval(std::vector<Chebyshe
     //Get the Lipshitz Constants of the appoximations in both dimensions
     double lConst1X,lConst2X,lConst1Y,lConst2Y;
     getLipshitzConstant2D(array1, arraySize1, arrayFullSize1, lConst1X, lConst1Y);
-    getLipshitzConstant2D(array2, arraySize2, arrayFullSize2, lConst2X, lConst2Y);
+    getLipshitzConstant2D(array2, arraySize2, arrayFullSize2, lConst2X, lConst2Y);*/
 
     //Set the start interval
     /*double ax = -1;

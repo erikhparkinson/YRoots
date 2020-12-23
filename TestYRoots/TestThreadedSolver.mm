@@ -27,7 +27,7 @@
 - (void)testBasic1D {
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
-    std::vector<std::string> subfunctionNames;
+    Function::FunctionMap subfunctions;
     std::string functionString = "-1+2*x1^20";
     
     Interval startInterval;
@@ -37,7 +37,7 @@
     std::cout<<"\n";
     for(size_t numThreads = 1; numThreads <= 4; numThreads++) {
         std::vector<std::unique_ptr<Function>> functions;
-        functions.emplace_back(std::make_unique<Function>(functionString, variablesNames, subfunctionNames));
+        functions.emplace_back(std::make_unique<Function>(functionString, variablesNames, subfunctions));
         ThreadedSolver<Dimension::One> solver(functions, numThreads, startInterval);
             
         size_t trials = 1;
@@ -74,12 +74,12 @@
     for(size_t testNum = 0; testNum < upperBounds.size(); testNum++) {
         //Get the variables
         double upperBound = upperBounds[testNum];
-        uint16_t powerNum = powerNums[testNum];
+        double powerNum = powerNums[testNum];
         size_t numThreads = 1;
 
         std::vector<std::string> variablesNames;
         variablesNames.push_back("x");
-        std::vector<std::string> subfunctionNames;
+        Function::FunctionMap subfunctions;
         //sin(x^powerNum)
         //Roots at x^powerNum = k*pi
         //There are upperBound^powerNum/pi roots
@@ -92,7 +92,7 @@
 
         //Set up the solver
         std::vector<std::unique_ptr<Function>> functions;
-        functions.emplace_back(std::make_unique<Function>(functionString, variablesNames, subfunctionNames));
+        functions.emplace_back(std::make_unique<Function>(functionString, variablesNames, subfunctions));
         ThreadedSolver<Dimension::One> solver(functions, numThreads, startInterval);
             
         //Solve it
@@ -124,8 +124,8 @@
     //Parameters
     std::vector<double> upperBoundsX;
     std::vector<double> upperBoundsY;
-    std::vector<uint16_t> powerNumsX;
-    std::vector<uint16_t> powerNumsY;
+    std::vector<double> powerNumsX;
+    std::vector<double> powerNumsY;
     std::vector<double> powerNumsX2;
     std::vector<double> powerNumsY2;
 
@@ -142,15 +142,15 @@
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x");
     variablesNames.push_back("y");
-    std::vector<std::string> subfunctionNames;
-    
+    Function::FunctionMap subfunctions;
+
     std::cout<<"\n";
     for(size_t testNum = 0; testNum < upperBoundsX.size(); testNum++) {
         //Get the variables
         double upperBoundX = upperBoundsX[testNum];
         double upperBoundY = upperBoundsY[testNum];
-        uint16_t powerNumX = powerNumsX[testNum];
-        uint16_t powerNumY = powerNumsY[testNum];
+        double powerNumX = powerNumsX[testNum];
+        double powerNumY = powerNumsY[testNum];
         double powerNumX2 = powerNumsX2[testNum];
         double powerNumY2 = powerNumsY2[testNum];
         size_t numThreads = 1;
@@ -171,8 +171,8 @@
 
         //Set up the solver
         std::vector<std::unique_ptr<Function>> functions;
-        functions.emplace_back(std::make_unique<Function>(functionString1, variablesNames, subfunctionNames));
-        functions.emplace_back(std::make_unique<Function>(functionString2, variablesNames, subfunctionNames));
+        functions.emplace_back(std::make_unique<Function>(functionString1, variablesNames, subfunctions));
+        functions.emplace_back(std::make_unique<Function>(functionString2, variablesNames, subfunctions));
         ThreadedSolver<Dimension::Two> solver(functions, numThreads, startInterval);
             
         //Solve it
@@ -189,12 +189,11 @@
         //Assert the solutions
         std::vector<FoundRoot> foundRoots =  solver.getRoots();
         size_t expectedRootsX = power(upperBoundX, powerNumX) / M_PI + 0.5;
-        size_t expectedRootsY = power(upperBoundX, powerNumX) / M_PI + 0.5;
+        size_t expectedRootsY = power(upperBoundY, powerNumY) / M_PI + 0.5;
         size_t expectedRoots = expectedRootsX * expectedRootsY;
         for(FoundRoot& root : foundRoots) {
             double rootModPiX = fmod(power(root.root[0], powerNumX), M_PI);
             double rootModPiY = fmod(power(root.root[1], powerNumY), M_PI);
-            //std::cout<<rootModPiX-M_PI/2<<"\t"<<rootModPiY-M_PI/2<<"\n";
             XCTAssert(withinEpslion(rootModPiX, M_PI/2, 1e-4) && withinEpslion(rootModPiY, M_PI/2, 1e-4));
         }
         XCTAssert(expectedRoots == foundRoots.size());

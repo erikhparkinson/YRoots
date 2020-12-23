@@ -6,7 +6,7 @@
 //  Copyright © 2020 Erik Hales Parkinson. All rights reserved.
 //
 
-#define USE_TIMING
+//#define USE_TIMING
 
 #import <XCTest/XCTest.h>
 #include <fftw3.h>

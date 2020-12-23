@@ -62,7 +62,7 @@ public:
             printAndThrowRuntimeError("Function definition not found!");
         }
         std::vector<std::string> variableNames = split(lines[1].substr(14), ",");
-        std::vector<std::string> subfunctionNames;
+        Function::FunctionMap subfunctions;
         
         //Get the individual functions
         for(size_t lineNum = 2; lineNum  + 1 < lines.size(); lineNum++) {
@@ -76,7 +76,7 @@ public:
                 printAndThrowRuntimeError("Subfunctions not implemented!");
             }
             else {
-                functions.push_back(std::make_unique<Function>(functionData[1], variableNames, subfunctionNames));
+                functions.push_back(std::make_unique<Function>(functionData[1], variableNames, subfunctions));
                 functionNames.erase(nameFind);
             }
         }

@@ -27,11 +27,11 @@
 - (void)testBasic1D {
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
-    std::vector<std::string> subfunctionNames;
+    Function::FunctionMap subfunctions;
     std::string functionString = "5+x1^2";
     size_t approximationDegree = 3;
     
-    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctionNames);
+    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctions);
     ChebyshevApproximation<Dimension::One> chebApproximation(1);
     ChebyshevApproximator<Dimension::One> chebyshevApproximator(1, approximationDegree, chebApproximation);
     Interval currentInterval;
@@ -53,11 +53,11 @@
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
     variablesNames.push_back("x2");
-    std::vector<std::string> subfunctionNames;
+    Function::FunctionMap subfunctions;
     std::string functionString = "5+x1^2+x2";
     size_t approximationDegree = 3;
     
-    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctionNames);
+    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctions);
     ChebyshevApproximation<Dimension::Two> chebApproximation(2);
     ChebyshevApproximator<Dimension::Two> chebyshevApproximator(2, approximationDegree, chebApproximation);
     Interval currentInterval;
@@ -91,7 +91,7 @@
     size_t degreePoly = 40;
 
     std::vector<std::string> variablesNames;
-    std::vector<std::string> subfunctionNames;
+    Function::FunctionMap subfunctions;
     std::string functionString = "1+";
     for(size_t i = 0; i < rank; i++) {
         variablesNames.push_back("x" + std::to_string(i));
@@ -101,7 +101,7 @@
         }
     }
 
-    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctionNames);
+    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctions);
     ChebyshevApproximation<Dimension::Two> chebApproximation(2);
     ChebyshevApproximator<Dimension::Two> chebyshevApproximator(rank, approximationDegree, chebApproximation);
     Interval currentInterval;

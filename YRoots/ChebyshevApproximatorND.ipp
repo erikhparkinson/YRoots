@@ -43,7 +43,7 @@ m_approximation(_approximation)
             nextChangeDegree /= 2;
             use1 = ~use1;
         }
-        m_intervalApproximators[degree-1] = std::make_unique<IntervalApproximator<D>>(m_rank, degree, m_input, use1 ? m_output1 : m_output2, m_kinds, m_inputPartial);
+        m_intervalApproximators[degree-1] = std::make_unique<IntervalApproximator<D>>(m_rank, degree, m_input, use1 ? m_output1 : m_output2, m_kinds, partialArrayLength);
     }
 }
 
