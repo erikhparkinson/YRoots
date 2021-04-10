@@ -42,7 +42,7 @@ function f1, f2;
 variable_group x1, x2;
 a = sqrt(x1^2 + x2^2)
 f1 = sin(x1) + 2 + ln(a);
-f2 = cos(x1)/(log(x2, 10)) + 2 + ln(a);
+f2 = cos(a)/(log(x2, 10)) + 2 + ln(x1 + 3);
 FUNCTIONS END;
 
 END;
