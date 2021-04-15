@@ -13,15 +13,15 @@ The input file is of the following format. All whitespace is ignored by the pars
 ```
 PARAMETERS;
 <Parameter Information>
-PARAMETERS END;
+PARAMETERS_END;
 
 INTERVAL;
 <Parameter Information>
-INTERVAL END;
+INTERVAL_END;
 
 FUNCTIONS;
 <Function Information>
-FUNCTIONS END;
+FUNCTIONS_END;
 
 END;
 ```
@@ -30,12 +30,12 @@ An example input file is
 ```
 PARAMETERS;
 numThreads = 3;
-PARAMETERS END;
+PARAMETERS_END;
 
 INTERVAL;
 [-1, 1/pi];
 [ln(2), e];
-INTERVAL END;
+INTERVAL_END;
 
 FUNCTIONS;
 function f1, f2;
@@ -43,18 +43,19 @@ variable_group x1, x2;
 a = sqrt(x1^2 + x2^2)
 f1 = sin(x1) + 2 + ln(a);
 f2 = cos(a)/(log(x2, 10)) + 2 + ln(x1 + 3);
-FUNCTIONS END;
+FUNCTIONS_END;
 
 END;
 ```
 
 ## Parameters
+This section is optional. If not used everything will use the default values. Every field is also optional. 
 Each Parameter Line should be of the form
 ```<name> = <value>;```
 
 Currently supported parameters are
 * numThreads
-  * Must be an integer. -1 will use the maximum number of possible threads determined by `std::thread::hardware_concurrency()`. Otherwise this value must be positive. Will be automatically be capped at `std::thread::hardware_concurrency()`.
+  * Must be an integer. Defaults to 1. -1 will use the maximum number of possible threads determined by `std::thread::hardware_concurrency()`. Otherwise this value must be positive. Will be automatically be capped at `std::thread::hardware_concurrency()`.
   
  
 ## Intervals
