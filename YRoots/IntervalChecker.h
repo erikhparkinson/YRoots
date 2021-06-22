@@ -56,18 +56,29 @@ protected:
     std::vector<bool>       m_throwOutMask;
     Interval                m_boundingInterval;
     Interval                m_tempInterval;
-
+    
+    //For BoundingIntervals
+    std::vector<size_t>                             m_biggestArraySizeChecked; //Len Dim, one for each approximation
+    std::vector<std::vector<std::vector<double>>>   m_reducedChebEvals; //Dim x (Dim-1) x length
+                                                                        //For the x,y spot length is degree^y. Check degree against m_biggestArraySizeChecked each run.
+    
     //Multithreading objects
     size_t                              m_threadNum;
     ConcurrentStack<SolveParameters>&   m_intervalsToRun;
     ObjectPool<SolveParameters>&        m_solveParametersPool;
     
     //For Timing
-    static const size_t     m_timerBoundingIntervalIndex = 0;
-    static const size_t     m_timerQuadraticCheckIndex = 1;
+    static size_t           m_timerBoundingIntervalIndex;
+    static size_t           m_timerQuadraticCheckIndex;
     Timer&                  m_timer = Timer::getInstance();
 };
 
+template<Dimension D>
+size_t IntervalChecker<D>::m_timerBoundingIntervalIndex = -1;
+template<Dimension D>
+size_t IntervalChecker<D>::m_timerQuadraticCheckIndex = -1;
+
+#include "BoundingIntervalUtilities.h"
 #include "IntervalChecker1D.ipp"
 #include "IntervalChecker2D.ipp"
 #include "IntervalChecker3D.ipp"

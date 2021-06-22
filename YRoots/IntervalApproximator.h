@@ -23,7 +23,7 @@ public:
     IntervalApproximator& operator=(IntervalApproximator const&) = delete;
     ~IntervalApproximator();
     
-    void approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, bool _findInfNorm);
+    void approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, bool _findInfNorm);
 
     bool getSignChange() {
         return m_signChange;
@@ -75,10 +75,21 @@ private:
     double          m_infNorm;
     bool            m_signChange;
     
-    static const size_t     m_timerIntervalApproximatorIndex = 2;
-    static const size_t     m_timerFFT = 3;
+    static size_t           m_timerInitIndex;
+    static size_t           m_timerPlanIndex;
+    static size_t           m_timerIntervalApproximatorIndex;
+    static size_t           m_timerFFT;
     Timer&                  m_timer = Timer::getInstance();
 };
+
+template<Dimension D>
+size_t IntervalApproximator<D>::m_timerIntervalApproximatorIndex = -1;
+template<Dimension D>
+size_t IntervalApproximator<D>::m_timerFFT = -1;
+template<Dimension D>
+size_t IntervalApproximator<D>::m_timerInitIndex = -1;
+template<Dimension D>
+size_t IntervalApproximator<D>::m_timerPlanIndex = -1;
 
 #include "IntervalApproximator1D.ipp"
 #include "IntervalApproximator2D.ipp"

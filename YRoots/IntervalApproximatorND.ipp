@@ -23,6 +23,10 @@ m_kinds(_kinds),
 m_infNorm(0),
 m_signChange(false)
 {
+    m_timer.registerTimer(m_timerInitIndex, "Interval Approximator Init");
+    m_timer.registerTimer(m_timerPlanIndex, "Interval Approximator Planning");
+    m_timer.startTimer(m_timerInitIndex);
+    
     m_inputPartial.resize(_inputPartialSize);
     
     //Alllocate memory
@@ -35,7 +39,9 @@ m_signChange(false)
 
     //Crete the plan
     //Options FFTW_EXHAUSTIVE, FFTW_PATIENT, FFTW_MEASURE, FFTW_ESTIMATE. See http://www.fftw.org/fftw3_doc/Planner-Flags.html#Planner-Flags.
-    m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_EXHAUSTIVE | FFTW_DESTROY_INPUT);
+    m_timer.startTimer(m_timerPlanIndex);
+    m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
+    m_timer.stopTimer(m_timerPlanIndex);
 
     //Create the precomputed points.
     m_evaluationPointsPreTransform.resize(m_rank);
@@ -56,6 +62,8 @@ m_signChange(false)
         
     m_timer.registerTimer(m_timerIntervalApproximatorIndex, "Interval Approximator");
     m_timer.registerTimer(m_timerFFT, "FFT");
+    
+    m_timer.stopTimer(m_timerInitIndex);
 }
 
 template <Dimension D>
@@ -153,7 +161,7 @@ void IntervalApproximator<D>::preComputePartialToFullTransition()
 }
 
 template <Dimension D>
-void IntervalApproximator<D>::approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, bool _findInfNorm)
+void IntervalApproximator<D>::approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, bool _findInfNorm)
 {
     m_timer.startTimer(m_timerIntervalApproximatorIndex);
 

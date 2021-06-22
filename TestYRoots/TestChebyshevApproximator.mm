@@ -18,6 +18,7 @@
 
 - (void)setUp {
     // Put setup code here. This method is called before the invocation of each test method in the class.
+    Function::clearSavedFunctions();
 }
 
 - (void)tearDown {
@@ -27,11 +28,10 @@
 - (void)testBasic1D {
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
-    Function::FunctionMap subfunctions;
     std::string functionString = "5+x1^2";
     size_t approximationDegree = 3;
     
-    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctions);
+    Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
     ChebyshevApproximation<Dimension::One> chebApproximation(1);
     ChebyshevApproximator<Dimension::One> chebyshevApproximator(1, approximationDegree, chebApproximation);
     Interval currentInterval;
@@ -53,11 +53,10 @@
     std::vector<std::string> variablesNames;
     variablesNames.push_back("x1");
     variablesNames.push_back("x2");
-    Function::FunctionMap subfunctions;
     std::string functionString = "5+x1^2+x2";
     size_t approximationDegree = 3;
     
-    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctions);
+    Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
     ChebyshevApproximation<Dimension::Two> chebApproximation(2);
     ChebyshevApproximator<Dimension::Two> chebyshevApproximator(2, approximationDegree, chebApproximation);
     Interval currentInterval;
@@ -85,13 +84,31 @@
     XCTAssertTrue(chebApproximation.isGoodApproximation(1e-15, 1e-15));
 }
 
+- (void)testCustom {
+    std::vector<std::string> variablesNames;
+    variablesNames.push_back("x");
+    variablesNames.push_back("y");
+    std::string functionString = "sin(2*x-y/2)+y";
+    size_t approximationDegree = 10;
+    
+    Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
+    ChebyshevApproximation<Dimension::Two> chebApproximation(2);
+    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(2, approximationDegree, chebApproximation);
+    Interval currentInterval;
+    currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
+    currentInterval.upperBounds.push_back(-.5); currentInterval.upperBounds.push_back(-.5);
+    chebyshevApproximator.approximate(function, currentInterval, approximationDegree);
+
+    double* approximation = chebApproximation.getArray();
+    XCTAssert(withinEpslion(approximation[0], -1.5934465031264855));
+}
+    
 - (void)testTimingTemp {
     size_t rank = 2;
     size_t approximationDegree = 5;    
     size_t degreePoly = 40;
 
     std::vector<std::string> variablesNames;
-    Function::FunctionMap subfunctions;
     std::string functionString = "1+";
     for(size_t i = 0; i < rank; i++) {
         variablesNames.push_back("x" + std::to_string(i));
@@ -101,7 +118,7 @@
         }
     }
 
-    std::unique_ptr<Function> function = std::make_unique<Function>(functionString, variablesNames, subfunctions);
+    Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
     ChebyshevApproximation<Dimension::Two> chebApproximation(2);
     ChebyshevApproximator<Dimension::Two> chebyshevApproximator(rank, approximationDegree, chebApproximation);
     Interval currentInterval;

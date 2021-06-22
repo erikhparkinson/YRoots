@@ -21,7 +21,7 @@ m_signChange(false),
 m_approximationError(0),
 m_absValWasSummed(false),
 m_sumAbsVal(0),
-m_goodDegree(std::numeric_limits<size_t>::max())
+m_goodDegree(std::numeric_limits<size_t>::max() - 1)
 {
     clear();
 }
@@ -161,7 +161,7 @@ template <Dimension D>
 void ChebyshevApproximation<D>::clear() {
     m_absValWasSummed = false;
     m_sumAbsVal = 0;
-    m_goodDegree = std::numeric_limits<size_t>::max();
+    m_goodDegree = std::numeric_limits<size_t>::max() - 1;
 }
 
 

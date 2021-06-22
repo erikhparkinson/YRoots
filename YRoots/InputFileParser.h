@@ -14,17 +14,20 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <thread>
 #include "Function.h"
 
 class InputFileParser {
 public:
     InputFileParser(std::string _filename):
     m_filename(_filename)
-    {}
+    {
+        m_timer.registerTimer(m_timerInputParserIndex, "Input Parser");
+    }
     
-    std::vector<std::unique_ptr<Function>> parseFunctions() {
-        std::vector<std::unique_ptr<Function>> functions;
-        
+    void parse() {
+        m_timer.startTimer(m_timerInputParserIndex);
+
         //Read the whole file into a string
         std::ifstream inputFile;
         std::string line;
@@ -42,60 +45,261 @@ public:
         std::vector<std::string> lines = split(inputString, ";");
         lines.pop_back();
         
-        //Make sure the end line is there
+        //Make sure the end line is there and remove it
         if(lines.size()  == 0 || lines[lines.size() - 1] != "END") {
             printAndThrowRuntimeError("Incorrect input format! END not found!");
         }
+        lines.pop_back();
+        size_t parseSpot = 0;
         
+        //Parse the PARAMETERS
+        if(lines.size() > parseSpot && lines[parseSpot] == "PARAMETERS") {
+            parseSpot++;
+            parseParameters(lines, parseSpot);
+        }
+        
+        //Parse the INTERVAL
+        if(lines.size() > parseSpot && lines[parseSpot] == "INTERVAL") {
+            parseSpot++;
+            parseInterval(lines, parseSpot);
+        }
+        else {
+            printAndThrowRuntimeError("Parser Error! No INTERVAL Found!");
+        }
+
+        //Parse the FUNCTIONS
+        if(lines.size() > parseSpot && lines[parseSpot] == "FUNCTIONS") {
+            parseSpot++;
+            parseFunctions(lines, parseSpot);
+        }
+        else {
+            printAndThrowRuntimeError("Parser Error! No FUNCTIONS Found!");
+        }
+        
+        //Make sure the functions size and interval size matches!
+        if(m_functions[0].size() != m_interval.lowerBounds.size()) {
+            printAndThrowRuntimeError("Parser Error! Number of Functions must match interval dimension!");
+        }
+        
+        m_timer.stopTimer(m_timerInputParserIndex);
+    }
+    
+    //Getters
+    std::vector<std::vector<Function::SharedFunctionPtr>>& getFunctions() {
+        return m_functions;
+    }
+    
+    Interval getInterval() {
+        return m_interval;
+    }
+    
+    size_t getNumThreads() {
+        return m_numThreads;
+    }
+    
+    SubdivisionParameters getSubdivisionParameters() {
+        return m_subdivisionParameters;
+    }
+    
+private:
+    int parseInteger(const std::string& inputString) {
+        try{
+            return std::stoi(inputString);
+        }
+        catch(...) {
+            printAndThrowRuntimeError("Parser Error! Invalid integer format!");
+        }
+        return 0;
+    }
+    
+    double parseDouble(const std::string& inputString) {
+        try{
+            return std::stod(inputString);
+        }
+        catch(...) {
+            printAndThrowRuntimeError("Parser Error! Invalid integer format!");
+        }
+        return 0;
+    }
+    
+    void parseParameters(const std::vector<std::string>& lines, size_t& parseSpot){
+        while(parseSpot < lines.size()) {
+            //Check for the END
+            if(lines[parseSpot] == "PARAMETERS_END") {
+                parseSpot++;
+                return;
+            }
+            
+            //Parse the Parameters
+            std::vector<std::string> parameterString = split(lines[parseSpot], "=");
+            if(parameterString.size() != 2) {
+                printAndThrowRuntimeError("Parser Error! Invalid Parameter Format!");
+            }
+            else if(parameterString[0] == "numThreads") {
+                int numThreads = parseInteger(parameterString[1]);
+                if(numThreads == -1) {
+                    m_numThreads = (size_t)std::thread::hardware_concurrency();
+                }
+                else if (numThreads <= 0) {
+                    printAndThrowRuntimeError("Parser Error! Invalid numThreads " + std::to_string(numThreads) + "!");
+                }
+                else {
+                    m_numThreads = numThreads;
+                }
+            }
+            else if(parameterString[0] == "relApproxTol") {
+                m_subdivisionParameters.relApproxTol = parseConstantNum(parameterString[1]);
+                if(m_subdivisionParameters.relApproxTol < 0) {
+                    printAndThrowRuntimeError("Parameter Error! relApproxTol must be >= 0!");
+                }
+            }
+            else if(parameterString[0] == "absApproxTol") {
+                m_subdivisionParameters.absApproxTol = parseConstantNum(parameterString[1]);
+                if(m_subdivisionParameters.absApproxTol < 0) {
+                    printAndThrowRuntimeError("Parameter Error! relApproxTol must be >= 0!");
+                }
+            }
+            else if(parameterString[0] == "goodZerosFactor") {
+                m_subdivisionParameters.goodZerosFactor = parseConstantNum(parameterString[1]);
+                if(m_subdivisionParameters.goodZerosFactor < 0) {
+                    printAndThrowRuntimeError("Parameter Error! goodZerosFactor must be >= 0!");
+                }
+            }
+            else if(parameterString[0] == "minGoodZerosTol") {
+                m_subdivisionParameters.minGoodZerosTol = parseConstantNum(parameterString[1]);
+                if(m_subdivisionParameters.minGoodZerosTol < 0) {
+                    printAndThrowRuntimeError("Parameter Error! minGoodZerosTol must be >= 0!");
+                }
+            }
+            else if(parameterString[0] == "approximationDegree") {
+                m_subdivisionParameters.approximationDegree = parseInteger(parameterString[1]);
+                if(m_subdivisionParameters.approximationDegree < 1) {
+                    printAndThrowRuntimeError("Parameter Error! minGoodZerosTol must be >= 1!");
+                }
+            }
+            else if(parameterString[0] == "maxLevel") {
+                m_subdivisionParameters.maxLevel = parseInteger(parameterString[1]);
+                if(m_subdivisionParameters.maxLevel < 0) {
+                    printAndThrowRuntimeError("Parameter Error! minGoodZerosTol must be >= 0!");
+                }
+            }
+            else {
+                printAndThrowRuntimeError("Parser Error! Unrecognized Parameter " + parameterString[0] + "!");
+            }
+            parseSpot++;
+        }
+        printAndThrowRuntimeError("Parser Error! No PARAMETERS_END Found!");
+    }
+    
+    double parseConstantNum(const std::string& inputString) {
+        try{
+            return std::stod(inputString);
+        }
+        catch(...) {}
+        
+        std::vector<std::string> emptyVector;
+        Function constantFunction("", inputString, emptyVector);
+        if(constantFunction.getFunctionType() != FunctionType::CONSTANT) {
+            printAndThrowRuntimeError("Parser Error! Invalid Constant Number!");
+        }
+        else {
+            return constantFunction.getValue();
+        }
+        return 0.0;
+    }
+
+    void parseInterval(const std::vector<std::string>& lines, size_t& parseSpot){
+        while(parseSpot < lines.size()) {
+            //Check for the END
+            if(lines[parseSpot] == "INTERVAL_END") {
+                parseSpot++;
+                return;
+            }
+            //Parse the interval
+            const std::string& currIntervalString = lines[parseSpot];
+            if(currIntervalString.length() < 2 || currIntervalString.front() != '[' || currIntervalString.back() != ']') {
+                printAndThrowRuntimeError("Parser Error! Incorrect Interval Format!");
+            }
+            else {
+                std::vector<std::string> intervalNums = split(currIntervalString.substr(1, currIntervalString.length()-2), ",");
+                if(intervalNums.size() != 2) {
+                    printAndThrowRuntimeError("Parser Error! Incorrect Interval Format! Should have 2 Numbers!");
+                }
+                else {
+                    m_interval.lowerBounds.push_back(parseConstantNum(intervalNums[0]));
+                    m_interval.upperBounds.push_back(parseConstantNum(intervalNums[1]));
+                }
+            }
+            parseSpot++;
+        }
+        printAndThrowRuntimeError("Parser Error! No INTERVAL_END Found!");
+    }
+
+    void parseFunctions(const std::vector<std::string>& lines, size_t& parseSpot) {
         //Get the function names
-        if(lines.size() == 0 || lines[0].substr(0,8) != "function") {
+        if(lines.size() <= parseSpot || lines[parseSpot].substr(0,8) != "function") {
             printAndThrowRuntimeError("Function definitions not found!");
         }
-        std::set<std::string> functionNames;
-        std::vector<std::string> functionNamesVector = split(lines[0].substr(8), ",");
-        for(size_t i = 0; i < functionNamesVector.size(); i++) {
-            functionNames.insert(functionNamesVector[i]);
-        }
+        std::vector<std::string> functionNames = split(lines[parseSpot].substr(8), ",");
+        parseSpot++;
         
         //Get the variable names
-        if(lines.size() == 1 || lines[1].substr(0,14) != "variable_group") {
+        if(lines.size() <= parseSpot || lines[parseSpot].substr(0,14) != "variable_group") {
             printAndThrowRuntimeError("Function definition not found!");
         }
-        std::vector<std::string> variableNames = split(lines[1].substr(14), ",");
-        Function::FunctionMap subfunctions;
+        std::vector<std::string> variableNames = split(lines[parseSpot].substr(14), ",");
+        parseSpot++;
+        
+        //Make sure there are the same number of functions are variables
+        if(variableNames.size() != functionNames.size()) {
+            printAndThrowRuntimeError("Parser Error! #Functions != #Variables!");
+        }
         
         //Get the individual functions
-        for(size_t lineNum = 2; lineNum  + 1 < lines.size(); lineNum++) {
-            std::vector<std::string> functionData = split(lines[lineNum], "=");
+        bool foundEnd = false;
+        m_functions.resize(m_numThreads);
+        while(parseSpot < lines.size()) {
+            if(lines[parseSpot] == "FUNCTIONS_END") {
+                parseSpot++;
+                foundEnd = true;
+                break;
+            }
+            std::vector<std::string> functionData = split(lines[parseSpot], "=");
             if(functionData.size() != 2) {
                 printAndThrowRuntimeError("Incorrect function definition format!");
             }
-            std::string functionName = functionData[0];
-            std::set<std::string>::iterator nameFind = functionNames.find(functionName);
-            if (nameFind == functionNames.end()) {
-                printAndThrowRuntimeError("Subfunctions not implemented!");
-            }
-            else {
-                functions.push_back(std::make_unique<Function>(functionData[1], variableNames, subfunctions));
-                functionNames.erase(nameFind);
-            }
-        }
-        if(functionNames.size() != 0) {
-            std::string errorMessage = "No definition found for function ";
-            for(std::set<std::string>::iterator it = functionNames.begin(); it != functionNames.end(); it++) {
-                errorMessage += *it + ", ";
-            }
-            printAndThrowRuntimeError(errorMessage);
+            Function::addFunction(functionData[0], functionData[1], variableNames);
+            parseSpot++;
         }
         
-        return functions;
+        if(!foundEnd) {
+            printAndThrowRuntimeError("Parser Error! No FUNCTIONS_END Found!");
+        }
+        
+        //Duplicate the functions for all the threads
+        Function::addThreadFunctions(m_numThreads);
+        
+        //Make sure we found definitions for all the functions
+        for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
+            for(size_t funcNum = 0; funcNum < functionNames.size(); funcNum++) {
+                m_functions[threadNum].push_back(Function::getThreadFunctionByName(threadNum, functionNames[funcNum]));
+            }
+        }
     }
-    
-    
     
 private:
     std::string m_filename;
     
+    //Parsed Variables
+    std::vector<std::vector<Function::SharedFunctionPtr>> m_functions;
+    Interval m_interval;
+    size_t m_numThreads = 1;
+    SubdivisionParameters m_subdivisionParameters;
+    
+    static size_t           m_timerInputParserIndex;
+    Timer&                  m_timer = Timer::getInstance();
 };
+
+size_t InputFileParser::m_timerInputParserIndex = -1;
 
 #endif /* InputFileParser_h */

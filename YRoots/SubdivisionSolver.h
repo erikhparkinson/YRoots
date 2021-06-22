@@ -22,7 +22,7 @@ template <Dimension D>
 class SubdivisionSolver
 {
 public:
-    SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<Function>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
+    SubdivisionSolver(size_t _threadNum, const std::vector<Function::SharedFunctionPtr>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, const SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
     ~SubdivisionSolver();
 
     void solve(SolveParameters* _parameters);
@@ -33,7 +33,7 @@ private:
 private:
     size_t                                                  m_threadNum;
     size_t                                                  m_rank;
-    const std::vector<std::unique_ptr<Function>>&           m_functions;
+    const std::vector<Function::SharedFunctionPtr>&         m_functions;
     ConcurrentStack<SolveParameters>&                       m_intervalsToRun;
     ObjectPool<SolveParameters>&                            m_solveParametersPool;
     SubdivisionParameters                                   m_subdivisionParameters;
@@ -43,7 +43,18 @@ private:
     std::vector<std::unique_ptr<ChebyshevApproximator<D>>>  m_chebyshevApproximators;
     IntervalChecker<D>                                      m_intervalChecker;
     LinearSolver<D>                                         m_linearSolver;
+    
+    static size_t m_subdivisionSolverTimerIndex1;
+    static size_t m_subdivisionSolverTimerIndex2;
+    Timer& m_timer = Timer::getInstance();
 };
+
+template<Dimension D>
+size_t SubdivisionSolver<D>::m_subdivisionSolverTimerIndex1 = -1;
+
+template<Dimension D>
+size_t SubdivisionSolver<D>::m_subdivisionSolverTimerIndex2 = -1;
+
 
 #include "SubdivisionSolverND.ipp"
 

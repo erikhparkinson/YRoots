@@ -42,12 +42,19 @@ m_solveParametersPool(_solveParametersPool)
         m_intervalMask.push_back(false);
         m_throwOutMask.push_back(false);
     }
-    //Initialize the boudning interval
+    //Initialize the bounding interval
     for(size_t i = 0; i < m_rank; i++) {
         m_boundingInterval.lowerBounds.push_back(0.0);
         m_boundingInterval.upperBounds.push_back(0.0);
         m_tempInterval.lowerBounds.push_back(0.0);
         m_tempInterval.upperBounds.push_back(0.0);
+    }
+    //Initialize m_reducedChebEvals
+    m_reducedChebEvals.resize(_rank);
+    m_biggestArraySizeChecked.resize(_rank);
+    for(size_t i = 0; i < _rank; i++) {
+        m_reducedChebEvals[i].resize(_rank-1);
+        m_biggestArraySizeChecked[i] = 0;
     }
     
     m_timer.registerTimer(m_timerBoundingIntervalIndex, "Bounding Interval");
@@ -118,7 +125,7 @@ void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation
         if(m_intervalMask[intervalNum]) {
             //Get the projected interval and store it
             projectInterval(m_tempInterval, _currentParameters->interval, m_scaledSubIntervals[intervalNum]);
-            m_intervalTracker.storeResult(m_threadNum, m_tempInterval, SolveMethod::QuadrticCheck);
+            m_intervalTracker.storeResult(m_threadNum, m_tempInterval, SolveMethod::QuadraticCheck);
         }
         else {
             //Push it to subdivision

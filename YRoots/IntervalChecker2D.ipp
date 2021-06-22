@@ -45,7 +45,7 @@ void IntervalChecker<Dimension::Two>::runQuadraticCheck(ChebyshevApproximation<D
     double c1 = degree > 0 ? array[1] : 0.0;
     double c0 = array[0];
 
-    error -= (std::abs(c5) + std::abs(c4) + std::abs(c3)+std::abs(c2) + std::abs(c1) + std::abs(c0));
+    error -= (std::abs(c5) + std::abs(c4) + std::abs(c3) + std::abs(c2) + std::abs(c1) + std::abs(c0));
     error = error < 0.0 ? 0.0 : error; //TODO: If this happens we have a problem
     
     //Repeated values from Horner's method
@@ -210,57 +210,120 @@ void IntervalChecker<Dimension::Two>::runQuadraticCheck(ChebyshevApproximation<D
     }
 }
 
-double getLipshitzConstant2D(double* array, size_t arraySize, size_t arrayFullSize, double& valueX, double& valueY) {
-    //TODO: Optimize this function
-    valueX = 0.0;
-    valueY = 0.0;
-    
-    //Iterate through the array
-    for(size_t i = 0; i < arraySize; i++) {
-        for(size_t j = 0; 0 < arraySize; j++) {
-            double arrayVal = std::abs(array[i*arrayFullSize + j]);
-            valueX += arrayVal*i*i;
-            valueY += arrayVal*j*j;
-        }
-    }
-    return valueX;
-}
-
-
 template <>
 double IntervalChecker<Dimension::Two>::getBoundingInterval(std::vector<ChebyshevApproximation<Dimension::Two>>& _chebyshevApproximations) {
-    //TODO: Updates m_boundingInterval. Returns the size of the bounding interval
-    
-    /*double* array1 = _chebyshevApproximations[0].getArray();
+    //Constants for this function
+    /*const double MIN_MOVE = 0.001;
+    const double MIN_HEIGHT = 0.0;
+    const double WIDTH_MULTIPLIER = 1.01;*/
+
+    /*
+    double* array1 = _chebyshevApproximations[0].getArray();
     double* array2 = _chebyshevApproximations[1].getArray();
     size_t arraySize1 = _chebyshevApproximations[0].getPartialSideLength();
     size_t arraySize2 = _chebyshevApproximations[1].getPartialSideLength();
     size_t arrayFullSize1 = _chebyshevApproximations[0].getSideLength();
     size_t arrayFullSize2 = _chebyshevApproximations[1].getSideLength();
+    double error1 = _chebyshevApproximations[0].getApproximationError();
+    double error2 = _chebyshevApproximations[1].getApproximationError();
+
+    //Updates the size of the vectors if needed
+    if(unlikely(arraySize1 > m_biggestArraySizeChecked[0])) {
+        m_reducedChebEvals[0].resize(arraySize1);
+        m_biggestArraySizeChecked[0] = arraySize1;
+    }
+    if(unlikely(arraySize2 > m_biggestArraySizeChecked[1])) {
+        m_reducedChebEvals[1].resize(arraySize2);
+        m_biggestArraySizeChecked[1] = arraySize2;
+    }
     
     //Get the Lipshitz Constants of the appoximations in both dimensions
     double lConst1X,lConst2X,lConst1Y,lConst2Y;
     getLipshitzConstant2D(array1, arraySize1, arrayFullSize1, lConst1X, lConst1Y);
-    getLipshitzConstant2D(array2, arraySize2, arrayFullSize2, lConst2X, lConst2Y);*/
+    getLipshitzConstant2D(array2, arraySize2, arrayFullSize2, lConst2X, lConst2Y);
 
     //Set the start interval
-    /*double ax = -1;
-    double ay = -1;
-    double bx = 1;
-    double by = 1;*/
-    
-    //TODO: I can create vectors and then pass their data as arrays! A vectors array is guarenteed to be contiguous.
-    //So maybe I should get rid of all my naked arrays and when I run the FFTs have those arrays created inside of vectors originally.
-    //And then pass the array to the FFT as &vector[0]. That would make debugging much easier and so I wouldn't have to use
-    //arrays anywhere else in the code.
-    
-    //There must be a clever way to do this.
-    
+    double a = -1;
+    double b = 1;
+        
     //Solve
-    /*while(ax < bx) {
-        break;
-    }*/
-    
+    //Run the values
+    bool makingProgress = true;
+    size_t currOptDim = 0;
+    while (a < b && makingProgress && currOptDim < 2) {
+        makingProgress = false;
+        //Get the evaluations down a dimension
+        evaluateCheb2D(array1, arraySize1, arrayFullSize1, a, currOptDim, m_reducedChebEvals[0][0]);
+        evaluateCheb2D(array2, arraySize2, arrayFullSize2, b, currOptDim, m_reducedChebEvals[1][0]);
+
+        //Get the Lipshitz constants down a dimension
+        double reducedLConst1 = getLipshitzConstant1D(m_reducedChebEvals[0][0].data(), arraySize1);
+        double reducedLConst2 = getLipshitzConstant1D(m_reducedChebEvals[1][0].data(), arraySize2);
+        
+        //Determine how far we want to step and the goal heigths we need to prove
+        double goalWidth = (b-a) * WIDTH_MULTIPLIER;
+        double goalHeight1, goalHeight2;
+        if(currOptDim == 0) {
+            goalHeight1 = goalWidth*lConst1X;
+            goalHeight2 = goalWidth*lConst2X;
+        }
+        else {
+            goalHeight1 = goalWidth*lConst1Y;
+            goalHeight2 = goalWidth*lConst2Y;
+        }
+        goalHeight1 = std::max(goalHeight1, MIN_HEIGHT);
+        goalHeight2 = std::max(goalHeight2, MIN_HEIGHT);
+
+        double a2, b2;
+        a2 = 0;
+        */
+        
+        /*
+
+        #Try to prove the height we need
+        currentVal = otherInterval[0]
+        while currentVal < otherInterval[1]:
+            val1 = abs(chebval1D(currentVal, M1Line)) - error1
+            val2 = abs(chebval1D(currentVal, M2Line)) - error2
+            while val1 < goalHeight1 and val2 < goalHeight2:
+                goalWidth /= 2
+                goalHeight1 /= 2
+                goalHeight2 /= 2
+                if goalWidth < MIN_LINE_MOVE:
+                    goalWidth = 0.0
+                    break
+            if goalWidth == 0.0:
+                break
+            delta1 = (val1 - goalHeight1) / lConstLine1 if lConstLine1 != 0 else (val1 - goalHeight1)*np.inf
+            delta2 = (val2 - goalHeight2) / lConstLine2 if lConstLine2 != 0 else (val2 - goalHeight2)*np.inf
+            delta = max(delta1, delta2)
+            if delta > 0:
+                currentVal += delta
+            if delta < MIN_DELTA:
+                goalWidth /= 2
+                goalHeight1 /= 2
+                goalHeight2 /= 2
+                if goalWidth < MIN_LINE_MOVE:
+                    goalWidth = 0.0
+                    break
+        #If we weren't able to prove the bound on the segment
+        if goalWidth == 0.0:
+            break
+        #Move the line
+        if solveUpper:
+            thisInterval[1] -= goalWidth
+        else:
+            thisInterval[0] += goalWidth
+        #Stop if we have eliminated it
+        if thisInterval[0] >= thisInterval[1]:
+            break
+
+
+        
+        
+    }
+         */
+
     return std::numeric_limits<double>::max();
 }
 

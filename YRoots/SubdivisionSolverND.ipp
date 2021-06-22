@@ -10,7 +10,7 @@
 #define SubdivisionSolverND_ipp
 
 template <Dimension D>
-SubdivisionSolver<D>::SubdivisionSolver(size_t _threadNum, const std::vector<std::unique_ptr<Function>>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
+SubdivisionSolver<D>::SubdivisionSolver(size_t _threadNum, const std::vector<Function::SharedFunctionPtr>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, const SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
 m_threadNum(_threadNum),
 m_rank(_functions.size()),
 m_functions(_functions),
@@ -48,10 +48,13 @@ template <Dimension D>
 void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
 {
     //Figure out how a speicific number is being solved
-    /*if(_parameters->interval.lowerBounds[0] > 0.5176325837886175 || _parameters->interval.upperBounds[0] < 0.5176325837886175) {
+    
+    /*double num1 = -.5;
+    double num2 = -.5;
+    if(_parameters->interval.lowerBounds[0] > num1 || _parameters->interval.upperBounds[0] < num1) {
         return;
     }
-    if(_parameters->interval.lowerBounds[1] > 0.9659361387156291 || _parameters->interval.upperBounds[1] < 0.9659361387156291) {
+    if(_parameters->interval.lowerBounds[1] > num2 || _parameters->interval.upperBounds[1] < num2) {
         return;
     }*/
 
@@ -67,7 +70,7 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
         if(!m_chebyshevApproximations[funcNum].isGoodApproximation(m_subdivisionParameters.absApproxTol, m_subdivisionParameters.relApproxTol)) {
             //Increase the goodDegree by 1 up to the max.
             _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum]+1, m_subdivisionParameters.approximationDegree);
-            //Subdivide
+            //Subdivide. TODO: Do I want to subdivide or get the approximations of the other things first?
             return subdivide(_parameters, funcNum);
         }
         else if(!m_chebyshevApproximations[funcNum].hasSignChange()) {
@@ -76,8 +79,8 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
                 return;
             }
         }
-        //Update the good degree
-        _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum], m_chebyshevApproximations[funcNum].getGoodDegree());
+        //Update the good degree to 1 greater than the current deg
+        _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum], m_chebyshevApproximations[funcNum].getGoodDegree() + 1);
     }
     
     //Trim the coeffs
@@ -85,8 +88,8 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
     for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {
         //Trim
         goodApproximations &= m_chebyshevApproximations[funcNum].trimCoefficients(m_subdivisionParameters.absApproxTol, m_subdivisionParameters.relApproxTol, m_subdivisionParameters.targetDegree);
-        //Get the good degree
-        _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum], m_chebyshevApproximations[funcNum].getGoodDegree());
+        //Get the good degree as 1 greater than the current deg
+        _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum], m_chebyshevApproximations[funcNum].getGoodDegree() + 1);
     }
     if(!goodApproximations) {
         return subdivide(_parameters, m_functions.size());

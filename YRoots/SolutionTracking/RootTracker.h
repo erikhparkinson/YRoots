@@ -92,6 +92,8 @@ public:
         for(size_t i = 0; i < _root.size(); i++) {
             thisRoot.root[i] = ((_interval.upperBounds[i] - _interval.lowerBounds[i]) * std::real(_root[i]) + (_interval.upperBounds[i] + _interval.lowerBounds[i])) /2.0;
         }
+        
+        //std::cout<<"Found Root: " << thisRoot << "\n";
     }
     
     void printResults() {
