@@ -57,40 +57,11 @@ void IntervalChecker<Dimension::One>::runQuadraticCheck(ChebyshevApproximation<D
     }
 }
 
-double getLipshitzConstant1D(double* array, size_t arraySize) {
-    double value = 0.0;
-    for(size_t i = 1; i < arraySize; i++) {
-        value += std::abs(array[i])*i*i;
-    }
-    return value;
-}
-
-double evaluateCheb1D(double* array, size_t arraySize, double value) {
-    if(arraySize == 0) {
-        return 0;
-    }
-    else if (arraySize == 1) {
-        return array[0];
-    }
-    else if (arraySize == 2) {
-        return array[0] + value * array[1];
-    }
-    else {
-        double doubleValue = 2*value;
-        double c0 = array[arraySize - 2];
-        double c1 = array[arraySize - 1];
-        double temp;
-        for(size_t i = arraySize-3; i < arraySize; i--) {
-            temp = c0;
-            c0 = array[i] - c1;
-            c1 = temp + c1 * doubleValue;
-        }
-        return c0 + c1*value;
-    }
-}
-
 template <>
 double IntervalChecker<Dimension::One>::getBoundingInterval(std::vector<ChebyshevApproximation<Dimension::One>>& _chebyshevApproximations) {
+    //Constants for this function
+    const double MIN_MOVE = 0.001;
+
     double* array = _chebyshevApproximations[0].getArray();
     size_t arraySize = _chebyshevApproximations[0].getPartialSideLength();
     
@@ -100,13 +71,13 @@ double IntervalChecker<Dimension::One>::getBoundingInterval(std::vector<Chebyshe
     double error = _chebyshevApproximations[0].getApproximationError();
     double a = -1;
     double b = 1;
-    double evalA, evalB, move;
+    
+    //Get the intitial evaluations
+    double evalA = std::abs(evaluateCheb1D(array, arraySize, a));
+    double evalB = std::abs(evaluateCheb1D(array, arraySize, b));
 
     //If the lipshitzConstant is 0, then we can throw it out if we get an eval above the error.
     if(lipshitzConstant == 0) {
-        evalA = evaluateCheb1D(array, arraySize, a);
-        evalB = evaluateCheb1D(array, arraySize, b);
-        
         if(evalA > error || evalB > error) {
             return 0.0;
         }
@@ -115,21 +86,20 @@ double IntervalChecker<Dimension::One>::getBoundingInterval(std::vector<Chebyshe
     
     //Run the values
     bool makingProgress = true;
-    double minMove = 0.001;
     while (a < b && makingProgress) {
         makingProgress = false;
-        evalA = std::abs(evaluateCheb1D(array, arraySize, a));
-        evalB = std::abs(evaluateCheb1D(array, arraySize, b));
         
         if(evalA > error) {
-            move = (evalA - error) / lipshitzConstant;
+            double move = (evalA - error) / lipshitzConstant;
             a += move;
-            makingProgress |= (move > minMove);
+            makingProgress |= (move > MIN_MOVE);
+            evalA = std::abs(evaluateCheb1D(array, arraySize, a));
         }
         if(evalB > error) {
-            move = (evalB - error) / lipshitzConstant;
+            double move = (evalB - error) / lipshitzConstant;
             b -= move;
-            makingProgress |= (move > minMove);
+            makingProgress |= (move > MIN_MOVE);
+            evalB = std::abs(evaluateCheb1D(array, arraySize, b));
         }
     }
 

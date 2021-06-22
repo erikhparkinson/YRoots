@@ -6,6 +6,10 @@
 //  Copyright © 2020 Erik Hales Parkinson. All rights reserved.
 //
 
+#ifndef USE_TIMING
+#define USE_TIMING
+#endif
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -13,7 +17,27 @@
 #include "ThreadedSolver.h"
 #include "thread"
 
+template<Dimension D>
+void runSolve(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, size_t _numThreads, Interval& _interval, const SubdivisionParameters& _subdivisionParameters) {
+    Timer& m_timer = Timer::getInstance();
+    size_t mainConstructorIndex = -1;
+    size_t mainSolveIndex = -1;
+    m_timer.registerTimer(mainConstructorIndex, "Main Constructor");
+    m_timer.registerTimer(mainSolveIndex, "Main Solve");
+
+    m_timer.startTimer(mainConstructorIndex);
+    ThreadedSolver<D> threadedSolver(_functions, _numThreads, _interval, _subdivisionParameters);
+    m_timer.stopTimer(mainConstructorIndex);
+    m_timer.startTimer(mainSolveIndex);
+    threadedSolver.solve();
+    m_timer.stopTimer(mainSolveIndex);
+}
+
 int main(int argc, const char * argv[]) {
+    #ifdef USE_TIMING
+        Timer::enable();
+    #endif
+
     if(argc != 3) {
         std::cout<<"Arguments input and output must be given!\n";
         return 0;
@@ -23,51 +47,45 @@ int main(int argc, const char * argv[]) {
     std::string outputFileName = argv[2];
     
     InputFileParser inputParser (inputFileName);
-    
-    //TODO: Have an input for number of threads
-    size_t numThreads = 1;
-    
-    std::vector<std::unique_ptr<Function>> functions = inputParser.parseFunctions();
-    
-    //TODO: Have an input for the search interval
-    Interval interval;
-    for(size_t i = 0; i < functions.size(); i++) {
-        interval.lowerBounds.push_back(-1.0);
-        interval.upperBounds.push_back(1.0);
-    }
-    
-    std::string errorMessage;
-    //TODO: Check that the number of dimensions equals the number of variables
-    switch(functions.size()) {
+    inputParser.parse();
+        
+    std::vector<std::vector<Function::SharedFunctionPtr>>& functions = inputParser.getFunctions();
+    Interval interval = inputParser.getInterval();
+    size_t numThreads = inputParser.getNumThreads();
+    SubdivisionParameters subdivisionParameters = inputParser.getSubdivisionParameters();
+
+    //Solve
+    switch(functions[0].size()) {
         case 0: {
             printAndThrowRuntimeError("No functions found!");
             break;
         }
         case 1:
         {
-            ThreadedSolver<Dimension::One> threadedSolver(functions, numThreads, interval);
-            threadedSolver.solve();
+            runSolve<Dimension::One>(functions, numThreads, interval, subdivisionParameters);
             break;
         }
         case 2:
         {
-            ThreadedSolver<Dimension::Two> threadedSolver(functions, numThreads, interval);
-            threadedSolver.solve();
+            runSolve<Dimension::Two>(functions, numThreads, interval, subdivisionParameters);
             break;
         }
         case 3:
         {
-            ThreadedSolver<Dimension::Three> threadedSolver(functions, numThreads, interval);
-            threadedSolver.solve();
+            runSolve<Dimension::Three>(functions, numThreads, interval, subdivisionParameters);
             break;
         }
         default:
         {
-            ThreadedSolver<Dimension::NDim> threadedSolver(functions, numThreads, interval);
-            threadedSolver.solve();
+            runSolve<Dimension::NDim>(functions, numThreads, interval, subdivisionParameters);
             break;
         }
     }
+    
+    
+#ifdef USE_TIMING
+    Timer::getTimingResultsAndClear();
+#endif
     
     return 0;
 }

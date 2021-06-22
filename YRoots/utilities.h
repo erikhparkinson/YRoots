@@ -65,7 +65,7 @@ bool isNumericDigit(const char c) {
     return c >= 49 && c <= 57;
 }
 
-void printAndThrowRuntimeError(std::string errorMessage) {
+void printAndThrowRuntimeError(const std::string& errorMessage) {
     //TODO: Use this more in all the places runtime error are being thrown
     std::cout<<errorMessage<<"\n";
     throw std::runtime_error(errorMessage);
@@ -82,6 +82,11 @@ std::string toLowerSubstring(std::string _input, size_t _start, size_t _numChars
         }
     }
     return output;
+}
+
+template<typename T1, typename T2>
+inline T1 power(T1 base, T2 exponent) {
+    return std::pow(base, exponent);
 }
 
 template<typename T>
@@ -157,22 +162,12 @@ enum Dimension {
     Two,
     Three,
     Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Eleven,
-    Twelve,
-    Thirteen,
-    Fourteen,
-    Fifteen
+    Five
 };
 
 enum SolveMethod {
     ConstantTermCheck = 0,
-    QuadrticCheck = 1,
+    QuadraticCheck = 1,
     BoundingInterval = 2,
     LinearSolve = 3,
     SpectralSolve = 4,
@@ -185,7 +180,7 @@ struct Interval {
     double              area;
     bool                areaFound;
     
-    std::string toString() {
+    std::string toString() const {
         std::string result = "";
         for(size_t dim = 0; dim < lowerBounds.size(); dim++) {
             if(dim != 0) {
@@ -237,17 +232,11 @@ void projectInterval(Interval& resultInterval, const Interval& currentInterval, 
 struct SubdivisionParameters {
     double relApproxTol = 1.e-10;
     double absApproxTol = 1.e-10;
-    double maxConditionNumber = 1e5;
     double goodZerosFactor = 100;
     double minGoodZerosTol = 1e-5;
-    bool checkEvaluationError = true;
-    size_t checkEvaluationFrequency = 1;
-    size_t approximationDegree = 10;
+    size_t approximationDegree = 20;
     size_t targetDegree = 1;
     size_t maxLevel = 999;
-    bool returnPotentials = false;
-    double targetTol = 1.e-15;
-    bool useTargetTol = true;
 };
 
 struct SolveParameters {
@@ -347,11 +336,13 @@ private:
     Timer() {}
     
     void printTimingResults() {
+#ifdef USE_TIMING
         std::cout<<"\nTIMING RESULTS\n";
         for(size_t i = 0; i < m_timingDetails.size(); i++) {
             std::cout<<m_timingDetails[i]<<"\n";
         }
         std::cout<<"\n";
+#endif
     }
     
     void clearClaims() {
@@ -360,6 +351,7 @@ private:
         }
     }
     
+    static size_t                   m_index;
     static bool                     m_enabled;
     std::vector<TimingDetails>      m_timingDetails;
 
@@ -386,16 +378,17 @@ public:
 #endif
     }
     
-    inline void registerTimer(size_t index, std::string name) {
+    inline void registerTimer(size_t& index, std::string name) {
 #ifdef USE_TIMING
         if(!Timer::isEnabled()) {
             return;
         }
         
-        if(index >= m_timingDetails.size()) {
-            m_timingDetails.resize(index + 1);
+        if(index == -1) {
+            index = m_index++;
+            m_timingDetails.resize(m_index);
         }
-        
+                
         m_timingDetails[index].claim(name);
 #endif
     }
@@ -418,6 +411,7 @@ public:
     }
 };
 bool Timer::m_enabled = false;
+size_t Timer::m_index = 0;
 
 
 

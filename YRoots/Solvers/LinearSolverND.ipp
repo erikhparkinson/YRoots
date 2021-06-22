@@ -24,18 +24,17 @@ m_rootTracker(_rootTracker)
 
 template <Dimension D>
 void LinearSolver<D>::solve(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, Interval& _interval, double _goodZerosTol) {
-    //The j,i spot in the m_linears matrix is the ith linear term of the jth approximation
+    //The i,j spot in the m_linears matrix is the jth linear term of the ith approximation
     //The ith spot in the m_constants vector is the 0th spot in the ith approximation.
     
-    size_t spot = 1;
-    size_t sideLength = _chebyshevApproximations[0].getSideLength();
-    for(size_t i = 0; i < m_rank; i++) {
-        //Set all the ith terms for each approximaitons.
-        for(size_t j = 0; j < m_rank; j++) {
-            m_linears(j,i) = _chebyshevApproximations[j].getArray()[spot];
+    for(size_t i = 0; i < m_rank; i++) { //Iterate through each approximation
+        size_t spot = 1;
+        size_t sideLength = _chebyshevApproximations[i].getSideLength();
+        for(size_t j = 0; j < m_rank; j++) { //Iterate through the linear terms in the approximation
+            m_linears(i,j) = _chebyshevApproximations[i].getArray()[spot];
+            spot *= sideLength;
         }
-        spot *= sideLength;
-        //Set the constant terms
+        //Set the constant term
         m_constants(i) = _chebyshevApproximations[i].getArray()[0];
     }
     

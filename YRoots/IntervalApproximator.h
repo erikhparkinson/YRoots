@@ -18,12 +18,12 @@ template <Dimension D>
 class IntervalApproximator
 {
 public:
-    IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, double* _inputPartial);
+    IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, size_t _inputPartialSize);
     IntervalApproximator(IntervalApproximator const&) = delete;
     IntervalApproximator& operator=(IntervalApproximator const&) = delete;
     ~IntervalApproximator();
     
-    void approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, bool _findInfNorm);
+    void approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, bool _findInfNorm);
 
     bool getSignChange() {
         return m_signChange;
@@ -60,7 +60,7 @@ private:
     double*         m_input;
     double*         m_output;
     fftw_r2r_kind*  m_kinds;
-    double*         m_inputPartial;
+    std::vector<double> m_inputPartial;
     fftw_plan       m_plan;
     
     //For evaluating just part of the grid
@@ -75,9 +75,21 @@ private:
     double          m_infNorm;
     bool            m_signChange;
     
-    static const size_t     m_timerIntervalApproximatorIndex = 2;
+    static size_t           m_timerInitIndex;
+    static size_t           m_timerPlanIndex;
+    static size_t           m_timerIntervalApproximatorIndex;
+    static size_t           m_timerFFT;
     Timer&                  m_timer = Timer::getInstance();
 };
+
+template<Dimension D>
+size_t IntervalApproximator<D>::m_timerIntervalApproximatorIndex = -1;
+template<Dimension D>
+size_t IntervalApproximator<D>::m_timerFFT = -1;
+template<Dimension D>
+size_t IntervalApproximator<D>::m_timerInitIndex = -1;
+template<Dimension D>
+size_t IntervalApproximator<D>::m_timerPlanIndex = -1;
 
 #include "IntervalApproximator1D.ipp"
 #include "IntervalApproximator2D.ipp"

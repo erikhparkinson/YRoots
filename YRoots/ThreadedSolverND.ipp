@@ -10,37 +10,24 @@
 #define ThreadedSolverND_ipp
 
 template <Dimension D>
-ThreadedSolver<D>::ThreadedSolver(std::vector<std::unique_ptr<Function>>& _functions, size_t _numThreads, Interval& _startInterval) :
+ThreadedSolver<D>::ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, size_t _numThreads, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters) :
+m_allFunctions(_functions),
 m_numThreads(_numThreads),
+m_killThreads(false),
+m_numRunningThreads(0),
 m_intervalsToRun(m_numThreads),
 m_intervalTracker(m_numThreads, true, _startInterval.getArea()), //TODO: Whether to store should be a parameter
 m_rootTracker(m_numThreads)
 {
-    //Limited the number of threads by the hardware amount
-    m_numThreads = std::min(m_numThreads, (size_t)std::thread::hardware_concurrency());
-    m_numRunningThreads.store(0);
-
-    //Make m_allFunctions
-    m_allFunctions.resize(m_numThreads);
-    for(size_t allFuncNum = 0; allFuncNum + 1 < m_numThreads; allFuncNum++) {
-        for(size_t funcNum = 0; funcNum < _functions.size(); funcNum++) {
-            m_allFunctions[allFuncNum].emplace_back(std::make_unique<Function>(*_functions[funcNum].get()));
-        }
+    if(m_numThreads == 0) {
+        printAndThrowRuntimeError("Can't run with 0 threads!");
     }
-    //This final function we just move the pointer over to avoid an unneeded copy
-    for(size_t funcNum = 0; funcNum < _functions.size(); funcNum++) {
-        m_allFunctions[m_allFunctions.size() - 1].emplace_back(_functions[funcNum].release());
+    else if(_functions.size() != m_numThreads) {
+        printAndThrowRuntimeError("Not enough functions passed to solver!");
     }
-
-    
-    //TODO: Parse these parameters
-    SubdivisionParameters subdivisionParameters;
-        
-    //Create the subdivision solvers
-    m_killThreads.store(false);
     
     //Create the Solve Parameters Pool
-    size_t rank = _functions.size();
+    size_t rank = _functions[0].size();
     SolveParameters defaultSolveParameters;
     defaultSolveParameters.interval.lowerBounds.resize(rank);
     defaultSolveParameters.interval.upperBounds.resize(rank);
@@ -52,12 +39,12 @@ m_rootTracker(m_numThreads)
     //Create the first solve parameters
     m_firstSolveParameters = m_solveParametersPool[0].pop();
     m_firstSolveParameters->interval = _startInterval;
-    std::fill(m_firstSolveParameters->goodDegrees.begin(), m_firstSolveParameters->goodDegrees.end(), subdivisionParameters.approximationDegree);
+    std::fill(m_firstSolveParameters->goodDegrees.begin(), m_firstSolveParameters->goodDegrees.end(), _subdivisionParameters.approximationDegree);
     m_firstSolveParameters->currentLevel = 0;
 
     //Create the solvers
     for(int threadNum = 0; threadNum < m_numThreads; threadNum++) {
-        m_subdivisionSolvers.emplace_back(std::make_unique<SubdivisionSolver<D>>(threadNum, m_allFunctions[threadNum], m_intervalsToRun, m_solveParametersPool[threadNum], subdivisionParameters, m_intervalTracker, m_rootTracker));
+        m_subdivisionSolvers.emplace_back(std::make_unique<SubdivisionSolver<D>>(threadNum, m_allFunctions[threadNum], m_intervalsToRun, m_solveParametersPool[threadNum], _subdivisionParameters, m_intervalTracker, m_rootTracker));
     }
 }
 
@@ -75,10 +62,14 @@ ThreadedSolver<D>::~ThreadedSolver() {
 template <Dimension D>
 void ThreadedSolver<D>::solve() {
     
+    //TODO: Create the threads in the constructor and have the threads help create the m_subdivisionSolvers?
+    //ALso, why do I have the sleep for a millisecond here???
+    
     m_intervalsToRun.push(0, m_firstSolveParameters);
     for(int threadNum = 0; threadNum < m_numThreads - 1; threadNum++) {
         //Create the threads
         m_threadPool.push_back(std::thread(&ThreadedSolver<D>::runThread, this, threadNum));
+        std::this_thread::sleep_for(std::chrono::microseconds(1500));
     }
     
     //Run the front thread as well
@@ -91,8 +82,10 @@ void ThreadedSolver<D>::solve() {
     }
     m_threadPool.clear();
     
-    //m_rootTracker.logResults();
-    //m_intervalTracker.logResults();
+#ifndef TESTING
+    m_rootTracker.logResults();
+    m_intervalTracker.logResults();
+#endif
 }
 
 template <Dimension D>

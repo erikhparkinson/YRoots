@@ -35,15 +35,16 @@ m_approximation(_approximation)
     }
     
     //Create Interval Approximators
+    //They all use the same input vector, the output is the same
     size_t nextChangeDegree = _maxApproximationDegree;
     bool use1 = false;
     m_intervalApproximators.resize(m_maxApproximationDegree);
     for(size_t degree = m_maxApproximationDegree; degree > 0; degree--) {
         if(degree == nextChangeDegree) {
             nextChangeDegree /= 2;
-            use1 = ~use1;
+            use1 = !use1;
         }
-        m_intervalApproximators[degree-1] = std::make_unique<IntervalApproximator<D>>(m_rank, degree, m_input, use1 ? m_output1 : m_output2, m_kinds, m_inputPartial);
+        m_intervalApproximators[degree-1] = std::make_unique<IntervalApproximator<D>>(m_rank, degree, m_input, use1 ? m_output1 : m_output2, m_kinds, partialArrayLength);
     }
 }
 
@@ -63,17 +64,13 @@ ChebyshevApproximator<D>::~ChebyshevApproximator()
 
 
 template <Dimension D>
-void ChebyshevApproximator<D>::approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, size_t _approximationDegree)
+void ChebyshevApproximator<D>::approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree)
 {
     if(_approximationDegree > m_intervalApproximators.size()) {
-        std::string errorMessage = "Approximation Degree is too large!";
-        std::cout<<errorMessage<<"\n";
-        throw std::runtime_error(errorMessage);
+        printAndThrowRuntimeError("Approximation Degree is too large!");
     }
     else if(_approximationDegree == 0) {
-        std::string errorMessage = "Approximation Degree can not be 0!";
-        std::cout<<errorMessage<<"\n";
-        throw std::runtime_error(errorMessage);
+        printAndThrowRuntimeError("Approximation Degree can not be 0!");
     }
     
     m_firstApproximator = _approximationDegree-1;
@@ -88,7 +85,7 @@ void ChebyshevApproximator<D>::approximate(const std::unique_ptr<Function>& _fun
     m_infNorm = m_intervalApproximators[m_secondApproximator]->getInfoNorm();
     m_signChange = m_intervalApproximators[m_secondApproximator]->getSignChange();
     calculateApproximationError();
-    
+        
     m_approximation.setApproximation(_approximationDegree, m_sideLength1, m_intervalApproximators[m_firstApproximator]->getOutput(), m_infNorm, m_signChange, m_approximationError);
 }
 
@@ -97,6 +94,7 @@ void ChebyshevApproximator<D>::calculateApproximationError()
 {
     double* approximation1 = m_intervalApproximators[m_firstApproximator]->getOutput();
     double* approximation2 = m_intervalApproximators[m_secondApproximator]->getOutput();
+    assert(approximation1 != approximation2);
     m_approximationError = 0.0;
         
     //Set up the needed variables
@@ -124,7 +122,7 @@ void ChebyshevApproximator<D>::calculateApproximationError()
                 spot2 += inputSpot[i]*multipliers2[i];
             }
             if(use1) {
-                m_approximationError += std::abs(approximation2[spot2] - (approximation1[spot1]));
+                m_approximationError += std::abs(approximation2[spot2] - approximation1[spot1]);
             }
             else {
                 m_approximationError += std::abs(approximation2[spot2]);

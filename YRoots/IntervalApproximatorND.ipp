@@ -10,7 +10,7 @@
 #define IntervalApproximatorND_ipp
 
 template <Dimension D>
-IntervalApproximator<D>::IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, double* _inputPartial):
+IntervalApproximator<D>::IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, size_t _inputPartialSize):
 m_rank(_rank),
 m_approximationDegree(_approximationDegree),
 m_sideLength(2*_approximationDegree),
@@ -20,10 +20,15 @@ m_partialArrayLength(power(m_partialSideLength, m_rank)),
 m_input(_input),
 m_output(_output),
 m_kinds(_kinds),
-m_inputPartial(_inputPartial),
 m_infNorm(0),
 m_signChange(false)
 {
+    m_timer.registerTimer(m_timerInitIndex, "Interval Approximator Init");
+    m_timer.registerTimer(m_timerPlanIndex, "Interval Approximator Planning");
+    m_timer.startTimer(m_timerInitIndex);
+    
+    m_inputPartial.resize(_inputPartialSize);
+    
     //Alllocate memory
     m_dimensions = (int*) malloc(m_rank * sizeof (int));
     
@@ -34,7 +39,9 @@ m_signChange(false)
 
     //Crete the plan
     //Options FFTW_EXHAUSTIVE, FFTW_PATIENT, FFTW_MEASURE, FFTW_ESTIMATE. See http://www.fftw.org/fftw3_doc/Planner-Flags.html#Planner-Flags.
+    m_timer.startTimer(m_timerPlanIndex);
     m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
+    m_timer.stopTimer(m_timerPlanIndex);
 
     //Create the precomputed points.
     m_evaluationPointsPreTransform.resize(m_rank);
@@ -54,6 +61,9 @@ m_signChange(false)
     preComputePartialToFullTransition();
         
     m_timer.registerTimer(m_timerIntervalApproximatorIndex, "Interval Approximator");
+    m_timer.registerTimer(m_timerFFT, "FFT");
+    
+    m_timer.stopTimer(m_timerInitIndex);
 }
 
 template <Dimension D>
@@ -151,7 +161,7 @@ void IntervalApproximator<D>::preComputePartialToFullTransition()
 }
 
 template <Dimension D>
-void IntervalApproximator<D>::approximate(const std::unique_ptr<Function>& _function, const Interval& _currentInterval, bool _findInfNorm)
+void IntervalApproximator<D>::approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, bool _findInfNorm)
 {
     m_timer.startTimer(m_timerIntervalApproximatorIndex);
 
@@ -166,7 +176,7 @@ void IntervalApproximator<D>::approximate(const std::unique_ptr<Function>& _func
             
     //Evaluate the functions at the points
     double divisor = static_cast<double>(power(m_approximationDegree, m_rank));
-    _function->evaluateGrid(m_evaluationPoints, m_inputPartial, divisor);
+    _function->evaluateGrid(m_evaluationPoints, m_inputPartial);
     
     if(_findInfNorm) {
         m_infNorm = 0;
@@ -178,17 +188,18 @@ void IntervalApproximator<D>::approximate(const std::unique_ptr<Function>& _func
             hasNeg |= m_inputPartial[i] < 0;
         }
         m_signChange = hasPos && hasNeg;
-        m_infNorm *= divisor;
     }
     
     //Fill in the full input
     for(size_t i = 0; i < m_arrayLength; i++) {
-        m_input[i] = m_inputPartial[m_partialToFullTransition[i]];
+        m_input[i] = m_inputPartial[m_partialToFullTransition[i]] / divisor;
     }
     
     //Take the fourier transform
+    m_timer.startTimer(m_timerFFT);
     fftw_execute(m_plan);
-        
+    m_timer.stopTimer(m_timerFFT);
+
     //Divide spots by 2
     for(size_t i = 0; i < m_divideByTwoPoints.size(); i++) {
         m_output[m_divideByTwoPoints[i]] /= 2;

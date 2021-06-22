@@ -37,6 +37,7 @@ public:
 
 - (void)setUp {
     m_allocated = false;
+    Function::clearSavedFunctions();
 }
 
 - (void)tearDown {
