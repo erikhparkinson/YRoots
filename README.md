@@ -54,9 +54,20 @@ Each Parameter Line should be of the form
 ```<name> = <value>;```
 
 Currently supported parameters are
-* numThreads
-  * Must be an integer. Defaults to 1. -1 will use the maximum number of possible threads determined by `std::thread::hardware_concurrency()`. Otherwise this value must be positive. Will be automatically be capped at `std::thread::hardware_concurrency()`.
-  
+* numThreads : Defaults to 1
+  * Must be an integer. Defaults to 1. -1 will use the maximum number of possible threads determined by `std::thread::hardware_concurrency()`. Otherwise this value must be positive.
+* relApproxTol : Defaults to 1e-10
+  * Must be a positive number. Used with absApproxTol to determine if an approximation is good.
+* absApproxTol : Defaults to 1e-10
+  * Must be a positive number. An approximation if good if `error < absApproxTol + inf_norm * relApproxTol`.
+* goodZerosFactor : Defaults to 100
+  * Must be a non-negative number. A zero is declared to be on the real line [-1,1] if it's real and imaginary parts are no more than tol * approx_error away from it.
+* minGoodZerosTol: Defaults to 1e-5
+  * The min value of tol * approx_error in the goodZerosFactor calculation.
+* approximationDegree : Defaults to 20
+  * The initial approximation degree used.
+* maxLevel : Defaults to 999
+  * How many levls deep the subdivision will go before giving up.
  
 ## Intervals
 This defines the intervals on which the roots are found. Currently this is only defined for an n-dimensional box. This section should contain a line for each of the _n_ variables defined in the _Functions_ section. Each line is of the form
