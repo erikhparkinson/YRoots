@@ -22,6 +22,25 @@
 
 //TODO: Make unit tests for these functions!
 
+std::string formatTimePretty(double nanoseconds) {
+    static constexpr double thousand = 1000;
+    static constexpr double million = thousand*thousand;
+    static constexpr double billion = million*thousand;
+
+    if(nanoseconds < thousand) {
+        return std::to_string(nanoseconds) + "ns";
+    }
+    else if(nanoseconds < million) {
+        return std::to_string(nanoseconds/thousand) + "us";
+    }
+    else if(nanoseconds < billion) {
+        return std::to_string(nanoseconds/million) + "ms";
+    }
+    else {
+        return std::to_string(nanoseconds/billion) + "s";
+    }
+}
+
 void printMatrix(Eigen::MatrixXd& matrix) {
     for(size_t i = 0; i < matrix.rows(); i++) {
         for(size_t j = 0; j < matrix.cols(); j++) {
@@ -256,164 +275,6 @@ struct SolveParameters {
         
     }
 };
-
-
-
-
-
-struct TimingDetails {
-    //TODO: Have this hold a vector of the individual run times, so we can print the median run time, highest 10%, lowest 10% etc
-    
-    std::string                                                 name;
-    bool                                                        indexClaimed;
-    size_t                                                      runCount;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
-    std::chrono::time_point<std::chrono::high_resolution_clock> end;
-    double                                                      runTimesNanos;
-    
-    TimingDetails() : indexClaimed(false), runCount(0), runTimesNanos(0.0) {}
-    
-    void claim(std::string _name) {
-        if(indexClaimed && _name != name) {
-            printAndThrowRuntimeError(_name + " is trying to claim a timing detail that is already claimed by " + name);
-        }
-        else {
-            indexClaimed = true;
-            name = _name;
-        }
-    }
-    
-    void clearClaim() {
-        name = "";
-        indexClaimed = false;
-        runCount = 0;
-        runTimesNanos = 0;
-    }
-    
-    std::string formatTimePretty(double time) const {
-        static constexpr double thousand = 1000;
-        static constexpr double million = thousand*thousand;
-        static constexpr double billion = million*thousand;
-
-        if(time < thousand) {
-            return std::to_string(time) + "ns";
-        }
-        else if(time < million) {
-            return std::to_string(time/thousand) + "us";
-        }
-        else if(time < billion) {
-            return std::to_string(time/million) + "ms";
-        }
-        else {
-            return std::to_string(time/billion) + "s";
-        }
-    }
-    
-    std::string getTimeString() const {
-        return "Total Time: " + formatTimePretty(runTimesNanos) + "\tAverage Time: " + formatTimePretty(runTimesNanos / runCount);
-    }
-    
-    friend std::ostream& operator<<(std::ostream& stream, const TimingDetails& timingDetails) {
-        stream << timingDetails.name << ":\tRun Count: "<< timingDetails.runCount << "\t"<< timingDetails.getTimeString();
-        return stream;
-    }
-};
-
-class Timer
-{
-public:
-    static Timer& getInstance()
-    {
-        static Timer    instance;
-        return instance;
-    }
-    
-    //Deleted copy functions
-    Timer(Timer const&)           = delete;
-    void operator=(Timer const&)  = delete;
-
-private:
-    Timer() {}
-    
-    void printTimingResults() {
-#ifdef USE_TIMING
-        std::cout<<"\nTIMING RESULTS\n";
-        for(size_t i = 0; i < m_timingDetails.size(); i++) {
-            std::cout<<m_timingDetails[i]<<"\n";
-        }
-        std::cout<<"\n";
-#endif
-    }
-    
-    void clearClaims() {
-        for(size_t i = 0; i < m_timingDetails.size(); i++) {
-            m_timingDetails[i].clearClaim();
-        }
-    }
-    
-    static size_t                   m_index;
-    static bool                     m_enabled;
-    std::vector<TimingDetails>      m_timingDetails;
-
-public:
-    inline void startTimer(size_t index) {
-#ifdef USE_TIMING
-        if(!Timer::isEnabled()) {
-            return;
-        }
-        
-        m_timingDetails[index].start = std::chrono::high_resolution_clock::now();
-#endif
-    }
-
-    inline void stopTimer(size_t index) {
-#ifdef USE_TIMING
-        if(!Timer::isEnabled()) {
-            return;
-        }
-        
-        m_timingDetails[index].end = std::chrono::high_resolution_clock::now();
-        m_timingDetails[index].runTimesNanos += static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(m_timingDetails[index].end - m_timingDetails[index].start).count());
-        m_timingDetails[index].runCount++;
-#endif
-    }
-    
-    inline void registerTimer(size_t& index, std::string name) {
-#ifdef USE_TIMING
-        if(!Timer::isEnabled()) {
-            return;
-        }
-        
-        if(index == -1) {
-            index = m_index++;
-            m_timingDetails.resize(m_index);
-        }
-                
-        m_timingDetails[index].claim(name);
-#endif
-    }
-    
-    static void getTimingResultsAndClear() {
-        getInstance().printTimingResults();
-        getInstance().clearClaims();
-    }
-    
-    static void enable() {
-        m_enabled = true;
-    }
-    
-    static void disable() {
-        m_enabled = false;
-    }
-    
-    static bool isEnabled() {
-        return m_enabled;
-    }
-};
-bool Timer::m_enabled = false;
-size_t Timer::m_index = 0;
-
-
 
 
 #endif /* utilities_h */

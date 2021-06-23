@@ -16,6 +16,7 @@
 #include "InputFileParser.h"
 #include "ThreadedSolver.h"
 #include "thread"
+#include "Timer.h"
 
 template<Dimension D>
 void runSolve(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, size_t _numThreads, Interval& _interval, const SubdivisionParameters& _subdivisionParameters) {
@@ -38,13 +39,17 @@ int main(int argc, const char * argv[]) {
         Timer::enable();
     #endif
 
-    if(argc != 3) {
-        std::cout<<"Arguments input and output must be given!\n";
-        return 0;
-    }
     //Get the file names
-    std::string inputFileName = argv[1];
-    std::string outputFileName = argv[2];
+    std::string inputFileName;
+    if(argc == 1) {
+        inputFileName = "input.txt";
+    }
+    else if (argc == 2) {
+        inputFileName = argv[1];
+    }
+    else {
+        printAndThrowRuntimeError("Only one input allowed!");
+    }
     
     InputFileParser inputParser (inputFileName);
     inputParser.parse();

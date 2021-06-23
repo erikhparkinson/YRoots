@@ -13,6 +13,7 @@
 #include "utilities.h"
 #include <unordered_map>
 #include <unordered_set>
+#include "Timer.h"
 
 //TODO: Maybe I should set this up so that coeffs are stored seperately on sums and products? So 4cos(x)+5cos(x) use the same cos(x)?
 

@@ -16,6 +16,7 @@
 #include "InputFileParser.h"
 #include "ThreadedSolver.h"
 #include "thread"
+#include "Timer.h"
 
 @interface TestThreadedSolver : XCTestCase
 
@@ -125,7 +126,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
 
         double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-        std::cout << "Solve with " << numThreads << " threads takes " <<nanos/(trials * 1000)<< "us.\n";
+        std::cout << "Solve with " << numThreads << " threads takes " << formatTimePretty(nanos/trials)<< ".\n";
 
         std::vector<FoundRoot> foundRoots =  solver.getRoots();
         for(FoundRoot& root : foundRoots) {
@@ -181,7 +182,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
             std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
             double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
         
-            std::cout << "Solve " << functionString << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<nanos/(trials * 1e6)<< "ms.\n";
+            std::cout << "Solve " << functionString << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " << formatTimePretty(nanos/trials)<< ".\n";
 
             //Assert the solutions
             std::vector<FoundRoot> foundRoots =  solver.getRoots();
@@ -261,7 +262,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
             std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
             double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
         
-            std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<nanos/(trials * 1e6)<< "ms.\n";
+            std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " << formatTimePretty(nanos/trials)<< ".\n";
             
             //Assert the solutions
             std::vector<FoundRoot> foundRoots =  solver.getRoots();
@@ -314,7 +315,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
 
-    std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<nanos/(trials * 1e6)<< "ms.\n";
+    std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<formatTimePretty(nanos/trials)<< ".\n";
     
     //Assert the solutions
     std::vector<FoundRoot> foundRoots =  solver.getRoots();

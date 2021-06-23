@@ -207,7 +207,7 @@
 
         double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
         
-        std::cout << "Evaluating function: " << numFives << " takes " <<nanos/(trials)<< "ns.\n";
+        std::cout << "Evaluating function: " << numFives << " takes " << formatTimePretty(nanos/(trials)) << ".\n";
         //std::cout<<result<<"\n";
     }
 }
@@ -243,7 +243,7 @@
 
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout << "\nEvaluating function: " << functionString << " on grid takes " <<nanos/(1000*trials)<< "us.\n\n";
+    std::cout << "\nEvaluating function: " << functionString << " on grid takes " << formatTimePretty(nanos/trials)<< ".\n\n";
 }
 
 - (void)testFunctionParsingTiming {
@@ -261,7 +261,7 @@
 
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout << "\nCreating function: " << functionString << " takes " <<nanos/(1000*trials)<< "us.\n\n";
+    std::cout << "\nCreating function: " << functionString << " takes " << formatTimePretty(nanos/trials) << ".\n\n";
 }
 
 

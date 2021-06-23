@@ -17,6 +17,7 @@
 #include <thread>
 #include <algorithm>
 #include "Function.h"
+#include "Timer.h"
 
 class InputFileParser {
 public:
