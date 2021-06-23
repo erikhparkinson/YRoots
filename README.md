@@ -68,6 +68,10 @@ Currently supported parameters are
   * The initial approximation degree used.
 * maxLevel : Defaults to 999
   * How many levls deep the subdivision will go before giving up.
+* trackIntervals : Defaults to true
+  * If true the intervals are tracked and the results of how each one is solved is saved in `intervals.txt`.
+* useTimer : Defaults to false
+  * If true timing details are recorded and saved in `timing.txt`.
  
 ## Intervals
 This defines the intervals on which the roots are found. Currently this is only defined for an n-dimensional box. This section should contain a line for each of the _n_ variables defined in the _Functions_ section. Each line is of the form
