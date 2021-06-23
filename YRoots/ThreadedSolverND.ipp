@@ -16,7 +16,7 @@ m_numThreads(_numThreads),
 m_killThreads(false),
 m_numRunningThreads(0),
 m_intervalsToRun(m_numThreads),
-m_intervalTracker(m_numThreads, true, _startInterval.getArea()), //TODO: Whether to store should be a parameter
+m_intervalTracker(m_numThreads, _subdivisionParameters.trackIntervals, _startInterval.getArea()),
 m_rootTracker(m_numThreads)
 {
     if(m_numThreads == 0) {

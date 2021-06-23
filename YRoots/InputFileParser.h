@@ -15,6 +15,7 @@
 #include <vector>
 #include <set>
 #include <thread>
+#include <algorithm>
 #include "Function.h"
 
 class InputFileParser {
@@ -102,6 +103,18 @@ public:
     }
     
 private:
+    bool parseBool(std::string inputString) {
+        std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
+        if(inputString == "true" || inputString == "t" || inputString == "y" || inputString == "yes") {
+            return true;
+        }
+        else if (inputString == "false" || inputString == "f" || inputString == "n" || inputString == "no") {
+            return false;
+        }
+        printAndThrowRuntimeError("Parser Error! Invalid bool format!");
+        return false;
+    }
+    
     int parseInteger(const std::string& inputString) {
         try{
             return std::stoi(inputString);
@@ -182,6 +195,9 @@ private:
                 if(m_subdivisionParameters.maxLevel < 0) {
                     printAndThrowRuntimeError("Parameter Error! minGoodZerosTol must be >= 0!");
                 }
+            }
+            else if(parameterString[0] == "trackIntervals") {
+                m_subdivisionParameters.trackIntervals = parseBool(parameterString[1]);
             }
             else {
                 printAndThrowRuntimeError("Parser Error! Unrecognized Parameter " + parameterString[0] + "!");

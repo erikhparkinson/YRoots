@@ -87,6 +87,12 @@
     inputPoints[0] = 2;
     result = tempFunction11.evaluate(inputPoints);
     XCTAssert(withinEpslion(result, 1024));
+
+    functionString = "2*(x0-1)";
+    Function tempFunction12("", functionString, variableNames);
+    inputPoints[0] = 5;
+    result = tempFunction12.evaluate(inputPoints);
+    XCTAssert(withinEpslion(result, 8));
 }
 
 - (void)testFunction2DBasic {

@@ -66,7 +66,6 @@ bool isNumericDigit(const char c) {
 }
 
 void printAndThrowRuntimeError(const std::string& errorMessage) {
-    //TODO: Use this more in all the places runtime error are being thrown
     std::cout<<errorMessage<<"\n";
     throw std::runtime_error(errorMessage);
 }
@@ -237,6 +236,7 @@ struct SubdivisionParameters {
     size_t approximationDegree = 20;
     size_t targetDegree = 1;
     size_t maxLevel = 999;
+    bool trackIntervals = true;
 };
 
 struct SolveParameters {
