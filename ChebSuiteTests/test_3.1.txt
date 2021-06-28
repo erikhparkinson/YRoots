@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = ((x-.3)^2+2*(y+0.3)^2-1);
+f2 = ((x-.49)^2+(y+.5)^2-1)*((x+0.5)^2+(y+0.5)^2-1)*((x-1)^2+(y-0.5)^2-1);
+FUNCTIONS_END;
+
+END;

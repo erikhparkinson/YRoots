@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = exp(x-2*x^2-y^2)*sin(10*(x+y+x*y^2));
+f2 = exp(-x+2*y^2+x*y^2)*sin(10*(x-y-2*x*y^2));
+FUNCTIONS_END;
+
+END;

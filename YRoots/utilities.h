@@ -41,7 +41,7 @@ std::string formatTimePretty(double nanoseconds) {
     }
 }
 
-void printMatrix(Eigen::MatrixXd& matrix) {
+void printMatrix(const Eigen::MatrixXd& matrix) {
     for(size_t i = 0; i < matrix.rows(); i++) {
         for(size_t j = 0; j < matrix.cols(); j++) {
             std::cout<<matrix(i,j)<<"\t";
@@ -51,7 +51,7 @@ void printMatrix(Eigen::MatrixXd& matrix) {
     std::cout<<"\n";
 }
 
-void printVector(Eigen::VectorXd& vector) {
+void printVector(const Eigen::VectorXd& vector) {
     for(size_t i = 0; i < vector.rows(); i++) {
         std::cout<<vector(i)<<"\t";
     }
@@ -70,6 +70,15 @@ std::vector<std::string> split(const std::string& string, const std::string& del
     return results;
 }
 
+void replaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace) {
+    //Copied from https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string/5878802
+    size_t pos = 0;
+    while ((pos = subject.find(search, pos)) != std::string::npos) {
+         subject.replace(pos, search.length(), replace);
+         pos += replace.length();
+    }
+}
+
 bool is_number(const std::string& s) {
     return( strspn( s.c_str(), "-.0123456789" ) == s.size() );
 }
@@ -84,8 +93,14 @@ bool isNumericDigit(const char c) {
     return c >= 49 && c <= 57;
 }
 
-void printAndThrowRuntimeError(const std::string& errorMessage) {
-    std::cout<<errorMessage<<"\n";
+
+inline void printWarning(const std::string& warningMessage) {
+    //Add a newline before and after to not interfere with the percent tracking.
+    std::cout<<"\n"<<warningMessage<<"\n";
+}
+
+inline void printAndThrowRuntimeError(const std::string& errorMessage) {
+    //std::cout<<errorMessage<<"\n"; //I don't really need to print it, the runtime error prints it.
     throw std::runtime_error(errorMessage);
 }
 
@@ -231,11 +246,11 @@ struct Interval {
         areaFound = true;
     }
     
-    void clear() {
+    inline void clear() {
         areaFound = false;
     }
     
-    Interval() {}
+    Interval() : areaFound(false) {}
 };
 
 void projectInterval(Interval& resultInterval, const Interval& currentInterval, const Interval& projectOntoInterval) {
@@ -254,7 +269,7 @@ struct SubdivisionParameters {
     double minGoodZerosTol = 1e-5;
     size_t approximationDegree = 20;
     size_t targetDegree = 1;
-    size_t maxLevel = 999;
+    size_t maxLevel = 50;
     bool trackIntervals = true;
 };
 
@@ -263,16 +278,10 @@ struct SolveParameters {
     size_t currentLevel;
     std::vector<size_t> goodDegrees;
     
-    SolveParameters() : currentLevel(0) {
+    SolveParameters() : currentLevel(0) {}
         
-    }
-    
-    SolveParameters(Interval _interval, size_t _currentLevel, std::vector<size_t> _goodDegrees) :
-    interval(_interval),
-    currentLevel(_currentLevel),
-    goodDegrees(_goodDegrees)
-    {
-        
+    inline void clear() {
+        interval.clear();
     }
 };
 

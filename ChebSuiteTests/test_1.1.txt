@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = 144*(x^4+y^4)-225*(x^2+y^2) + 350*x^2*y^2+81;
+f2 = y-x^6;
+FUNCTIONS_END;
+
+END;

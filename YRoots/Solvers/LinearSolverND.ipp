@@ -35,9 +35,9 @@ void LinearSolver<D>::solve(std::vector<ChebyshevApproximation<D>>& _chebyshevAp
             spot *= sideLength;
         }
         //Set the constant term
-        m_constants(i) = _chebyshevApproximations[i].getArray()[0];
+        m_constants(i) = -_chebyshevApproximations[i].getArray()[0];
     }
-    
+
     m_result = m_linears.colPivHouseholderQr().solve(m_constants);
     for(size_t i = 0; i < m_rank; i++) {
         m_root[i] = m_result[i];

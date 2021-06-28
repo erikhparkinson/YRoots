@@ -103,6 +103,10 @@ public:
         return m_subdivisionParameters;
     }
     
+    bool useTimer() {
+        return m_useTimer;
+    }
+    
 private:
     bool parseBool(std::string inputString) {
         std::transform(inputString.begin(), inputString.end(), inputString.begin(), ::tolower);
@@ -200,6 +204,9 @@ private:
             else if(parameterString[0] == "trackIntervals") {
                 m_subdivisionParameters.trackIntervals = parseBool(parameterString[1]);
             }
+            else if(parameterString[0] == "useTimer") {
+                m_useTimer = parseBool(parameterString[1]);
+            }
             else {
                 printAndThrowRuntimeError("Parser Error! Unrecognized Parameter " + parameterString[0] + "!");
             }
@@ -285,6 +292,9 @@ private:
             if(functionData.size() != 2) {
                 printAndThrowRuntimeError("Incorrect function definition format!");
             }
+             //Parse ** as ^ so it's easy to copy from python
+            replaceStringInPlace(functionData[1], "**", "^");
+            //TODO: Make it also pull out stuff like 1e-4 here and replace it with 1*10^(-4)
             Function::addFunction(functionData[0], functionData[1], variableNames);
             parseSpot++;
         }
@@ -312,6 +322,7 @@ private:
     Interval m_interval;
     size_t m_numThreads = 1;
     SubdivisionParameters m_subdivisionParameters;
+    bool m_useTimer = false;
     
     static size_t           m_timerInputParserIndex;
     Timer&                  m_timer = Timer::getInstance();

@@ -140,7 +140,12 @@
     variableNames.push_back("y");
     
     std::vector<std::string> functionStrings;
+    functionStrings.push_back("7");
+    functionStrings.push_back("x");
+    functionStrings.push_back("y");
     functionStrings.push_back("x-y");
+    functionStrings.push_back("x-y+.5");
+    functionStrings.push_back("x+y");
     functionStrings.push_back("sin(30*x-y/30)+y");
     functionStrings.push_back("cos(x/30-30*y)-x");
     functionStrings.push_back("x^1.3*cos(y^0.8)");
@@ -174,9 +179,9 @@
                     evalPoints[0] = grid[0][i];
                     evalPoints[1] = grid[1][j];
                     double eval = tempFunction.evaluate(evalPoints);
-                    /*if(!withinEpslion(eval, results[j*numPoints + i])) {
+                    if(!withinEpslion(eval, results[j*numPoints + i])) {
                         std::cout << eval << "\t" << results[j*numPoints + i] << "\t" << std::abs(eval-results[j*numPoints + i]) << "\n";
-                    }*/
+                    }
                     XCTAssert(withinEpslion(eval, results[j*numPoints + i]));
                 }
             }

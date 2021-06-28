@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = sin(4*(x + y/10 + pi/10));
+f2 = cos(2*(x-2*y+pi/7));
+FUNCTIONS_END;
+
+END;
