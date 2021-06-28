@@ -1,6 +1,4 @@
 PARAMETERS;
-absApproxTol = 1e-10;
-relApproxTol = 1e-10;
 PARAMETERS_END;
 
 INTERVAL;

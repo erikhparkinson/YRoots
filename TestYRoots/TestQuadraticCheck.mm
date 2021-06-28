@@ -69,7 +69,7 @@ void allocateMemoryTestQuadraticCheck()
 - (void)test1DBasic {
     //Set up the Mock Class
     size_t rank = 1;
-    IntervalTracker intervalTracker(0, true, 4.0);
+    IntervalTracker intervalTracker(rank, 0, true, 4.0);
     size_t threadNum = 0;
     ConcurrentStack<SolveParameters> intervalsToRun(1);
     SolveParameters defualtParams;
@@ -98,7 +98,7 @@ void allocateMemoryTestQuadraticCheck()
 - (void)testQuadCheckTiming {
     //Set up the Mock Class
     size_t rank = 1;
-    IntervalTracker intervalTracker(0, true, 4.0);
+    IntervalTracker intervalTracker(rank,   0, true, 4.0);
     size_t threadNum = 0;
     ConcurrentStack<SolveParameters> intervalsToRun(1);
     SolveParameters defualtParams;

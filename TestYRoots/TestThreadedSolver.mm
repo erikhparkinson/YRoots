@@ -441,7 +441,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     testNames.push_back("test_3.1");
     testNames.push_back("test_3.2");
     testNames.push_back("test_4.1");
-    testNames.push_back("test_4.2");
+    //testNames.push_back("test_4.2");
 
     for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
         const std::string testName = testNames[testNum];
