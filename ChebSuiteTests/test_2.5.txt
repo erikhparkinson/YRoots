@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-4, 4];
+[-4, 4];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = 2*y*cos(y^2)*cos(2*x)-cos(y);
+f2 = 2*sin(y^2)*sin(2*x)-sin(x);
+FUNCTIONS_END;
+
+END;

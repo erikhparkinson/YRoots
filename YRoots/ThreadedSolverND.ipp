@@ -16,7 +16,7 @@ m_numThreads(_numThreads),
 m_killThreads(false),
 m_numRunningThreads(0),
 m_intervalsToRun(m_numThreads),
-m_intervalTracker(m_numThreads, true, _startInterval.getArea()), //TODO: Whether to store should be a parameter
+m_intervalTracker(_functions[0].size(), m_numThreads, _subdivisionParameters.trackIntervals, _startInterval.getArea()),
 m_rootTracker(m_numThreads)
 {
     if(m_numThreads == 0) {
@@ -61,9 +61,8 @@ ThreadedSolver<D>::~ThreadedSolver() {
 
 template <Dimension D>
 void ThreadedSolver<D>::solve() {
-    
     //TODO: Create the threads in the constructor and have the threads help create the m_subdivisionSolvers?
-    //ALso, why do I have the sleep for a millisecond here???
+    //Also, why do I have the sleep for a millisecond here???
     
     m_intervalsToRun.push(0, m_firstSolveParameters);
     for(int threadNum = 0; threadNum < m_numThreads - 1; threadNum++) {
@@ -82,10 +81,8 @@ void ThreadedSolver<D>::solve() {
     }
     m_threadPool.clear();
     
-#ifndef TESTING
     m_rootTracker.logResults();
     m_intervalTracker.logResults();
-#endif
 }
 
 template <Dimension D>

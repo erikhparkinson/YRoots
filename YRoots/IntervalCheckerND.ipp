@@ -124,6 +124,7 @@ void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation
     for(size_t intervalNum = 0; intervalNum < m_scaledSubIntervals.size(); intervalNum++) {
         if(m_intervalMask[intervalNum]) {
             //Get the projected interval and store it
+            m_tempInterval.clear();
             projectInterval(m_tempInterval, _currentParameters->interval, m_scaledSubIntervals[intervalNum]);
             m_intervalTracker.storeResult(m_threadNum, m_tempInterval, SolveMethod::QuadraticCheck);
         }
@@ -157,6 +158,7 @@ double IntervalChecker<D>::getBoundingInterval(std::vector<ChebyshevApproximatio
 template <Dimension D>
 void IntervalChecker<D>::pushIntervalToSolve(SolveParameters* _currentParameters, Interval& _newInterval) {
     SolveParameters* _nextParameters = m_solveParametersPool.pop();
+    _nextParameters->clear();
     //Get the projected interval
     projectInterval(_nextParameters->interval, _currentParameters->interval, _newInterval);
 

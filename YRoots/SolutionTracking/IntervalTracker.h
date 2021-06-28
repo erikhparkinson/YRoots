@@ -11,6 +11,7 @@
 
 #include "utilities.h"
 #include <fstream>
+#include <numeric>
 
 struct IntervalResult {
     Interval    m_interval;
@@ -25,23 +26,38 @@ struct IntervalResult {
 
 class IntervalTracker {
 public:
-    IntervalTracker(size_t _numThreads, bool _enabled, double totalArea):
+    IntervalTracker(size_t _rank, size_t _numThreads, bool _enabled, double totalArea):
+    m_rank(_rank),
     m_numThreads(_numThreads),
     m_enabled(_enabled),
     m_totalArea(totalArea),
-    m_areaSolved(0)
+    m_unitIntervalArea(power(2, _rank)),
+    m_updatingProgressBar(0),
+    m_lastAreaSolved(0),
+    m_printedTooDeepWarning(false)
     {
         m_intervalResults.resize(m_numThreads);
         m_outputFile = "intervals.txt";
+        m_areaSolved.resize(m_numThreads, 0);
     }
     
     void storeResult(size_t _threadNum, Interval& _interval, SolveMethod _howFound, double newSize = 0.0) {
         //TODO: Have this be two seperate levels of enabled
         if (m_enabled) {
-            m_areaSolved += _interval.getArea() - newSize;
+            //New Size is on the [-1,1] scale. So take (1-newSize/2^n) * _interval.getArea()
+            double areaSolved = (1 - newSize / m_unitIntervalArea) * _interval.getArea();
+            assert(areaSolved > 0);
+            m_areaSolved[_threadNum] += areaSolved;
             //Also, maybe have an option that counts intervals but doesn't store them.
             //I could even template the IntervalTracker of the trackingLevel to avoid checking m_enabled each time
             m_intervalResults[_threadNum].emplace_back(_interval, _howFound);
+#ifndef TESTING
+            updateProgressBar();
+#endif
+            
+            if(unlikely(_howFound == SolveMethod::TooDeep && !m_printedTooDeepWarning.exchange(true))) {
+                printWarning("Max Depth recusrion depth reached on solve, program may never finish. Try running with higher tolerances!");
+            }
         }
     }
     
@@ -103,12 +119,44 @@ public:
 
     
 private:
+    void updateProgressBar() {
+        if(m_updatingProgressBar.fetch_add(1) == 0) {
+            int currentArea = std::round(100 * std::accumulate(m_areaSolved.begin(), m_areaSolved.end(), 0.0) / m_totalArea);
+            assert(currentArea >= 0);
+            assert(currentArea <= 100);
+            if(currentArea > m_lastAreaSolved) {
+                //Print the progress
+                int barWidth = 70;
+                std::cout << "\r[";
+                int pos = barWidth * currentArea/100;
+                for (int i = 0; i < barWidth; ++i) {
+                    if (i < pos) std::cout << "=";
+                    else if (i == pos) std::cout << ">";
+                    else std::cout << " ";
+                }
+                std::cout << "] " << currentArea << " %";
+                if(unlikely(currentArea == 100)) {
+                    std::cout<<"\n"; //Print a newline at the end so the program ends on a newline.
+                }
+                std::cout.flush();
+                
+                m_lastAreaSolved = currentArea;
+            }
+        }
+        m_updatingProgressBar.fetch_add(-1);
+    }
+    
+    size_t                                      m_rank;
     size_t                                      m_numThreads;
     bool                                        m_enabled;
     std::vector<std::vector<IntervalResult>>    m_intervalResults;
     std::string                                 m_outputFile;
     double                                      m_totalArea;
-    double                                      m_areaSolved;
+    double                                      m_unitIntervalArea;
+    std::vector<double>                         m_areaSolved;
+    int                                         m_lastAreaSolved;
+    std::atomic<int>                            m_updatingProgressBar;
+    std::atomic<bool>                           m_printedTooDeepWarning;
 };
 
 #endif /* IntervalData_h */

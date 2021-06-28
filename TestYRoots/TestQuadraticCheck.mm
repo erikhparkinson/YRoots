@@ -127,10 +127,7 @@ void allocateMemoryTestQuadraticCheck()
 
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
 
-    std::cout << "\nQuadratic Check takes " <<nanos/(trials)<< "ns.\n\n";
-
-    
-
+    std::cout << "\nQuadratic Check takes " << formatTimePretty(nanos/trials) << ".\n\n";
 
     std::vector<bool>& intervalMask = intervalChecker.get_m_intervalMask();
     XCTAssert(intervalMask[0]);

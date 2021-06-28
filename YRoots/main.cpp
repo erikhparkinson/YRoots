@@ -10,78 +10,28 @@
 #define USE_TIMING
 #endif
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include "InputFileParser.h"
-#include "ThreadedSolver.h"
-#include "thread"
-
-template<Dimension D>
-void runSolve(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, size_t _numThreads, Interval& _interval, const SubdivisionParameters& _subdivisionParameters) {
-    Timer& m_timer = Timer::getInstance();
-    size_t mainConstructorIndex = -1;
-    size_t mainSolveIndex = -1;
-    m_timer.registerTimer(mainConstructorIndex, "Main Constructor");
-    m_timer.registerTimer(mainSolveIndex, "Main Solve");
-
-    m_timer.startTimer(mainConstructorIndex);
-    ThreadedSolver<D> threadedSolver(_functions, _numThreads, _interval, _subdivisionParameters);
-    m_timer.stopTimer(mainConstructorIndex);
-    m_timer.startTimer(mainSolveIndex);
-    threadedSolver.solve();
-    m_timer.stopTimer(mainSolveIndex);
-}
+#include "Solve.h"
+#include "Timer.h"
 
 int main(int argc, const char * argv[]) {
     #ifdef USE_TIMING
         Timer::enable();
     #endif
 
-    if(argc != 3) {
-        std::cout<<"Arguments input and output must be given!\n";
-        return 0;
-    }
     //Get the file names
-    std::string inputFileName = argv[1];
-    std::string outputFileName = argv[2];
-    
-    InputFileParser inputParser (inputFileName);
-    inputParser.parse();
-        
-    std::vector<std::vector<Function::SharedFunctionPtr>>& functions = inputParser.getFunctions();
-    Interval interval = inputParser.getInterval();
-    size_t numThreads = inputParser.getNumThreads();
-    SubdivisionParameters subdivisionParameters = inputParser.getSubdivisionParameters();
-
-    //Solve
-    switch(functions[0].size()) {
-        case 0: {
-            printAndThrowRuntimeError("No functions found!");
-            break;
-        }
-        case 1:
-        {
-            runSolve<Dimension::One>(functions, numThreads, interval, subdivisionParameters);
-            break;
-        }
-        case 2:
-        {
-            runSolve<Dimension::Two>(functions, numThreads, interval, subdivisionParameters);
-            break;
-        }
-        case 3:
-        {
-            runSolve<Dimension::Three>(functions, numThreads, interval, subdivisionParameters);
-            break;
-        }
-        default:
-        {
-            runSolve<Dimension::NDim>(functions, numThreads, interval, subdivisionParameters);
-            break;
-        }
+    std::string inputFileName;
+    if(argc == 1) {
+        inputFileName = "input.txt";
     }
-    
+    else if (argc == 2) {
+        inputFileName = argv[1];
+    }
+    else {
+        printAndThrowRuntimeError("Only one input allowed!");
+    }
+
+    //Call the solver
+    mainSolver(inputFileName);
     
 #ifdef USE_TIMING
     Timer::getTimingResultsAndClear();

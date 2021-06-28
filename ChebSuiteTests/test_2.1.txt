@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = cos(10*x*y);
+f2 = x + y^2;
+FUNCTIONS_END;
+
+END;

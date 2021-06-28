@@ -87,6 +87,12 @@
     inputPoints[0] = 2;
     result = tempFunction11.evaluate(inputPoints);
     XCTAssert(withinEpslion(result, 1024));
+
+    functionString = "2*(x0-1)";
+    Function tempFunction12("", functionString, variableNames);
+    inputPoints[0] = 5;
+    result = tempFunction12.evaluate(inputPoints);
+    XCTAssert(withinEpslion(result, 8));
 }
 
 - (void)testFunction2DBasic {
@@ -134,7 +140,12 @@
     variableNames.push_back("y");
     
     std::vector<std::string> functionStrings;
+    functionStrings.push_back("7");
+    functionStrings.push_back("x");
+    functionStrings.push_back("y");
     functionStrings.push_back("x-y");
+    functionStrings.push_back("x-y+.5");
+    functionStrings.push_back("x+y");
     functionStrings.push_back("sin(30*x-y/30)+y");
     functionStrings.push_back("cos(x/30-30*y)-x");
     functionStrings.push_back("x^1.3*cos(y^0.8)");
@@ -168,9 +179,9 @@
                     evalPoints[0] = grid[0][i];
                     evalPoints[1] = grid[1][j];
                     double eval = tempFunction.evaluate(evalPoints);
-                    /*if(!withinEpslion(eval, results[j*numPoints + i])) {
+                    if(!withinEpslion(eval, results[j*numPoints + i])) {
                         std::cout << eval << "\t" << results[j*numPoints + i] << "\t" << std::abs(eval-results[j*numPoints + i]) << "\n";
-                    }*/
+                    }
                     XCTAssert(withinEpslion(eval, results[j*numPoints + i]));
                 }
             }
@@ -201,7 +212,7 @@
 
         double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
         
-        std::cout << "Evaluating function: " << numFives << " takes " <<nanos/(trials)<< "ns.\n";
+        std::cout << "Evaluating function: " << numFives << " takes " << formatTimePretty(nanos/(trials)) << ".\n";
         //std::cout<<result<<"\n";
     }
 }
@@ -237,7 +248,7 @@
 
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout << "\nEvaluating function: " << functionString << " on grid takes " <<nanos/(1000*trials)<< "us.\n\n";
+    std::cout << "\nEvaluating function: " << functionString << " on grid takes " << formatTimePretty(nanos/trials)<< ".\n\n";
 }
 
 - (void)testFunctionParsingTiming {
@@ -255,7 +266,7 @@
 
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout << "\nCreating function: " << functionString << " takes " <<nanos/(1000*trials)<< "us.\n\n";
+    std::cout << "\nCreating function: " << functionString << " takes " << formatTimePretty(nanos/trials) << ".\n\n";
 }
 
 

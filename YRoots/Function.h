@@ -13,10 +13,10 @@
 #include "utilities.h"
 #include <unordered_map>
 #include <unordered_set>
+#include "Timer.h"
 
 //TODO: Maybe I should set this up so that coeffs are stored seperately on sums and products? So 4cos(x)+5cos(x) use the same cos(x)?
 
-//TODO: Call this FunctionType
 enum FunctionType {
     SIN, //Syntax: sin(x)
     COS, //Syntax: cos(x)
@@ -121,14 +121,7 @@ public:
                 break;
             }
         }
-        
-        //TODO: Think about this, I didn't need this condition before
-        /*if(m_isTopFunction) {
-            for(size_t i = 0; i < m_dimension; i++) {
-                m_hasDimension[i] = true;
-            }
-        }*/
-        
+                
         //The number of true spots in m_hasDimension is m_numUsedDimensions
         m_numUsedDimensions = 0;
         for(size_t i = 0; i < m_hasDimension.size(); i++) {
@@ -166,7 +159,7 @@ public:
                 m_evaluateGridType = EvaluateGridType::COMBINE;
                 break;
             default:
-                throw std::runtime_error("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
+                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
         }
         
@@ -276,14 +269,14 @@ public:
             case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
                 break;
             default:
-                throw std::runtime_error("Unknown Function Type Encountered in evaluate grid base! Fix Switch Statement!");
+                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid base! Fix Switch Statement!");
                 break;
         }
     }
 
     void evaluateGridBaseTop(const std::vector<std::vector<double>>& _grid, std::vector<double>& _results) {
         size_t gridSize = _grid[0].size();
-        size_t numEvals = m_evaluteGridInfo[gridSize].childEvalSize;
+        size_t numEvals = power(gridSize, _grid.size());;
         
         switch(m_functionType) {
             case FunctionType::CONSTANT:
@@ -291,15 +284,15 @@ public:
                     _results[i] =  m_value;
                 }
                 break;
-            case FunctionType::VARIABLE:
+            case FunctionType::VARIABLE: {
+                //TODO: this could probably be more efficient.
+                size_t varGridSize = power(gridSize, m_varIndex);
                 for(size_t i = 0; i < numEvals; i++) {
-                    //TODO: this could probably be more efficient.
-                    size_t gridSize = _grid[0].size();
-                    size_t varGridSize = power(gridSize, m_varIndex);
                     size_t index = (i/varGridSize)%gridSize;
                     _results[i] =  _grid[m_varIndex][index];
                 }
                 break;
+            }
             case FunctionType::POWER_BASIS_MONOMIAL: //TODO: Write the specialized base calls for monomials and polynomials
                 break;
             case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:
@@ -309,7 +302,7 @@ public:
             case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
                 break;
             default:
-                throw std::runtime_error("Unknown Function Type Encountered in evaluate grid base! Fix Switch Statement!");
+                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid base! Fix Switch Statement!");
                 break;
         }
     }
@@ -373,7 +366,7 @@ public:
                 }
                 break;
             default:
-                throw std::runtime_error("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
+                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
         }
     }
@@ -424,7 +417,7 @@ public:
                 break;
             }
             default:
-                throw std::runtime_error("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
+                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
         }
     }
@@ -450,7 +443,7 @@ public:
                 evaluateGridCombine(gridSize, m_partialEvaluations);
                 break;
             default:
-                throw std::runtime_error("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
+                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
         }
     }
@@ -476,7 +469,7 @@ public:
                 evaluateGridCombine(gridSize, _results);
                 break;
             default:
-                throw std::runtime_error("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
+                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
         }
     }
@@ -584,10 +577,9 @@ public:
             case FunctionType::VARIABLE:
                 return m_value * _inputPoints[m_varIndex];
             default:
-                throw std::runtime_error("Unknown Function Type Encountered in evaluate! Fix Switch Statement!");
+                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate! Fix Switch Statement!");
                 break;
         }
-        //TODO: Get rid of this Once everything else is implemented.
         return 0.0;
     }
         
@@ -608,24 +600,23 @@ private:
         
         if(subparts.size() == 0) {
             //This is an empty string! Something went wrong
-            std::string errorMessage = "Error Parsing Functions!";
-            std::cout<<errorMessage<<"\n";
-            throw std::runtime_error(errorMessage);
+            printAndThrowRuntimeError("Error Parsing Functions!");
         }
         else if(subparts.size() == 1) {
-            //Parse the Coefficient
-            parseCoeff(_functionString);
-
             //Reparse to look for product
             subparts.clear();
             splitProduct(_functionString, subparts, m_isMultiply);
             
             if(subparts.size() == 1) {
+                //Parse the Coefficient
+                parseCoeff(_functionString);
+
                 //The whole thing is a more complex function
                 parseComplexType(_functionString);
             }
             else {
                 //Make this a PRODUCT type and split it up
+                m_value = 1;
                 parseProduct(subparts);
             }
         }

@@ -97,7 +97,7 @@ struct tempStruct {
 
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout << "\nMulti Pool push pop takes " <<nanos/(m_timingTrials)<< "ns.\n\n";
+    std::cout << "\nMulti Pool push pop takes " << formatTimePretty(nanos/(m_timingTrials)) << ".\n\n";
 }
 
 - (void)testStack {
@@ -188,7 +188,7 @@ struct tempStruct {
     myPools[0].push(temp);
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-    std::cout << "\nConcurrent Stack push pop takes " <<nanos/(m_timingTrials)<< "ns.\n\n";
+    std::cout << "\nConcurrent Stack push pop takes " << formatTimePretty(nanos/(m_timingTrials)) << ".\n\n";
 }
 
 @end

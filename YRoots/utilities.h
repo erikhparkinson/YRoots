@@ -22,7 +22,26 @@
 
 //TODO: Make unit tests for these functions!
 
-void printMatrix(Eigen::MatrixXd& matrix) {
+std::string formatTimePretty(double nanoseconds) {
+    static constexpr double thousand = 1000;
+    static constexpr double million = thousand*thousand;
+    static constexpr double billion = million*thousand;
+
+    if(nanoseconds < thousand) {
+        return std::to_string(nanoseconds) + "ns";
+    }
+    else if(nanoseconds < million) {
+        return std::to_string(nanoseconds/thousand) + "us";
+    }
+    else if(nanoseconds < billion) {
+        return std::to_string(nanoseconds/million) + "ms";
+    }
+    else {
+        return std::to_string(nanoseconds/billion) + "s";
+    }
+}
+
+void printMatrix(const Eigen::MatrixXd& matrix) {
     for(size_t i = 0; i < matrix.rows(); i++) {
         for(size_t j = 0; j < matrix.cols(); j++) {
             std::cout<<matrix(i,j)<<"\t";
@@ -32,7 +51,7 @@ void printMatrix(Eigen::MatrixXd& matrix) {
     std::cout<<"\n";
 }
 
-void printVector(Eigen::VectorXd& vector) {
+void printVector(const Eigen::VectorXd& vector) {
     for(size_t i = 0; i < vector.rows(); i++) {
         std::cout<<vector(i)<<"\t";
     }
@@ -51,6 +70,15 @@ std::vector<std::string> split(const std::string& string, const std::string& del
     return results;
 }
 
+void replaceStringInPlace(std::string& subject, const std::string& search, const std::string& replace) {
+    //Copied from https://stackoverflow.com/questions/5878775/how-to-find-and-replace-string/5878802
+    size_t pos = 0;
+    while ((pos = subject.find(search, pos)) != std::string::npos) {
+         subject.replace(pos, search.length(), replace);
+         pos += replace.length();
+    }
+}
+
 bool is_number(const std::string& s) {
     return( strspn( s.c_str(), "-.0123456789" ) == s.size() );
 }
@@ -65,9 +93,14 @@ bool isNumericDigit(const char c) {
     return c >= 49 && c <= 57;
 }
 
-void printAndThrowRuntimeError(const std::string& errorMessage) {
-    //TODO: Use this more in all the places runtime error are being thrown
-    std::cout<<errorMessage<<"\n";
+
+inline void printWarning(const std::string& warningMessage) {
+    //Add a newline before and after to not interfere with the percent tracking.
+    std::cout<<"\n"<<warningMessage<<"\n";
+}
+
+inline void printAndThrowRuntimeError(const std::string& errorMessage) {
+    //std::cout<<errorMessage<<"\n"; //I don't really need to print it, the runtime error prints it.
     throw std::runtime_error(errorMessage);
 }
 
@@ -213,11 +246,11 @@ struct Interval {
         areaFound = true;
     }
     
-    void clear() {
+    inline void clear() {
         areaFound = false;
     }
     
-    Interval() {}
+    Interval() : areaFound(false) {}
 };
 
 void projectInterval(Interval& resultInterval, const Interval& currentInterval, const Interval& projectOntoInterval) {
@@ -236,7 +269,8 @@ struct SubdivisionParameters {
     double minGoodZerosTol = 1e-5;
     size_t approximationDegree = 20;
     size_t targetDegree = 1;
-    size_t maxLevel = 999;
+    size_t maxLevel = 50;
+    bool trackIntervals = true;
 };
 
 struct SolveParameters {
@@ -244,176 +278,12 @@ struct SolveParameters {
     size_t currentLevel;
     std::vector<size_t> goodDegrees;
     
-    SolveParameters() : currentLevel(0) {
+    SolveParameters() : currentLevel(0) {}
         
-    }
-    
-    SolveParameters(Interval _interval, size_t _currentLevel, std::vector<size_t> _goodDegrees) :
-    interval(_interval),
-    currentLevel(_currentLevel),
-    goodDegrees(_goodDegrees)
-    {
-        
+    inline void clear() {
+        interval.clear();
     }
 };
-
-
-
-
-
-struct TimingDetails {
-    //TODO: Have this hold a vector of the individual run times, so we can print the median run time, highest 10%, lowest 10% etc
-    
-    std::string                                                 name;
-    bool                                                        indexClaimed;
-    size_t                                                      runCount;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
-    std::chrono::time_point<std::chrono::high_resolution_clock> end;
-    double                                                      runTimesNanos;
-    
-    TimingDetails() : indexClaimed(false), runCount(0), runTimesNanos(0.0) {}
-    
-    void claim(std::string _name) {
-        if(indexClaimed && _name != name) {
-            printAndThrowRuntimeError(_name + " is trying to claim a timing detail that is already claimed by " + name);
-        }
-        else {
-            indexClaimed = true;
-            name = _name;
-        }
-    }
-    
-    void clearClaim() {
-        name = "";
-        indexClaimed = false;
-        runCount = 0;
-        runTimesNanos = 0;
-    }
-    
-    std::string formatTimePretty(double time) const {
-        static constexpr double thousand = 1000;
-        static constexpr double million = thousand*thousand;
-        static constexpr double billion = million*thousand;
-
-        if(time < thousand) {
-            return std::to_string(time) + "ns";
-        }
-        else if(time < million) {
-            return std::to_string(time/thousand) + "us";
-        }
-        else if(time < billion) {
-            return std::to_string(time/million) + "ms";
-        }
-        else {
-            return std::to_string(time/billion) + "s";
-        }
-    }
-    
-    std::string getTimeString() const {
-        return "Total Time: " + formatTimePretty(runTimesNanos) + "\tAverage Time: " + formatTimePretty(runTimesNanos / runCount);
-    }
-    
-    friend std::ostream& operator<<(std::ostream& stream, const TimingDetails& timingDetails) {
-        stream << timingDetails.name << ":\tRun Count: "<< timingDetails.runCount << "\t"<< timingDetails.getTimeString();
-        return stream;
-    }
-};
-
-class Timer
-{
-public:
-    static Timer& getInstance()
-    {
-        static Timer    instance;
-        return instance;
-    }
-    
-    //Deleted copy functions
-    Timer(Timer const&)           = delete;
-    void operator=(Timer const&)  = delete;
-
-private:
-    Timer() {}
-    
-    void printTimingResults() {
-#ifdef USE_TIMING
-        std::cout<<"\nTIMING RESULTS\n";
-        for(size_t i = 0; i < m_timingDetails.size(); i++) {
-            std::cout<<m_timingDetails[i]<<"\n";
-        }
-        std::cout<<"\n";
-#endif
-    }
-    
-    void clearClaims() {
-        for(size_t i = 0; i < m_timingDetails.size(); i++) {
-            m_timingDetails[i].clearClaim();
-        }
-    }
-    
-    static size_t                   m_index;
-    static bool                     m_enabled;
-    std::vector<TimingDetails>      m_timingDetails;
-
-public:
-    inline void startTimer(size_t index) {
-#ifdef USE_TIMING
-        if(!Timer::isEnabled()) {
-            return;
-        }
-        
-        m_timingDetails[index].start = std::chrono::high_resolution_clock::now();
-#endif
-    }
-
-    inline void stopTimer(size_t index) {
-#ifdef USE_TIMING
-        if(!Timer::isEnabled()) {
-            return;
-        }
-        
-        m_timingDetails[index].end = std::chrono::high_resolution_clock::now();
-        m_timingDetails[index].runTimesNanos += static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(m_timingDetails[index].end - m_timingDetails[index].start).count());
-        m_timingDetails[index].runCount++;
-#endif
-    }
-    
-    inline void registerTimer(size_t& index, std::string name) {
-#ifdef USE_TIMING
-        if(!Timer::isEnabled()) {
-            return;
-        }
-        
-        if(index == -1) {
-            index = m_index++;
-            m_timingDetails.resize(m_index);
-        }
-                
-        m_timingDetails[index].claim(name);
-#endif
-    }
-    
-    static void getTimingResultsAndClear() {
-        getInstance().printTimingResults();
-        getInstance().clearClaims();
-    }
-    
-    static void enable() {
-        m_enabled = true;
-    }
-    
-    static void disable() {
-        m_enabled = false;
-    }
-    
-    static bool isEnabled() {
-        return m_enabled;
-    }
-};
-bool Timer::m_enabled = false;
-size_t Timer::m_index = 0;
-
-
 
 
 #endif /* utilities_h */

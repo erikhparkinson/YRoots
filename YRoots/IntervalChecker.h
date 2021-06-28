@@ -13,6 +13,7 @@
 #include "IntervalTracker.h"
 #include "MultiPool.h"
 #include "ConcurrentStack.h"
+#include "Timer.h"
 
 enum EvalSign {
     //If we & to signs together as a bool, we get true if we can throw out an interval

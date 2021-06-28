@@ -16,6 +16,9 @@
 #include "InputFileParser.h"
 #include "ThreadedSolver.h"
 #include "thread"
+#include "Timer.h"
+#include "utilities.h"
+#include "Solve.h"
 
 @interface TestThreadedSolver : XCTestCase
 
@@ -55,46 +58,8 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
 
     //Get the file names
     std::string inputFileName = "input.txt";
+    mainSolver(inputFileName);
     
-    InputFileParser inputParser (inputFileName);
-    inputParser.parse();
-        
-    std::vector<std::vector<Function::SharedFunctionPtr>>& functions = inputParser.getFunctions();
-    Interval interval = inputParser.getInterval();
-    size_t numThreads = inputParser.getNumThreads();
-    SubdivisionParameters subdivisionParameters = inputParser.getSubdivisionParameters();
-    
-    //Solve
-    switch(functions[0].size()) {
-        case 0: {
-            printAndThrowRuntimeError("No functions found!");
-            break;
-        }
-        case 1:
-        {
-            ThreadedSolver<Dimension::One> threadedSolver(functions, numThreads, interval, subdivisionParameters);
-            threadedSolver.solve();
-            break;
-        }
-        case 2:
-        {
-            ThreadedSolver<Dimension::Two> threadedSolver(functions, numThreads, interval, subdivisionParameters);
-            threadedSolver.solve();
-            break;
-        }
-        case 3:
-        {
-            ThreadedSolver<Dimension::Three> threadedSolver(functions, numThreads, interval, subdivisionParameters);
-            threadedSolver.solve();
-            break;
-        }
-        default:
-        {
-            ThreadedSolver<Dimension::NDim> threadedSolver(functions, numThreads, interval, subdivisionParameters);
-            threadedSolver.solve();
-            break;
-        }
-    }
     Timer::getTimingResultsAndClear();
 }
 
@@ -125,7 +90,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
 
         double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
     
-        std::cout << "Solve with " << numThreads << " threads takes " <<nanos/(trials * 1000)<< "us.\n";
+        std::cout << "Solve with " << numThreads << " threads takes " << formatTimePretty(nanos/trials)<< ".\n";
 
         std::vector<FoundRoot> foundRoots =  solver.getRoots();
         for(FoundRoot& root : foundRoots) {
@@ -181,7 +146,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
             std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
             double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
         
-            std::cout << "Solve " << functionString << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<nanos/(trials * 1e6)<< "ms.\n";
+            std::cout << "Solve " << functionString << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " << formatTimePretty(nanos/trials)<< ".\n";
 
             //Assert the solutions
             std::vector<FoundRoot> foundRoots =  solver.getRoots();
@@ -261,7 +226,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
             std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
             double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
         
-            std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<nanos/(trials * 1e6)<< "ms.\n";
+            std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " << formatTimePretty(nanos/trials)<< ".\n";
             
             //Assert the solutions
             std::vector<FoundRoot> foundRoots =  solver.getRoots();
@@ -271,7 +236,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
             for(FoundRoot& root : foundRoots) {
                 double rootModPiX = fmod(power(root.root[0], powerNumX), M_PI);
                 double rootModPiY = fmod(power(root.root[1], powerNumY), M_PI);
-                XCTAssert(withinEpslion(rootModPiX, M_PI/2, 1e-4) && withinEpslion(rootModPiY, M_PI/2, 1e-4));
+                XCTAssert(withinEpslion(rootModPiX, M_PI/2) && withinEpslion(rootModPiY, M_PI/2));
             }
             XCTAssert(expectedRoots == foundRoots.size());
         }
@@ -314,11 +279,197 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
 
-    std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<nanos/(trials * 1e6)<< "ms.\n";
+    std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<formatTimePretty(nanos/trials)<< ".\n";
     
     //Assert the solutions
     std::vector<FoundRoot> foundRoots =  solver.getRoots();
     XCTAssert(363 == foundRoots.size());
+}
+
+std::vector<std::vector<double>> parseYRootsFile(const std::string& _yrootsFile)
+{
+    std::vector<std::vector<double>> roots;
+    
+    std::ifstream inputFile;
+    std::string line;
+    inputFile.open(_yrootsFile);
+    while(std::getline(inputFile, line)) {
+        if(line.substr(0,6) == "Thread") {
+            continue;
+        }
+        
+        std::vector<double> root;
+        std::vector<std::string> rootString = split(line, "\t");
+        for(auto&& s : rootString) {
+            root.push_back(std::stod(s));
+        }
+        roots.push_back(root);
+    }
+    inputFile.close();
+
+    return roots;
+}
+
+std::vector<std::vector<double>> parseChebFile(const std::string& _chebRootsFile)
+{
+    std::vector<std::vector<double>> roots;
+    
+    std::ifstream inputFile;
+    std::string line;
+    inputFile.open(_chebRootsFile);
+    while(std::getline(inputFile, line)) {
+        if(line.substr(0,6) == "Thread") {
+            continue;
+        }
+        
+        std::vector<double> root;
+        std::vector<std::string> rootString = split(line, ",");
+        for(auto&& s : rootString) {
+            root.push_back(std::stod(s));
+        }
+        roots.push_back(root);
+    }
+    inputFile.close();
+    
+    return roots;
+}
+
+double distanceBetweenPoints(const std::vector<double>& p1, const std::vector<double>& p2)
+{
+    assert(p1.size() == p2.size());
+    
+    double val = 0;
+    for(size_t i = 0; i < p1.size(); i++) {
+        val += power(p1[i] - p2[i], 2);
+    }
+    return sqrt(val);
+}
+
+bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRootsFile, std::vector<Function::SharedFunctionPtr>& functions)
+{
+    //const double maxDistanceAllowed = 1e-5;
+    const double maxResidualAllowed = 1e-10;
+
+    std::vector<std::vector<double>> myRoots = parseYRootsFile(_yrootsFile);
+    std::vector<std::vector<double>> chebRoots = parseChebFile(_chebRootsFile);
+    
+    if(myRoots.size() != chebRoots.size()) {
+        std::cout<<"Unequal number of roots found!";
+        return false;
+    }
+    const size_t numRoots = myRoots.size();
+    
+    std::set<double> spotsFound;
+    std::vector<double> distances(numRoots);
+    std::vector<std::vector<double>> yrootsResiduals(numRoots);
+    std::vector<std::vector<double>> chebResiduals(numRoots);
+    for(size_t rootSpot1 = 0; rootSpot1 < numRoots; rootSpot1++) {
+        const std::vector<double>& myRoot = myRoots[rootSpot1];
+        //Find the closest root
+        double bestDistance = std::numeric_limits<double>::max();
+        size_t bestIndex = -1;
+        for(size_t rootSpot2 = 0; rootSpot2 < numRoots; rootSpot2++) {
+            double d = distanceBetweenPoints(myRoot, chebRoots[rootSpot2]);
+            if(d < bestDistance) {
+                bestDistance = d;
+                bestIndex = rootSpot2;
+            }
+        }
+        distances[rootSpot1] = bestDistance;
+        //Track it
+        if(spotsFound.find(bestIndex) != spotsFound.end()) {
+            std::cout<<"Couldn't match up roots!!";
+            return false;
+        }
+        else {
+            spotsFound.insert(bestIndex);
+        }
+        //Get the residuals
+        const std::vector<double>& chebRoot = chebRoots[bestIndex];
+        for(size_t funcNum = 0; funcNum < functions.size(); funcNum++) {
+            yrootsResiduals[rootSpot1].push_back(std::abs(functions[funcNum]->evaluate(myRoot)));
+            chebResiduals[rootSpot1].push_back(std::abs(functions[funcNum]->evaluate(chebRoot)));
+        }
+    }
+    
+    //Check the distances and residuals
+    double maxResidual = 0;
+    for(size_t rootSpot = 0; rootSpot < numRoots; rootSpot++) {
+        /*if(distances[rootSpot] > maxDistanceAllowed) {
+            return false;
+        }*/
+        for(size_t i = 0; i < functions.size(); i++) {
+            maxResidual = std::max(maxResidual, yrootsResiduals[rootSpot][i]);
+            if(yrootsResiduals[rootSpot][i] > maxResidualAllowed) {
+                return false;
+            }
+        }
+
+        /*std::cout << "D1: " << distances[rootSpot] << "\n";
+        std::cout << "R1: ";
+        for(size_t i = 0; i < functions.size(); i++) {
+            std::cout << yrootsResiduals[rootSpot][i] << "\t";
+        }
+        std::cout<<"\n";
+        std::cout << "R2: ";
+        for(size_t i = 0; i < functions.size(); i++) {
+            std::cout << chebResiduals[rootSpot][i] << "\t";
+        }
+        std::cout<<"\n";*/
+    }
+    
+    std::cout<<"\tPass with max residual: "<<maxResidual<<"\n";
+    
+    return true;
+}
+
+- (void)testChebSuite {
+    //Read through all the ChebSuite files, run the test, and then check the results against what ChebFun gets.
+    const std::string testFolder = "ChebSuiteTests/";
+    const std::string testResultFolder = "Chebfun_results/";
+    std::vector<std::string> testNames;
+    testNames.push_back("test_1.1");
+    testNames.push_back("test_1.2");
+    testNames.push_back("test_1.3");
+    testNames.push_back("test_1.4");
+    testNames.push_back("test_1.5");
+    testNames.push_back("test_2.1");
+    testNames.push_back("test_2.2");
+    testNames.push_back("test_2.3");
+    testNames.push_back("test_2.4");
+    testNames.push_back("test_2.5");
+    testNames.push_back("test_3.1");
+    testNames.push_back("test_3.2");
+    testNames.push_back("test_4.1");
+    testNames.push_back("test_4.2");
+
+    for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
+        const std::string testName = testNames[testNum];
+        std::cout << "Running Test " + testName << "\n";
+
+        //Get file names
+        std::vector<std::string> splitName = split(testName, "_");
+        const std::string testInputFile = testFolder + testName + ".txt";
+        const std::string testResultFile = testResultFolder + splitName[0] + "_roots_" + splitName[1] + ".csv";
+        const std::string testOutputFile = "roots.txt";
+
+        //Solve it
+        Function::clearSavedFunctions();
+        std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
+        mainSolver(testInputFile);
+        std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+        double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
+        std::cout << "Solves in " <<formatTimePretty(nanos)<< ".\n";
+        
+        //Grab functions
+        Function::clearSavedFunctions();
+        InputFileParser inputParser(testInputFile);
+        inputParser.parse();
+        std::vector<Function::SharedFunctionPtr>& functions = inputParser.getFunctions()[0];
+
+        //Check it
+        XCTAssert(compareTestFiles(testOutputFile, testResultFile, functions));
+    }
 }
 
 @end
