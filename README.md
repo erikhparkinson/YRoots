@@ -4,7 +4,7 @@ Implementing BYU's YRoots Rootfinding code in C++
 # Running
 Yroots can be run from the command line with the following syntax.
 
-./yroots \<input file\> \<output file\>
+./yroots \<input file\>
 
 # File Input
 
@@ -66,7 +66,7 @@ Currently supported parameters are
   * The min value of tol * approx_error in the goodZerosFactor calculation.
 * approximationDegree : Defaults to 20
   * The initial approximation degree used.
-* maxLevel : Defaults to 999
+* maxLevel : Defaults to 50
   * How many levls deep the subdivision will go before giving up.
 * trackIntervals : Defaults to true
   * If true the intervals are tracked and the results of how each one is solved is saved in `intervals.txt`.
@@ -105,7 +105,7 @@ This must exists for every function declared in the first line, but can also exi
 * Constants
   * These include numbers, `e`, and `pi`.
 * Addition, Subtraction, Multiplication, Division and Powers
-  * `+`, `-`, `*`, `/`, and `^`.
+  * `+`, `-`, `*`, `/`, and `^`. To make Python users happy, `**` is interpreted as `^`.
 * Trig functions
   * `sin`, `cos`, `tan`, `sinh`, `cosh`, `tanh`. Used as `sin(<expression>)`.
 * Square roots
