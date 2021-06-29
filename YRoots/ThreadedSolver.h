@@ -20,7 +20,7 @@
 template <Dimension D>
 class ThreadedSolver {
 public:
-    ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, size_t _numThreads, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters);
+    ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, const GeneralParameters& _generalParameters, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters);
     
     void solve();
     

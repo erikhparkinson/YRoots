@@ -39,6 +39,7 @@ enum FunctionType {
     POWER_BASIS_POLYNOMIAL, //Sums of POWER_BASIS_MONOMIAL, for faster evaluation.
     CHEBYSHEV_BASIS_POLYNOMIAL, //Sums of CHEBYSHEV_BASIS_MONOMIAL, for faster evaluation.
     VARIABLE, //A single monomial of one variable. Includes signed coefficient.
+    PASS_THROUGH, //A constant times one subfunction. Used for things like -<subfunction>
     UNKNOWN //Something went wrong
 };
 
@@ -150,6 +151,7 @@ public:
             case FunctionType::SQRT:
             case FunctionType::EXP:
             case FunctionType::CHEBYSHEV:
+            case FunctionType::PASS_THROUGH:
                 m_evaluateGridType = EvaluateGridType::SIMPLE;
                 break;
             case FunctionType::POWER:
@@ -365,6 +367,11 @@ public:
                     _results[i] =  m_value * chebPower(childEvals[i], m_varIndex);
                 }
                 break;
+            case FunctionType::PASS_THROUGH:
+                for(size_t i = 0; i < numEvals; i++) {
+                    _results[i] =  m_value * childEvals[i];
+                }
+                break;
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
@@ -576,6 +583,8 @@ public:
                 return m_value * chebPower(m_subfunctions[0]->evaluate(_inputPoints), m_varIndex);
             case FunctionType::VARIABLE:
                 return m_value * _inputPoints[m_varIndex];
+            case FunctionType::PASS_THROUGH:
+                return m_value * m_subfunctions[0]->evaluate(_inputPoints);
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate! Fix Switch Statement!");
                 break;
@@ -1277,7 +1286,9 @@ private:
             return;
         }
         
-        printAndThrowRuntimeError("Function Type Unknown!");
+        //At this point parse it again, it may be a changed func
+        m_functionType = FunctionType::PASS_THROUGH;
+        addSubfunction(_functionString);
     }
     
     void parseComplexFunctionParenthesis(const std::string& _functionString) {
@@ -1688,25 +1699,35 @@ public:
             s_allFunctionNames.resize(1);
         }
 
-        SharedFunctionPtr function = std::make_shared<Function>(_functionName, _functionString, _variableNames);
-        
-        //Add to the maps
-        if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
-            printAndThrowRuntimeError("Trying to add function Twice! Name is " + _functionName + " String is " + _functionString);
-        }
-        else {
-            s_allFunctions[0][_functionString] = function;
-        }
-        
-        if(_functionName != "") { //Only track it if it has a name
+        //Check if we are double adding it
+        bool namedFuncAlreadyExists = false;
+        if(_functionName != "") {
             if(s_allFunctionNames[0].find(_functionName) != s_allFunctionNames[0].end()) {
                 printAndThrowRuntimeError("Trying to add function Twice! Name is " + _functionName + " String is " + _functionString);
             }
-            else {
-                s_allFunctionNames[0][_functionName] = function;
+            if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
+                namedFuncAlreadyExists = true;
             }
         }
-        return function;
+        else if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
+            printAndThrowRuntimeError("Trying to add function Twice! Name is " + _functionName + " String is " + _functionString);
+        }
+        
+        if(namedFuncAlreadyExists) {
+            SharedFunctionPtr function = s_allFunctions[0][_functionString];
+            s_allFunctionNames[0][_functionName] = function;
+            return function;
+        }
+        else {
+            SharedFunctionPtr function = std::make_shared<Function>(_functionName, _functionString, _variableNames);
+
+            if(_functionName != "") {
+                s_allFunctionNames[0][_functionName] = function;
+            }
+            s_allFunctions[0][_functionString] = function;
+            
+            return function;
+        }
     }
     
     static void clearSavedFunctions() {

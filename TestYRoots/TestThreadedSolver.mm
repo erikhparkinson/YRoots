@@ -54,6 +54,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
 }
 
 - (void) testMain {
+    return;
     Timer::enable();
 
     //Get the file names
@@ -75,11 +76,13 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     startInterval.upperBounds.push_back(1.0);
     
     SubdivisionParameters subdivisionParameters;
-    
+    GeneralParameters generalParameters;
+
     std::cout<<"\n";
     for(size_t numThreads = 1; numThreads <= 4; numThreads++) {
+        generalParameters.numThreads = numThreads;
         std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-        ThreadedSolver<Dimension::One> solver(functions, numThreads, startInterval, subdivisionParameters);
+        ThreadedSolver<Dimension::One> solver(functions, generalParameters, startInterval, subdivisionParameters);
             
         size_t trials = 1;
         std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
@@ -112,6 +115,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     upperBounds.push_back(10.0); powerNums.push_back(4);
     
     SubdivisionParameters subdivisionParameters;
+    GeneralParameters generalParameters;
 
     std::cout<<"\n";
     for(size_t testNum = 0; testNum < upperBounds.size(); testNum++) {
@@ -134,8 +138,9 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
             startInterval.upperBounds.push_back(upperBound);
 
             //Set up the solver
+            generalParameters.numThreads = numThreads;
             std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-            ThreadedSolver<Dimension::One> solver(functions, numThreads, startInterval, subdivisionParameters);
+            ThreadedSolver<Dimension::One> solver(functions, generalParameters, startInterval, subdivisionParameters);
                 
             //Solve it
             size_t trials = 1;
@@ -185,6 +190,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     variablesNames.push_back("y");
     
     SubdivisionParameters subdivisionParameters;
+    GeneralParameters generalParameters;
 
     std::cout<<"\n";
     for(size_t testNum = 0; testNum < upperBoundsX.size(); testNum++) {
@@ -214,8 +220,9 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
             startInterval.upperBounds.push_back(upperBoundY);
 
             //Set up the solver
+            generalParameters.numThreads = numThreads;
             std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-            ThreadedSolver<Dimension::Two> solver(functions, numThreads, startInterval, subdivisionParameters);
+            ThreadedSolver<Dimension::Two> solver(functions, generalParameters, startInterval, subdivisionParameters);
                 
             //Solve it
             size_t trials = 1;
@@ -263,12 +270,13 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     startInterval.upperBounds.push_back(1);
     
     SubdivisionParameters subdivisionParameters;
+    GeneralParameters generalParameters;
 
-    size_t numThreads = 1;
+    generalParameters.numThreads = 1;
     
     //Set up the solver
-    std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-    ThreadedSolver<Dimension::Two> solver(functions, numThreads, startInterval, subdivisionParameters);
+    std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, generalParameters.numThreads);
+    ThreadedSolver<Dimension::Two> solver(functions, generalParameters, startInterval, subdivisionParameters);
     
     //Solve it
     size_t trials = 1;
@@ -279,7 +287,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
     double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
 
-    std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << numThreads << " threads takes " <<formatTimePretty(nanos/trials)<< ".\n";
+    std::cout << "Solve " << functionString1 <<", "<< functionString2 << " on "<< startInterval.toString() << " with " << generalParameters.numThreads << " threads takes " <<formatTimePretty(nanos/trials)<< ".\n";
     
     //Assert the solutions
     std::vector<FoundRoot> foundRoots =  solver.getRoots();

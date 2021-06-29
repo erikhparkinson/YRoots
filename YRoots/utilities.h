@@ -270,7 +270,13 @@ struct SubdivisionParameters {
     size_t approximationDegree = 20;
     size_t targetDegree = 1;
     size_t maxLevel = 50;
+};
+
+struct GeneralParameters {
     bool trackIntervals = true;
+    bool trackProgress = true;
+    bool useTimer = false;
+    size_t numThreads = 1;
 };
 
 struct SolveParameters {
