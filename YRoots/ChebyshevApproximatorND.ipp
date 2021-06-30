@@ -46,6 +46,13 @@ m_approximation(_approximation)
         }
         m_intervalApproximators[degree-1] = std::make_unique<IntervalApproximator<D>>(m_rank, degree, m_input, use1 ? m_output1 : m_output2, m_kinds, partialArrayLength);
     }
+    
+    //Initialize m_absApproxErrorCalcInterval
+    m_absApproxErrorCalcInterval.lowerBounds.resize(m_rank);
+    m_absApproxErrorCalcInterval.upperBounds.resize(m_rank);
+    
+    m_timer.registerTimer(m_timerFullApproximateIndex, "Cheb Approximator Full");
+    m_timer.registerTimer(m_timerAbsApproxErrorCalcIndex, "Cheb Approximator Abs Approx Estimate");
 }
 
 template <Dimension D>
@@ -66,6 +73,7 @@ ChebyshevApproximator<D>::~ChebyshevApproximator()
 template <Dimension D>
 void ChebyshevApproximator<D>::approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree)
 {
+    m_timer.startTimer(m_timerFullApproximateIndex);
     if(_approximationDegree > m_intervalApproximators.size()) {
         printAndThrowRuntimeError("Approximation Degree is too large!");
     }
@@ -87,6 +95,38 @@ void ChebyshevApproximator<D>::approximate(const Function::SharedFunctionPtr _fu
     calculateApproximationError();
         
     m_approximation.setApproximation(_approximationDegree, m_sideLength1, m_intervalApproximators[m_firstApproximator]->getOutput(), m_infNorm, m_signChange, m_approximationError);
+    
+    m_timer.stopTimer(m_timerFullApproximateIndex);
+}
+
+template <Dimension D>
+double ChebyshevApproximator<D>::getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree)
+{
+    m_timer.startTimer(m_timerAbsApproxErrorCalcIndex);
+
+    m_firstApproximator = _approximationDegree-1;
+    m_secondApproximator = 2*_approximationDegree-1;
+    m_sideLength1 = 2*_approximationDegree;
+    m_sideLength2 = 4*_approximationDegree;
+    m_approxLength1 = _approximationDegree+1;
+    m_approxLength2 = 2*_approximationDegree+1;
+    
+    //Get an interval
+    const double linearization_size = 1e-10; //Make sure this isn't too small. Otherwise, we could get an interval where everything in it evaluates to the same point.
+    for(size_t i = 0; i < m_rank; i++) {
+        const double rand = 0.5; //TODO: Rand uniform [0,1]
+        const double randomPoint = _currentInterval.lowerBounds[i] + rand * (_currentInterval.upperBounds[i] - _currentInterval.lowerBounds[i]);
+        m_absApproxErrorCalcInterval.lowerBounds[i] = randomPoint - linearization_size;
+        m_absApproxErrorCalcInterval.upperBounds[i] = randomPoint + linearization_size;
+    }
+
+    m_intervalApproximators[m_firstApproximator]->approximate(_function, m_absApproxErrorCalcInterval, false);
+    m_intervalApproximators[m_secondApproximator]->approximate(_function, m_absApproxErrorCalcInterval, false);
+    calculateApproximationError();
+    
+    m_timer.stopTimer(m_timerAbsApproxErrorCalcIndex);
+
+    return m_approximationError*10;
 }
 
 template <Dimension D>

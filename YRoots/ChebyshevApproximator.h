@@ -11,6 +11,7 @@
 
 #include "IntervalApproximator.h"
 #include "ChebyshevApproximation.hpp"
+#include "Timer.h"
 
 template <Dimension D>
 class ChebyshevApproximator
@@ -20,7 +21,8 @@ public:
     ~ChebyshevApproximator();
     
     void approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree);
-    
+    double getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree);
+
     bool hasSignChange() {
         return m_signChange;
     }
@@ -54,8 +56,19 @@ private:
     bool                                    m_signChange;
     double                                  m_approximationError;
     
+    Interval                                m_absApproxErrorCalcInterval;
+    
     ChebyshevApproximation<D>&              m_approximation;
+    
+    static size_t           m_timerFullApproximateIndex;
+    static size_t           m_timerAbsApproxErrorCalcIndex;
+    Timer&                  m_timer = Timer::getInstance();
 };
+
+template<Dimension D>
+size_t ChebyshevApproximator<D>::m_timerFullApproximateIndex = -1;
+template<Dimension D>
+size_t ChebyshevApproximator<D>::m_timerAbsApproxErrorCalcIndex = -1;
 
     
 #include "ChebyshevApproximatorND.ipp"

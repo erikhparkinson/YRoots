@@ -204,7 +204,7 @@ void IntervalApproximator<D>::approximate(const Function::SharedFunctionPtr _fun
     for(size_t i = 0; i < m_divideByTwoPoints.size(); i++) {
         m_output[m_divideByTwoPoints[i]] /= 2;
     }
-        
+            
     m_timer.stopTimer(m_timerIntervalApproximatorIndex);
 }
 

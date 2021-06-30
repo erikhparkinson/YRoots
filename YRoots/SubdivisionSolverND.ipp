@@ -20,7 +20,8 @@ m_subdivisionParameters(_parameters),
 m_intervalTracker(_intervalTracker),
 m_rootTracker(_rootTracker),
 m_intervalChecker(m_rank, m_intervalTracker, m_threadNum, m_intervalsToRun, m_solveParametersPool),
-m_linearSolver(m_threadNum, m_rank, m_intervalTracker, m_rootTracker)
+m_linearSolver(m_threadNum, m_rank, m_intervalTracker, m_rootTracker),
+m_minApproxTols(m_functions.size(), 0.0)
 {
     for(size_t i = 0; i < m_functions.size(); i++) {
         //Create the Chebyshev Approximations
@@ -47,10 +48,9 @@ void SubdivisionSolver<D>::subdivide(SolveParameters* _parameters, size_t _numGo
 template <Dimension D>
 void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
 {
-    //Figure out how a speicific number is being solved
-    
-    /*double num1 = -.5;
-    double num2 = -.5;
+    //Figure out how a speicific number is being solved //TODO: Remove this when I'm confident things work.
+    /*double num1 = 128.8052987971815;
+    double num2 = 0.9367747949648417;
     if(_parameters->interval.lowerBounds[0] > num1 || _parameters->interval.upperBounds[0] < num1) {
         return;
     }
@@ -61,13 +61,26 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
     //If we are too deep, track that and return.
     if (_parameters->currentLevel > m_subdivisionParameters.maxLevel)
     {
+        //TODO: Have this store a root if it gets to deep? Make this a param?
         m_intervalTracker.storeResult(m_threadNum, _parameters->interval, SolveMethod::TooDeep);
         return;
     }
+    
+    if(m_subdivisionParameters.check_eval_error) {
+        for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {
+            //break;
+            size_t const degToUse = 2;
+            size_t numVals1 = power(degToUse*2,2) - power(degToUse,2);
+            size_t numVals2 = power(_parameters->goodDegrees[funcNum]*2,2) - power(_parameters->goodDegrees[funcNum],2);
+            m_minApproxTols[funcNum] = numVals2 * m_chebyshevApproximators[funcNum]->getAbsApproxTol(m_functions[funcNum], _parameters->interval, degToUse) / numVals1;
+        }
+    }
+    
     for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {
         //Get a chebyshev approximation
         m_chebyshevApproximators[funcNum]->approximate(m_functions[funcNum], _parameters->interval, _parameters->goodDegrees[funcNum]);
-        if(!m_chebyshevApproximations[funcNum].isGoodApproximation(m_subdivisionParameters.absApproxTol, m_subdivisionParameters.relApproxTol)) {
+        const double absApproxTolToUse = std::max(m_minApproxTols[funcNum], m_subdivisionParameters.absApproxTol);
+        if(!m_chebyshevApproximations[funcNum].isGoodApproximation(absApproxTolToUse, m_subdivisionParameters.relApproxTol)) {
             //Increase the goodDegree by 1 up to the max.
             _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum]+1, m_subdivisionParameters.approximationDegree);
             //Subdivide. TODO: Do I want to subdivide or get the approximations of the other things first?
@@ -87,7 +100,8 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
     bool goodApproximations = true;
     for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {
         //Trim
-        goodApproximations &= m_chebyshevApproximations[funcNum].trimCoefficients(m_subdivisionParameters.absApproxTol, m_subdivisionParameters.relApproxTol, m_subdivisionParameters.targetDegree);
+        const double absApproxTolToUse = std::max(m_minApproxTols[funcNum], m_subdivisionParameters.targetTol);
+        goodApproximations &= m_chebyshevApproximations[funcNum].trimCoefficients(absApproxTolToUse, m_subdivisionParameters.relApproxTol, m_subdivisionParameters.targetDegree);
         //Get the good degree as 1 greater than the current deg
         _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum], m_chebyshevApproximations[funcNum].getGoodDegree() + 1);
     }
@@ -96,6 +110,7 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
     }
 
     //Check if everything is linear and get goodZerosTol
+    //TODO: I can get rid of the linear check if targetDegree is 1, it will already be linear at this point.
     bool isLinear = true;
     double goodZerosTol = 0;
     for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {

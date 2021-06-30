@@ -263,10 +263,15 @@ void projectInterval(Interval& resultInterval, const Interval& currentInterval, 
 }
 
 struct SubdivisionParameters {
-    double relApproxTol = 1.e-10;
-    double absApproxTol = 1.e-10;
+    //Approx Tols
+    double relApproxTol = 1.e-10; //TODO: Test to figure out the best defaults.
+    double absApproxTol = 1.e-5;
+    double targetTol = 1e-10; // TODO: To polish to really good residuals we can make this 1e-15. This causes some things to lose roots though. Figure out a happy medium/why it loses roots when smaller/a better way to polish at the end? Newton Polish?
+    bool check_eval_error = true;
+    //Good Zeros
     double goodZerosFactor = 100;
     double minGoodZerosTol = 1e-5;
+    //Degrees
     size_t approximationDegree = 20;
     size_t targetDegree = 1;
     size_t maxLevel = 50;

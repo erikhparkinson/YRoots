@@ -158,7 +158,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
             size_t expectedRoots = power(upperBound, powerNum) / M_PI;
             for(FoundRoot& root : foundRoots) {
                 double rootModPi = fmod(power(root.root[0], powerNum), M_PI);
-                XCTAssert(withinEpslion(rootModPi, 0.0) || withinEpslion(rootModPi, M_PI));
+                XCTAssert(withinEpslion(rootModPi, 0.0, 1.e-5) || withinEpslion(rootModPi, M_PI, 1.e-5));
             }
             XCTAssert(expectedRoots == foundRoots.size());
         }
@@ -202,6 +202,9 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
         double powerNumX2 = powerNumsX2[testNum];
         double powerNumY2 = powerNumsY2[testNum];
         for(size_t numThreads = 1; numThreads <= 4; numThreads++) {
+            if(numThreads == 1) {
+                Timer::enable();
+            }
             //x^powerNumX2 * cos(y^powerNumY)
             //y^powerNumY2 * cos(x^powerNumX)
             //Roots are at y^powerNumY = k1*pi + pi/2, x^powerNumX = k2*pi + pi/2
@@ -246,6 +249,10 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
                 XCTAssert(withinEpslion(rootModPiX, M_PI/2) && withinEpslion(rootModPiY, M_PI/2));
             }
             XCTAssert(expectedRoots == foundRoots.size());
+            
+            if(numThreads == 1) {
+                Timer::getTimingResultsAndClear();
+            }
         }
     }
     std::cout<<"\n";
@@ -294,8 +301,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     XCTAssert(363 == foundRoots.size());
 }
 
-std::vector<std::vector<double>> parseYRootsFile(const std::string& _yrootsFile)
-{
+std::vector<std::vector<double>> parseYRootsFile(const std::string& _yrootsFile) {
     std::vector<std::vector<double>> roots;
     
     std::ifstream inputFile;
@@ -318,8 +324,7 @@ std::vector<std::vector<double>> parseYRootsFile(const std::string& _yrootsFile)
     return roots;
 }
 
-std::vector<std::vector<double>> parseChebFile(const std::string& _chebRootsFile)
-{
+std::vector<std::vector<double>> parseChebFile(const std::string& _chebRootsFile) {
     std::vector<std::vector<double>> roots;
     
     std::ifstream inputFile;
@@ -342,8 +347,7 @@ std::vector<std::vector<double>> parseChebFile(const std::string& _chebRootsFile
     return roots;
 }
 
-double distanceBetweenPoints(const std::vector<double>& p1, const std::vector<double>& p2)
-{
+double distanceBetweenPoints(const std::vector<double>& p1, const std::vector<double>& p2) {
     assert(p1.size() == p2.size());
     
     double val = 0;
@@ -353,10 +357,9 @@ double distanceBetweenPoints(const std::vector<double>& p1, const std::vector<do
     return sqrt(val);
 }
 
-bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRootsFile, std::vector<Function::SharedFunctionPtr>& functions)
-{
+bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRootsFile, std::vector<Function::SharedFunctionPtr>& functions) {
     //const double maxDistanceAllowed = 1e-5;
-    const double maxResidualAllowed = 1e-10;
+    const double maxResidualAllowed = 1e-5;
 
     std::vector<std::vector<double>> myRoots = parseYRootsFile(_yrootsFile);
     std::vector<std::vector<double>> chebRoots = parseChebFile(_chebRootsFile);
@@ -449,7 +452,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     testNames.push_back("test_3.1");
     testNames.push_back("test_3.2");
     testNames.push_back("test_4.1");
-    //testNames.push_back("test_4.2");
+    testNames.push_back("test_4.2");
 
     for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
         const std::string testName = testNames[testNum];

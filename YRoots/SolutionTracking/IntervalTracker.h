@@ -49,7 +49,7 @@ public:
             if(m_trackIntervals) {
                 //New Size is on the [-1,1] scale. So take (1-newSize/2^n) * _interval.getArea()
                 double areaSolved = (1 - newSize / m_unitIntervalArea) * _interval.getArea();
-                assert(areaSolved > 0);
+                assert(areaSolved >= 0); //TODO: If the size if 0 I should just be returning too deep immediately.
                 m_areaSolved[_threadNum] += areaSolved;
 #ifndef TESTING
                 updateProgressBar();
