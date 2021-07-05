@@ -43,6 +43,7 @@ private:
     std::vector<std::unique_ptr<ChebyshevApproximator<D>>>  m_chebyshevApproximators;
     IntervalChecker<D>                                      m_intervalChecker;
     LinearSolver<D>                                         m_linearSolver;
+    std::vector<double>                                     m_minApproxTols;
     
     static size_t m_subdivisionSolverTimerIndex1;
     static size_t m_subdivisionSolverTimerIndex2;

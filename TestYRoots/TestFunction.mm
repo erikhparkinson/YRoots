@@ -93,6 +93,30 @@
     inputPoints[0] = 5;
     result = tempFunction12.evaluate(inputPoints);
     XCTAssert(withinEpslion(result, 8));
+
+    functionString = "10^(-9)";
+    Function tempFunction13("", functionString, variableNames);
+    inputPoints[0] = 5;
+    result = tempFunction13.evaluate(inputPoints);
+    XCTAssert(withinEpslion(result, 1e-9));
+
+    functionString = "1-x0^2";
+    Function tempFunction14("", functionString, variableNames);
+    inputPoints[0] = 2;
+    result = tempFunction14.evaluate(inputPoints);
+    XCTAssert(withinEpslion(result, -3));
+
+    functionString = "1-2x0^2";
+    Function tempFunction15("", functionString, variableNames);
+    inputPoints[0] = 2;
+    result = tempFunction15.evaluate(inputPoints);
+    XCTAssert(withinEpslion(result, -7));
+
+    functionString = "1-2^x0";
+    Function tempFunction16("", functionString, variableNames);
+    inputPoints[0] = 2;
+    result = tempFunction16.evaluate(inputPoints);
+    XCTAssert(withinEpslion(result, -3));
 }
 
 - (void)testFunction2DBasic {

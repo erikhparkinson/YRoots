@@ -39,6 +39,7 @@ enum FunctionType {
     POWER_BASIS_POLYNOMIAL, //Sums of POWER_BASIS_MONOMIAL, for faster evaluation.
     CHEBYSHEV_BASIS_POLYNOMIAL, //Sums of CHEBYSHEV_BASIS_MONOMIAL, for faster evaluation.
     VARIABLE, //A single monomial of one variable. Includes signed coefficient.
+    PASS_THROUGH, //A constant times one subfunction. Used for things like -<subfunction>
     UNKNOWN //Something went wrong
 };
 
@@ -150,6 +151,7 @@ public:
             case FunctionType::SQRT:
             case FunctionType::EXP:
             case FunctionType::CHEBYSHEV:
+            case FunctionType::PASS_THROUGH:
                 m_evaluateGridType = EvaluateGridType::SIMPLE;
                 break;
             case FunctionType::POWER:
@@ -365,6 +367,11 @@ public:
                     _results[i] =  m_value * chebPower(childEvals[i], m_varIndex);
                 }
                 break;
+            case FunctionType::PASS_THROUGH:
+                for(size_t i = 0; i < numEvals; i++) {
+                    _results[i] =  m_value * childEvals[i];
+                }
+                break;
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
@@ -576,6 +583,8 @@ public:
                 return m_value * chebPower(m_subfunctions[0]->evaluate(_inputPoints), m_varIndex);
             case FunctionType::VARIABLE:
                 return m_value * _inputPoints[m_varIndex];
+            case FunctionType::PASS_THROUGH:
+                return m_value * m_subfunctions[0]->evaluate(_inputPoints);
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate! Fix Switch Statement!");
                 break;
@@ -608,9 +617,6 @@ private:
             splitProduct(_functionString, subparts, m_isMultiply);
             
             if(subparts.size() == 1) {
-                //Parse the Coefficient
-                parseCoeff(_functionString);
-
                 //The whole thing is a more complex function
                 parseComplexType(_functionString);
             }
@@ -1134,7 +1140,7 @@ private:
         }
     }
     
-    void parseCoeff(std::string& _functionString) {
+    std::string parseCoeff(std::string& _functionString) {
         //Parses a number from the front of the string and removes it.
         std::string numStr = "";
         size_t toRemove = 0;
@@ -1156,6 +1162,7 @@ private:
         }
         
         //Get the truncated string
+        std::string coeffString = _functionString.substr(0, toRemove);
         _functionString = _functionString.substr(toRemove);
         //Parse the value.
         if(numStr == "") {
@@ -1167,16 +1174,26 @@ private:
         else {
             m_value = std::stod(numStr);
         }
+        
+        return coeffString;
     }
     
     void parseComplexType(std::string& _functionString) {
         size_t stringLenth = _functionString.length();
-        
-        //Parse Power
-        if(parsePower(_functionString)) {
+
+        //Parse the Coefficient
+        std::string coeffString = parseCoeff(_functionString);
+
+        //Parse Power. Note we have already parsed the coeff, which might be the whole rhs.
+        //So if it is 10^x, remember the 10.
+        //If it is 10x^2, the 10 is the coeff.
+        if(parsePower(_functionString, coeffString)) {
             m_functionType = FunctionType::POWER;
             return;
         }
+        
+        //Everything below this must be able to a have a coeff in front of it that is pulled out and
+        //multiplied by it. So all operations +,-,*,/,^ are handeled above this
         
         //Parse constants
         if(_functionString == "") {
@@ -1277,7 +1294,9 @@ private:
             return;
         }
         
-        printAndThrowRuntimeError("Function Type Unknown!");
+        //At this point parse it again, it may be a changed func
+        m_functionType = FunctionType::PASS_THROUGH;
+        addSubfunction(_functionString);
     }
     
     void parseComplexFunctionParenthesis(const std::string& _functionString) {
@@ -1360,7 +1379,7 @@ private:
         addSubfunction(substring2);
     }
 
-    bool parsePower(const std::string& _functionString) {
+    bool parsePower(const std::string& _functionString, const std::string& _coeffString) {
         std::string substring1;
         std::string substring2;
         bool part2 = false;
@@ -1390,6 +1409,17 @@ private:
             }
         }
         if(part2) {
+            if(substring1 == "") {//The coeff might have been the whole rhs, so put it back.
+                //If the _coeffString has a - in it, pull that out and make the m_value -1. Because then negative should not be in the power.
+                if(_coeffString[0] == CHAR::MINUS) {
+                    substring1 = _coeffString.substr(1);
+                    m_value = -1;
+                }
+                else {
+                    substring1 = _coeffString;
+                    m_value = 1;
+                }
+            }
             addSubfunction(substring1);
             addSubfunction(substring2);
             return true;
@@ -1477,15 +1507,27 @@ public:
         //This way when we evaluate we can evaluate all the functions starting a level 0 at going up.
         
         m_functionLevel = 0;
-        for(size_t i = 0; i < m_subfunctions.size(); i++) {
-            m_subfunctions[i]->getFunctionLevels(allFunctionLevels);
-            size_t currLevel = m_subfunctions[i]->getFunctionLevel();
+        for(size_t subFuncNum = 0; subFuncNum < m_subfunctions.size(); subFuncNum++) {
+            m_subfunctions[subFuncNum]->getFunctionLevels(allFunctionLevels);
+            size_t currLevel = m_subfunctions[subFuncNum]->getFunctionLevel();
             m_functionLevel = std::max(m_functionLevel, currLevel + 1);
             
             if(allFunctionLevels.size() <= currLevel) {
                 allFunctionLevels.resize(currLevel + 1);
             }
-            allFunctionLevels[currLevel].push_back(m_subfunctions[i]);
+            
+            //Add to the vector if it's not already there
+            bool alreadyExists = false;
+            for(size_t i = 0; i < allFunctionLevels[currLevel].size(); i++) {
+                if(allFunctionLevels[currLevel][i] == m_subfunctions[subFuncNum]) {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+            if(!alreadyExists) {
+                allFunctionLevels[currLevel].push_back(m_subfunctions[subFuncNum]);
+            }
+            
         }
         
         //Figure out what dimensions the function exists in.
@@ -1688,25 +1730,35 @@ public:
             s_allFunctionNames.resize(1);
         }
 
-        SharedFunctionPtr function = std::make_shared<Function>(_functionName, _functionString, _variableNames);
-        
-        //Add to the maps
-        if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
-            printAndThrowRuntimeError("Trying to add function Twice! Name is " + _functionName + " String is " + _functionString);
-        }
-        else {
-            s_allFunctions[0][_functionString] = function;
-        }
-        
-        if(_functionName != "") { //Only track it if it has a name
+        //Check if we are double adding it
+        bool namedFuncAlreadyExists = false;
+        if(_functionName != "") {
             if(s_allFunctionNames[0].find(_functionName) != s_allFunctionNames[0].end()) {
                 printAndThrowRuntimeError("Trying to add function Twice! Name is " + _functionName + " String is " + _functionString);
             }
-            else {
-                s_allFunctionNames[0][_functionName] = function;
+            if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
+                namedFuncAlreadyExists = true;
             }
         }
-        return function;
+        else if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
+            printAndThrowRuntimeError("Trying to add function Twice! Name is " + _functionName + " String is " + _functionString);
+        }
+        
+        if(namedFuncAlreadyExists) {
+            SharedFunctionPtr function = s_allFunctions[0][_functionString];
+            s_allFunctionNames[0][_functionName] = function;
+            return function;
+        }
+        else {
+            SharedFunctionPtr function = std::make_shared<Function>(_functionName, _functionString, _variableNames);
+
+            if(_functionName != "") {
+                s_allFunctionNames[0][_functionName] = function;
+            }
+            s_allFunctions[0][_functionString] = function;
+            
+            return function;
+        }
     }
     
     static void clearSavedFunctions() {

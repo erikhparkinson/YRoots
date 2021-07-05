@@ -91,20 +91,16 @@ public:
         return m_functions;
     }
     
-    Interval getInterval() {
+    Interval& getInterval() {
         return m_interval;
     }
-    
-    size_t getNumThreads() {
-        return m_numThreads;
-    }
-    
-    SubdivisionParameters getSubdivisionParameters() {
+        
+    const SubdivisionParameters& getSubdivisionParameters() const {
         return m_subdivisionParameters;
     }
     
-    bool useTimer() {
-        return m_useTimer;
+    const GeneralParameters& getGeneralParameters() const {
+        return m_generalParameters;
     }
     
 private:
@@ -156,13 +152,13 @@ private:
             else if(parameterString[0] == "numThreads") {
                 int numThreads = parseInteger(parameterString[1]);
                 if(numThreads == -1) {
-                    m_numThreads = (size_t)std::thread::hardware_concurrency();
+                    m_generalParameters.numThreads = (size_t)std::thread::hardware_concurrency();
                 }
                 else if (numThreads <= 0) {
                     printAndThrowRuntimeError("Parser Error! Invalid numThreads " + std::to_string(numThreads) + "!");
                 }
                 else {
-                    m_numThreads = numThreads;
+                    m_generalParameters.numThreads = numThreads;
                 }
             }
             else if(parameterString[0] == "relApproxTol") {
@@ -202,10 +198,13 @@ private:
                 }
             }
             else if(parameterString[0] == "trackIntervals") {
-                m_subdivisionParameters.trackIntervals = parseBool(parameterString[1]);
+                m_generalParameters.trackIntervals = parseBool(parameterString[1]);
+            }
+            else if(parameterString[0] == "trackProgress") {
+                m_generalParameters.trackProgress = parseBool(parameterString[1]);
             }
             else if(parameterString[0] == "useTimer") {
-                m_useTimer = parseBool(parameterString[1]);
+                m_generalParameters.useTimer = parseBool(parameterString[1]);
             }
             else {
                 printAndThrowRuntimeError("Parser Error! Unrecognized Parameter " + parameterString[0] + "!");
@@ -281,7 +280,7 @@ private:
         
         //Get the individual functions
         bool foundEnd = false;
-        m_functions.resize(m_numThreads);
+        m_functions.resize(m_generalParameters.numThreads);
         while(parseSpot < lines.size()) {
             if(lines[parseSpot] == "FUNCTIONS_END") {
                 parseSpot++;
@@ -304,10 +303,10 @@ private:
         }
         
         //Duplicate the functions for all the threads
-        Function::addThreadFunctions(m_numThreads);
+        Function::addThreadFunctions(m_generalParameters.numThreads);
         
         //Make sure we found definitions for all the functions
-        for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
+        for(size_t threadNum = 0; threadNum < m_generalParameters.numThreads; threadNum++) {
             for(size_t funcNum = 0; funcNum < functionNames.size(); funcNum++) {
                 m_functions[threadNum].push_back(Function::getThreadFunctionByName(threadNum, functionNames[funcNum]));
             }
@@ -320,9 +319,8 @@ private:
     //Parsed Variables
     std::vector<std::vector<Function::SharedFunctionPtr>> m_functions;
     Interval m_interval;
-    size_t m_numThreads = 1;
     SubdivisionParameters m_subdivisionParameters;
-    bool m_useTimer = false;
+    GeneralParameters     m_generalParameters;
     
     static size_t           m_timerInputParserIndex;
     Timer&                  m_timer = Timer::getInstance();

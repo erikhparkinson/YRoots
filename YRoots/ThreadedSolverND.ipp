@@ -10,13 +10,13 @@
 #define ThreadedSolverND_ipp
 
 template <Dimension D>
-ThreadedSolver<D>::ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, size_t _numThreads, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters) :
+ThreadedSolver<D>::ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, const GeneralParameters& _generalParameters, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters) :
 m_allFunctions(_functions),
-m_numThreads(_numThreads),
+m_numThreads(_generalParameters.numThreads),
 m_killThreads(false),
 m_numRunningThreads(0),
 m_intervalsToRun(m_numThreads),
-m_intervalTracker(_functions[0].size(), m_numThreads, _subdivisionParameters.trackIntervals, _startInterval.getArea()),
+m_intervalTracker(_functions[0].size(), _generalParameters.numThreads, _generalParameters.trackIntervals, _generalParameters.trackProgress, _startInterval.getArea()),
 m_rootTracker(m_numThreads)
 {
     if(m_numThreads == 0) {

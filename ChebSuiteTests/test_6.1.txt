@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = (y - 2*x)*(y+0.5*x);
+f2 = x*(x**2+y**2-1);
+FUNCTIONS_END;
+
+END;

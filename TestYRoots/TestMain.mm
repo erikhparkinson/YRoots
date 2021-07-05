@@ -7,7 +7,7 @@
 //
 
 #ifndef USE_TIMING
-//#define USE_TIMING
+#define USE_TIMING
 #endif
 
 #define TESTING
