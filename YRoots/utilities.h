@@ -265,8 +265,8 @@ void projectInterval(Interval& resultInterval, const Interval& currentInterval, 
 struct SubdivisionParameters {
     //Approx Tols
     double relApproxTol = 1.e-10; //TODO: Test to figure out the best defaults.
-    double absApproxTol = 1.e-5;
-    double targetTol = 1e-10; // TODO: To polish to really good residuals we can make this 1e-15. This causes some things to lose roots though. Figure out a happy medium/why it loses roots when smaller/a better way to polish at the end? Newton Polish?
+    double absApproxTol = 1.e-10;
+    double targetTol = 1e-15; // TODO: To polish to really good residuals we can make this 1e-15. This causes some things to lose roots though. Figure out a happy medium/why it loses roots when smaller/a better way to polish at the end? Newton Polish?
     bool check_eval_error = true;
     //Good Zeros
     double goodZerosFactor = 100;

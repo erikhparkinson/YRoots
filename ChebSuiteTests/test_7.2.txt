@@ -1,0 +1,18 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = y**4 + (-1)*y**3 + (2*x**2)*(y**2) + (3*x**2)*y + (x**4);
+xIn = 2*x;
+yIn = 2*(y+.5);
+f2 = yIn**10-2*(xIn**8)*(yIn**2)+4*(xIn**4)* yIn-2;
+FUNCTIONS_END;
+
+END;

@@ -112,12 +112,12 @@ double ChebyshevApproximator<D>::getAbsApproxTol(const Function::SharedFunctionP
     m_approxLength2 = 2*_approximationDegree+1;
     
     //Get an interval
-    const double linearization_size = 1e-10; //Make sure this isn't too small. Otherwise, we could get an interval where everything in it evaluates to the same point.
+    const double linearization_size = 1e-14; //Make sure this isn't too small. Otherwise, we could get an interval where everything in it evaluates to the same point.
     for(size_t i = 0; i < m_rank; i++) {
-        const double rand = 0.5; //TODO: Rand uniform [0,1]
+        const double rand = 0.51234127384517283654; //TODO: Rand uniform [0,1]. Make sure the random point is not 0!
         const double randomPoint = _currentInterval.lowerBounds[i] + rand * (_currentInterval.upperBounds[i] - _currentInterval.lowerBounds[i]);
-        m_absApproxErrorCalcInterval.lowerBounds[i] = randomPoint - linearization_size;
-        m_absApproxErrorCalcInterval.upperBounds[i] = randomPoint + linearization_size;
+        m_absApproxErrorCalcInterval.lowerBounds[i] = randomPoint * (1+linearization_size);
+        m_absApproxErrorCalcInterval.upperBounds[i] = randomPoint * (1-linearization_size);
     }
 
     m_intervalApproximators[m_firstApproximator]->approximate(_function, m_absApproxErrorCalcInterval, false);

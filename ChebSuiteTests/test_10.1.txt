@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = (x-1)*(cos(x*y**2)+2);
+f2 = sin(8*pi*y)*(cos(x*y)+2);
+FUNCTIONS_END;
+
+END;

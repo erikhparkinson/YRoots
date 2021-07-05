@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = sin(10*x-y/10) + y;
+f2 = cos(10*y-x/10) - x;
+FUNCTIONS_END;
+
+END;

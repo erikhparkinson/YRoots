@@ -204,7 +204,13 @@ void IntervalApproximator<D>::approximate(const Function::SharedFunctionPtr _fun
     for(size_t i = 0; i < m_divideByTwoPoints.size(); i++) {
         m_output[m_divideByTwoPoints[i]] /= 2;
     }
-            
+    
+    /*Print input and output. TODO: Remove when I'm confident things work.
+    std::cout<<"Input:\n";
+    printInputArray();
+    std::cout<<"Output:\n";
+    printOutputArray();*/
+    
     m_timer.stopTimer(m_timerIntervalApproximatorIndex);
 }
 

@@ -365,7 +365,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     std::vector<std::vector<double>> chebRoots = parseChebFile(_chebRootsFile);
     
     if(myRoots.size() != chebRoots.size()) {
-        std::cout<<"Unequal number of roots found!";
+        std::cout<<"Unequal number of roots found!\n";
         return false;
     }
     const size_t numRoots = myRoots.size();
@@ -389,7 +389,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         distances[rootSpot1] = bestDistance;
         //Track it
         if(spotsFound.find(bestIndex) != spotsFound.end()) {
-            std::cout<<"Couldn't match up roots!!";
+            std::cout<<"Couldn't match up roots!!\n";
             return false;
         }
         else {
@@ -453,6 +453,19 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     testNames.push_back("test_3.2");
     testNames.push_back("test_4.1");
     testNames.push_back("test_4.2");
+    testNames.push_back("test_5.1");
+    testNames.push_back("test_6.1");
+    testNames.push_back("test_6.2");
+    testNames.push_back("test_6.3");
+    testNames.push_back("test_7.1");
+    testNames.push_back("test_7.2");
+    testNames.push_back("test_7.3");
+    testNames.push_back("test_7.4");
+    testNames.push_back("test_8.1");
+    testNames.push_back("test_8.2");
+    testNames.push_back("test_9.1");
+    testNames.push_back("test_9.2");
+    testNames.push_back("test_10.1");
 
     for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
         const std::string testName = testNames[testNum];

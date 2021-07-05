@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = sin(3*pi*x)*cos(x*y);
+f2 = sin(3*pi*y)*cos(sin(x*y));
+FUNCTIONS_END;
+
+END;

@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = x**2+y**2-.49**2;
+f2 = (x-.1)*(x*y - .2);
+FUNCTIONS_END;
+
+END;
