@@ -116,6 +116,7 @@ Specifically, the function parser works recursively with the following supported
 * `<Variable Name>` - The name of one of the variable inputs.
 * `<Function Name>` - The name of one of the funtion inputs. This function must have been previously defined.
 * `<Number>` - Numbers, as defined below.
+* `(<subfunction>)` - Using parenthesis.
 
 The supported `Expression` for complex functions with one input are
 * `sin`, `cos`, `tan`,`sinh`, `cosh`, `tanh` - Trigonimetric Functions
