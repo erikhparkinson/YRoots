@@ -82,7 +82,7 @@ For example, all of the following are valid intervals.
 ```
 [-11, 1.5];
 [2^(-3), e];
-[-pi, cos(sin(log(7)))];
+[-pi, cos(sin(ln(7)))];
 ```
 
 ## Functions
@@ -101,20 +101,30 @@ The reset of the lines all declare the function. They are of the form
 <function_name> = <expression>;
 ```
 
-This must exists for every function declared in the first line, but can also exist for other subfunctions that are then used in the main funcitons. Functions can contain the following types. Letters are not cases sensitive. 
-* Constants
-  * These include numbers, `e`, and `pi`.
-* Addition, Subtraction, Multiplication, Division and Powers
-  * `+`, `-`, `*`, `/`, and `^`. To make Python users happy, `**` is interpreted as `^`.
-* Trig functions
-  * `sin`, `cos`, `tan`, `sinh`, `cosh`, `tanh`. Used as `sin(<expression>)`.
-* Square roots
-  * `sqrt(<expression>)`.
-* Exponentials and Logirithms
-  * `exp(<expression>)`, `log(<expression>, <b>)`, and `ln(<expression>)`. ln is the base e logarithm. log is the base b logarithm, where b is not neccesarily constant.
-* Chebyshev Polynomials
-  * `T<n>(<expression>)` gives the nth Chebyshev polynomials of the first kind of \<expression\>, 
-* Variables and Other Functions
-  * The name of a defined variable or function. Any function is assumed to be of the same dimension and take in the same variables.
+This must exists for every function declared in the first line, but can also exist for other subfunctions that are then used in the main funcitons. 
 
+The function parsing was set up to hopefully be fairly intuitive, and you should be able to just write function as you'd think it should be. The typical order of operations if followed.
+Specifically, the function parser works recursively with the following supported function formats.
+* `<subfunction1> + <subfunction2>` - Addition
+* `<subfunction1> - <subfunction2>` - Subtraction
+* `<subfunction1> * <subfunction2>` - Multiplication
+* `<subfunction1> / <subfunction2>` - Division
+* `<Number><subfunction1> ^ <subfunction2>` - Power. The Number is optional.
+* `<Number><subfunction1> ** <subfunction2>` - Power. Same as above but makes copying functions from Python easier. The Number is optional.
+* `<Number><Expression>(<subfunction>)` - More complicated expressions as defined below with one input. The Number is optional.
+* `<Number><Expression>(<subfunction1>, <subfunction2>)` - More complicated expressions as defined below with 2 inputs. The Number is optional.
+* `<Variable Name>` - The name of one of the variable inputs.
+* `<Function Name>` - The name of one of the funtion inputs. This function must have been previously defined.
+* `<Number>` - Numbers, as defined below.
 
+The supported `Expression` for complex functions with one input are
+* `sin`, `cos`, `tan`,`sinh`, `cosh`, `tanh` - Trigonimetric Functions
+* `sqrt`,`exp`,`ln` - Square root, Exponential Function, and Natural Logarithm.
+* `T<n>` - Chebyshev Polynomials. gives the nth Chebyshev polynomials of the first kind. The <> here are literal, so the second Chebyshev Polynomials in would be `T<2>(x)`.
+The supported `Expression` for complex functions with two inputs are
+* `log` - A variable base logirithm. Takes the log of `<subfunction1>` base `<subfunction2>`.
+
+The supported `Number` expressions can be of the following foramts.
+* `<LiteralNumber><NumbericConstant>` - Currently supported Numeric Constants are `pi` and `e`, not case sensitive. Example - `4pi`. The LiteralNumber in front is optional.
+* `<LiteralNumber>` - Your basic numbers folks. An optional negative sign in front, an optional decimal sign somewhere. And any amount of `[0-9]` numbers.
+* `<ScientificNotation>` - The syntax for this is  `<LiteralNumber>e<LiteralNumber>`, and is interpreted as `Num1*10^Num2`. The `e` is not case sensitive. Note that the parser gives precidence to scientific notation for the letter `e` if present as opposed to the Numberic Constant, so if you don't want `3e-2` to be interpreted as `.03`, you can type `3*e-2` or `(3e)-2`. 
