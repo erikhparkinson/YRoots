@@ -121,7 +121,7 @@ Specifically, the function parser works recursively with the following supported
 The supported `Expression` for complex functions with one input are
 * `sin`, `cos`, `tan`,`sinh`, `cosh`, `tanh` - Trigonimetric Functions. Example: `3sin(x)`.
 * `sqrt`,`exp`,`ln` - Square root, Exponential Function, and Natural Logarithm.  Example: `-2.5ln(x)`.
-* `T<n>` - Chebyshev Polynomials. gives the nth Chebyshev polynomials of the first kind. The <> here are literal. Example: `T<2>(x)`.
+* `T<n>` - Chebyshev Polynomials. gives the nth Chebyshev polynomials of the first kind. Example: `T2(x)`.
 The supported `Expression` for complex functions with two inputs are
 * `log` - A variable base logirithm. Takes the log of `<subfunction1>` base `<subfunction2>`. Example: `5log(x,10)`.
 
