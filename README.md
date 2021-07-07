@@ -105,27 +105,27 @@ This must exists for every function declared in the first line, but can also exi
 
 The function parsing was set up to hopefully be fairly intuitive, and you should be able to just write function as you'd think it should be. The typical order of operations if followed.
 Specifically, the function parser works recursively with the following supported function formats.
-* `<subfunction1> + <subfunction2>` - Addition
-* `<subfunction1> - <subfunction2>` - Subtraction
-* `<subfunction1> * <subfunction2>` - Multiplication
-* `<subfunction1> / <subfunction2>` - Division
-* `<Number><subfunction1> ^ <subfunction2>` - Power. The Number is optional.
-* `<Number><subfunction1> ** <subfunction2>` - Power. Same as above but makes copying functions from Python easier. The Number is optional.
+* `<subfunction1> + <subfunction2>` - Addition. Example: `x+y`.
+* `<subfunction1> - <subfunction2>` - Subtraction. Example: `x-y`.
+* `<subfunction1> * <subfunction2>` - Multiplication. Example: `x*y`.
+* `<subfunction1> / <subfunction2>` - Division. Example: `x/y`.
+* `<Number><subfunction1> ^ <subfunction2>` - Power. The Number is optional. Example: `3x^2`.
+* `<Number><subfunction1> ** <subfunction2>` - Power. Same as above but makes copying functions from Python easier. The Number is optional.  Example: `3x**2`.
 * `<Number><Expression>(<subfunction>)` - More complicated expressions as defined below with one input. The Number is optional.
 * `<Number><Expression>(<subfunction1>, <subfunction2>)` - More complicated expressions as defined below with 2 inputs. The Number is optional.
 * `<Variable Name>` - The name of one of the variable inputs.
 * `<Function Name>` - The name of one of the funtion inputs. This function must have been previously defined.
 * `<Number>` - Numbers, as defined below.
-* `(<subfunction>)` - Using parenthesis.
+* `<Number>`(<subfunction>)` - Using parenthesis.
 
 The supported `Expression` for complex functions with one input are
-* `sin`, `cos`, `tan`,`sinh`, `cosh`, `tanh` - Trigonimetric Functions
-* `sqrt`,`exp`,`ln` - Square root, Exponential Function, and Natural Logarithm.
-* `T<n>` - Chebyshev Polynomials. gives the nth Chebyshev polynomials of the first kind. The <> here are literal, so the second Chebyshev Polynomials in would be `T<2>(x)`.
+* `sin`, `cos`, `tan`,`sinh`, `cosh`, `tanh` - Trigonimetric Functions. Example: `3sin(x)`.
+* `sqrt`,`exp`,`ln` - Square root, Exponential Function, and Natural Logarithm.  Example: `-2.5ln(x)`.
+* `T<n>` - Chebyshev Polynomials. gives the nth Chebyshev polynomials of the first kind. The <> here are literal. Example: `T<2>(x)`.
 The supported `Expression` for complex functions with two inputs are
-* `log` - A variable base logirithm. Takes the log of `<subfunction1>` base `<subfunction2>`.
+* `log` - A variable base logirithm. Takes the log of `<subfunction1>` base `<subfunction2>`. Example: `5log(x,10)`.
 
 The supported `Number` expressions can be of the following foramts.
-* `<LiteralNumber><NumbericConstant>` - Currently supported Numeric Constants are `pi` and `e`, not case sensitive. Example - `4pi`. The LiteralNumber in front is optional.
-* `<LiteralNumber>` - Your basic numbers folks. An optional negative sign in front, an optional decimal sign somewhere. And any amount of `[0-9]` numbers.
-* `<ScientificNotation>` - The syntax for this is  `<LiteralNumber>e<LiteralNumber>`, and is interpreted as `Num1*10^Num2`. The `e` is not case sensitive. Note that the parser gives precidence to scientific notation for the letter `e` if present as opposed to the Numberic Constant, so if you don't want `3e-2` to be interpreted as `.03`, you can type `3*e-2` or `(3e)-2`. 
+* `<LiteralNumber><NumbericConstant>` - Currently supported Numeric Constants are `pi` and `e`, not case sensitive. The LiteralNumber in front is optional. Example: `4pi`.
+* `<LiteralNumber>` - Your basic numbers folks. An optional negative sign in front, an optional decimal sign somewhere. And any amount of `[0-9]` numbers. Example: `-1283618.123973`.
+* `<ScientificNotation>` - The syntax for this is  `<LiteralNumber>e<LiteralNumber>`, and is interpreted as `Num1*10^Num2`. The `e` is not case sensitive. Example: `3.1e-2` Note that the parser gives precidence to scientific notation for the letter `e` if present as opposed to the Numberic Constant, so if you don't want `3e-2` to be interpreted as `.03`, you can type `3*e-2` or `(3e)-2`. 
