@@ -128,4 +128,6 @@ The supported `Expression` for complex functions with two inputs are
 The supported `Number` expressions can be of the following foramts.
 * `<LiteralNumber><NumbericConstant>` - Currently supported Numeric Constants are `pi` and `e`, not case sensitive. The LiteralNumber in front is optional. Example: `4pi`.
 * `<LiteralNumber>` - Your basic numbers folks. An optional negative sign in front, an optional decimal sign somewhere. And any amount of `[0-9]` numbers. Example: `-1283618.123973`.
-* `<ScientificNotation>` - The syntax for this is  `<LiteralNumber>e<LiteralNumber>`, and is interpreted as `Num1*10^Num2`. The `e` is not case sensitive. Example: `3.1e-2` Note that the parser gives precidence to scientific notation for the letter `e` if present as opposed to the Numberic Constant, so if you don't want `3e-2` to be interpreted as `.03`, you can type `3*e-2` or `(3e)-2`. 
+* `<ScientificNotation>` - The syntax for this is  `<LiteralNumber>e<LiteralNumber>`, and is interpreted as `Num1*10^Num2`. The `e` is not case sensitive. Example: `3.1e-2`
+ 
+Note that the occurance of the `e` in both scientific notation and as a constant creates ambiguity sometimes. If there is a `LiteralNumber` before and after the `e`, it will always be interpreted as scientific notation. For example, `2.6e-3.3*4` will be interpreted as `(2.6*10^-3.3)*4`. If you want `e` to be interpreted as the constant in this case, then you can write it as `2.6*e-3.3*4` or `(2.6e)-3.3*4`.
