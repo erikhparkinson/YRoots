@@ -89,8 +89,8 @@ bool isDigit(const char c) {
 }
 
 bool isNumericDigit(const char c) {
-    //Return if c is in "123456789"
-    return c >= 49 && c <= 57;
+    //Return if c is in "0123456789"
+    return c >= 48 && c <= 57;
 }
 
 

@@ -291,9 +291,6 @@ private:
             if(functionData.size() != 2) {
                 printAndThrowRuntimeError("Incorrect function definition format!");
             }
-             //Parse ** as ^ so it's easy to copy from python
-            replaceStringInPlace(functionData[1], "**", "^");
-            //TODO: Make it also pull out stuff like 1e-4 here and replace it with 1*10^(-4)
             Function::addFunction(functionData[0], functionData[1], variableNames);
             parseSpot++;
         }

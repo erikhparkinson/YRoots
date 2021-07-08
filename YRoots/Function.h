@@ -312,7 +312,7 @@ public:
     void evaluateGridSimple(size_t _gridSize, std::vector<double>& _results) {
         //Get the childs evaluations and resize the result vector if needed
         const std::vector<double>& childEvals = m_subfunctions[0]->getPartialEvals();
-        size_t numEvals = m_evaluteGridInfo[_gridSize].childEvalSize;
+        size_t numEvals = m_evaluateGridInfo[_gridSize].childEvalSize;
 
         //Run the functions over each evaluation
         switch(m_functionType) {
@@ -379,7 +379,7 @@ public:
     }
 
     void evaluateGridCombine(size_t _gridSize, std::vector<double>& _results) {
-        std::vector<std::vector<size_t>>& currSpots = m_evaluteGridInfo[_gridSize].childEvalIndexes;
+        std::vector<std::vector<size_t>>& currSpots = m_evaluateGridInfo[_gridSize].childEvalIndexes;
         switch(m_functionType) {
             case FunctionType::POWER: {
                 const std::vector<double>& childEvals1 = m_subfunctions[0]->getPartialEvals();
@@ -432,11 +432,11 @@ public:
     void evaluateGridMain(const std::vector<std::vector<double>>& _grid) {
         //Prep the evaluate grid info if it hasn't already been done
         size_t gridSize = _grid[0].size();
-        if(unlikely(m_evaluteGridInfo.size() <= gridSize)) {
-            m_evaluteGridInfo.resize(gridSize + 1);
+        if(unlikely(m_evaluateGridInfo.size() <= gridSize)) {
+            m_evaluateGridInfo.resize(gridSize + 1);
         }
-        if(unlikely(!m_evaluteGridInfo[gridSize].precomputed)) {
-            prepEvaluatGrid(gridSize, m_evaluteGridInfo[gridSize]);
+        if(unlikely(!m_evaluateGridInfo[gridSize].precomputed)) {
+            prepEvaluatGrid(gridSize, m_evaluateGridInfo[gridSize]);
         }
 
         switch(m_evaluateGridType) {
@@ -458,11 +458,11 @@ public:
     void evaluateGridMain(const std::vector<std::vector<double>>& _grid, std::vector<double>& _results) {
         //Prep the evaluate grid info if it hasn't already been done
         size_t gridSize = _grid[0].size();
-        if(unlikely(m_evaluteGridInfo.size() <= gridSize)) {
-            m_evaluteGridInfo.resize(gridSize + 1);
+        if(unlikely(m_evaluateGridInfo.size() <= gridSize)) {
+            m_evaluateGridInfo.resize(gridSize + 1);
         }
-        if(unlikely(!m_evaluteGridInfo[gridSize].precomputed)) {
-            prepEvaluatGrid(gridSize, m_evaluteGridInfo[gridSize]);
+        if(unlikely(!m_evaluateGridInfo[gridSize].precomputed)) {
+            prepEvaluatGrid(gridSize, m_evaluateGridInfo[gridSize]);
         }
 
         switch(m_evaluateGridType) {
@@ -603,9 +603,8 @@ private:
         //Remove excess parenthesis surrounding the entire function.
         removeExtraParenthesis(_functionString);
         
-        //TO start, split on +-.
-        std::vector<std::string> subparts;
-        splitSum(_functionString, subparts);
+        //To start, split on +-.
+        std::vector<std::string> subparts = splitSum(_functionString);
         
         if(subparts.size() == 0) {
             //This is an empty string! Something went wrong
@@ -1051,7 +1050,28 @@ private:
         }
     }
     
-    void splitSum(const std::string& _functionString, std::vector<std::string>& _subparts) {
+    std::unordered_set<size_t> getScientificNotationMinusLocs(const std::string& _functionString) {
+        std::unordered_set<size_t> spots;
+        for(size_t spot = 0; spot < _functionString.length(); spot++) {
+            if(_functionString[spot] == CHAR::MINUS) {
+                //It is scientific notation if it is <isNumericDigit><.>e-<.><isNumericDigit> with optional <.>
+                const bool eBefore = spot >= 1 && (_functionString[spot-1] == 'e' || _functionString[spot-1] == 'E');
+                const bool numericBefore = spot >= 2 && isNumericDigit(_functionString[spot-2]);
+                const bool numericBefore2 = spot >= 3 && isNumericDigit(_functionString[spot-3]) && _functionString[spot-2] == '.';
+                const bool numericAfter = _functionString.length()-spot-1 >= 1 && isNumericDigit(_functionString[spot+1]);
+                const bool numericAfter2 = _functionString.length()-spot-1 >= 2 && _functionString[spot+1] == '.' && isNumericDigit(_functionString[spot+2]);
+                if(eBefore && (numericBefore || numericBefore2) && (numericAfter || numericAfter2)) {
+                    spots.insert(spot);
+                }
+            }
+        }
+        return spots;
+    }
+    
+    std::vector<std::string> splitSum(const std::string& _functionString) {
+        std::unordered_set<size_t> scientificNotationMinusLocs = getScientificNotationMinusLocs(_functionString);
+        
+        std::vector<std::string> subparts;
         std::string currentSubstring = "";
         size_t parenthesisCount = 0;
         for (std::string::size_type stringSpot = 0; stringSpot < _functionString.size(); stringSpot++) {
@@ -1069,10 +1089,13 @@ private:
             else if(parenthesisCount > 0) {
                 //Do nothing, we are inside parenthesis
             }
+            else if(currChar == CHAR::MINUS && scientificNotationMinusLocs.find(stringSpot) != scientificNotationMinusLocs.end()) {
+                //Do nothing, this MINUS is part of scientific notation.
+            }
             //Store the current substring if it exists
             else if(currChar == CHAR::PLUS || currChar == CHAR::MINUS) {
                 if(currentSubstring.length() > 0) {
-                    _subparts.push_back(currentSubstring);
+                    subparts.push_back(currentSubstring);
                 }
                 currentSubstring = "";
             }
@@ -1080,7 +1103,8 @@ private:
         }
         
         //Add Anything Remaining
-        _subparts.push_back(currentSubstring);
+        subparts.push_back(currentSubstring);
+        return subparts;
     }
 
     void splitProduct(const std::string& _functionString, std::vector<std::string>& _subparts, std::vector<bool>& _isMultiply) {
@@ -1105,6 +1129,14 @@ private:
                 //Do nothing, we are inside parenthesis
                 currentSubstring += currChar;
 
+            }
+            else if(currChar == CHAR::TIMES && stringSpot + 1 < _functionString.size() && _functionString[stringSpot+1] == CHAR::TIMES) {
+                //Do nothing, this is a ** which is a ^.
+                currentSubstring += currChar;
+            }
+            else if(currChar == CHAR::TIMES && stringSpot > 0 && _functionString[stringSpot-1] == CHAR::TIMES) {
+                //Do nothing, this is a ** which is a ^.
+                currentSubstring += currChar;
             }
             //Store the current substring and the new sign if it exists
             else if(currChar == CHAR::TIMES || currChar == CHAR::DIVIDE) {
@@ -1142,37 +1174,55 @@ private:
     
     std::string parseCoeff(std::string& _functionString) {
         //Parses a number from the front of the string and removes it.
-        std::string numStr = "";
+        std::string numStr1 = "";
+        std::string numStr2 = "";
+        bool foundE = false;
         size_t toRemove = 0;
+        size_t toRemoveNoE = 0;
         size_t stringLength = _functionString.length();
-        //Check if the next char is a number, - or .
+        //Check if the next char is valid.
         while(stringLength > toRemove) {
-            if(isDigit(_functionString[toRemove])) {
-                numStr += _functionString[toRemove++];
-            }
-            else if(_functionString[toRemove] == CHAR::PLUS) {
+            std::string& stringToAddTo = foundE ? numStr2 : numStr1;
+            if(_functionString[toRemove] == 'e' || _functionString[toRemove] == 'E') { //Check for scientific notation.
+                toRemoveNoE = toRemove;
+                foundE = true;
                 toRemove++;
+            }
+            else if(isNumericDigit(_functionString[toRemove]) || _functionString[toRemove] == '.') {
+                stringToAddTo += _functionString[toRemove++];
+            }
+            else if(stringToAddTo == "" && _functionString[toRemove] == CHAR::MINUS) { //- can only show up as first character.
+                stringToAddTo += _functionString[toRemove++];
             }
             else {
                 break;
             }
         }
-        if(_functionString[toRemove] == CHAR::TIMES) {
-            toRemove++;
+        if(!foundE) {
+            toRemoveNoE = toRemove;
         }
         
-        //Get the truncated string
-        std::string coeffString = _functionString.substr(0, toRemove);
-        _functionString = _functionString.substr(toRemove);
-        //Parse the value.
-        if(numStr == "") {
-            m_value = 1.0;
-        }
-        else if(numStr == "-") {
-            m_value = -1.0;
+        std::string coeffString;
+        //If we are using scientific notation
+        if(foundE && numStr1 != "" && numStr1 != "-" && numStr2 != "" && numStr2 != "-") {
+            coeffString = _functionString.substr(0, toRemove);
+            _functionString = _functionString.substr(toRemove);
+            //Parse the value.
+            m_value = std::stod(numStr1) * power(10.0, std::stod(numStr2));
         }
         else {
-            m_value = std::stod(numStr);
+            coeffString = _functionString.substr(0, toRemoveNoE);
+            _functionString = _functionString.substr(toRemoveNoE);
+            //Parse the value.
+            if(numStr1 == "") {
+                m_value = 1.0;
+            }
+            else if(numStr1 == "-") {
+                m_value = -1.0;
+            }
+            else {
+                m_value = std::stod(numStr1);
+            }
         }
         
         return coeffString;
@@ -1295,6 +1345,7 @@ private:
         }
         
         //At this point parse it again, it may be a changed func
+        //TODO: Assert that it is surrounded by parenthesis at this point?
         m_functionType = FunctionType::PASS_THROUGH;
         addSubfunction(_functionString);
     }
@@ -1397,9 +1448,14 @@ private:
             else if(c == CHAR::LEFT_PAREN) {
                 parenthesisCount++;
             }
-            //Check for a comma and add to the right substring
-            if(c == CHAR::POWER && parenthesisCount == 0) {
+            //Check for a power symbol and split the substrings
+            if(parenthesisCount == 0 && c == CHAR::POWER) {
                 part2 = true;
+            }
+            else if(parenthesisCount == 0 && c == CHAR::TIMES && i+1 < _functionString.length() && _functionString[i+1] == CHAR::TIMES) {
+                //** is parsed as ^
+                part2 = true;
+                i++;
             }
             else if (part2) {
                 substring2 += c;
@@ -1493,8 +1549,8 @@ private:
     }
     
     double productEval(const std::vector<double>& _inputPoints) {
-        double result = m_value * m_subfunctions[0]->evaluate(_inputPoints);
-        for(size_t i = 1; i < m_isMultiply.size(); i++) {
+        double result = m_value;
+        for(size_t i = 0; i < m_isMultiply.size(); i++) {
             SIGNCHECKPRODUCT(m_isMultiply[i], result, m_subfunctions[i]->evaluate(_inputPoints));
         }
         return result;
@@ -1615,7 +1671,7 @@ public:
     }
 
     const std::vector<EvaluateGridInfo>& getEvaluateGridInfo() const {
-        return m_evaluteGridInfo;
+        return m_evaluateGridInfo;
     }
 
     const EvaluateGridType getEvaluateGridType() const {
@@ -1691,7 +1747,7 @@ public:
     m_hasDimension(other.getHasDimension()),
     m_numUsedDimensions(other.getNumUsedDimensions()),
     m_partialEvaluations(other.getPartialEvals()),
-    m_evaluteGridInfo(other.getEvaluateGridInfo()),
+    m_evaluateGridInfo(other.getEvaluateGridInfo()),
     m_evaluateGridType(other.getEvaluateGridType())
     {
         //Copies everything except the pointers
@@ -1802,7 +1858,7 @@ private:
     std::vector<bool>                           m_hasDimension;
     size_t                                      m_numUsedDimensions;
     std::vector<double>                         m_partialEvaluations;
-    std::vector<EvaluateGridInfo>               m_evaluteGridInfo;
+    std::vector<EvaluateGridInfo>               m_evaluateGridInfo;
     EvaluateGridType                            m_evaluateGridType;
     
     static size_t           m_timerEvaluateGridIndex;

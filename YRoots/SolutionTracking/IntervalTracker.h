@@ -126,21 +126,34 @@ public:
 private:
     void updateProgressBar() {
         if(m_updatingProgressBar.fetch_add(1) == 0) {
-            int currentArea = std::round(100 * std::accumulate(m_areaSolved.begin(), m_areaSolved.end(), 0.0) / m_totalArea);
+            const int DecimalsSpots = 3;
+            int DecimalPower = power(10,DecimalsSpots);
+            const int MaxAreaVal = 100*DecimalPower;
+            int currentArea = std::round(MaxAreaVal * std::accumulate(m_areaSolved.begin(), m_areaSolved.end(), 0.0) / m_totalArea);
             assert(currentArea >= 0);
-            assert(currentArea <= 100);
+            assert(currentArea <= MaxAreaVal);
             if(currentArea > m_lastAreaSolved) {
                 //Print the progress
                 int barWidth = 70;
                 std::cout << "\r[";
-                int pos = barWidth * currentArea/100;
+                int pos = barWidth * currentArea/MaxAreaVal;
                 for (int i = 0; i < barWidth; ++i) {
                     if (i < pos) std::cout << "=";
                     else if (i == pos) std::cout << ">";
                     else std::cout << " ";
                 }
-                std::cout << "] " << currentArea << " %";
-                if(unlikely(currentArea == 100)) {
+                int percentInt = currentArea / DecimalPower;
+                int percentFrac = currentArea % DecimalPower;
+                std::cout << "] " << percentInt;
+                if(DecimalsSpots > 0) {
+                    std::cout << "." << percentFrac;
+                    while(percentFrac < DecimalPower/10) { //TODO: Make this more efficient
+                        std::cout << "0";
+                        DecimalPower /= 10;
+                    }
+                }
+                std::cout << "%";
+                if(unlikely(currentArea == MaxAreaVal)) {
                     std::cout<<"\n"; //Print a newline at the end so the program ends on a newline.
                 }
                 std::cout.flush();

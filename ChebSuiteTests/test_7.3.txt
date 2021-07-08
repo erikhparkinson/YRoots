@@ -9,7 +9,7 @@ INTERVAL_END;
 FUNCTIONS;
 function f1, f2;
 variable_group x, y;
-c = 10^(-9);
+c = 1e-9;
 f1 = cos(x*y/(c**2))+sin(3*x*y/(c**2));
 f2 = cos(y/c)-cos(2*x*y/(c**2));
 FUNCTIONS_END;

@@ -10,7 +10,7 @@ FUNCTIONS;
 function f1, f2;
 variable_group x, y;
 f1 = (y - 2*x)*(y+.5*x);
-f2 = (x-.0001)*(x**2+y**2-1);
+f2 = (x-1e-4)*(x**2+y**2-1);
 FUNCTIONS_END;
 
 END;
