@@ -27,96 +27,59 @@
 - (void)testFunction1DBasic {
     std::vector<double> inputPoints;
     std::vector<std::string> variableNames;
-    variableNames.push_back("x0");
+    variableNames.push_back("x");
     
-    std::string functionString = "5+2*x0";
-    Function tempFunction("", functionString, variableNames);
-    inputPoints.push_back(5);
-    double result = tempFunction.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 15));
+    auto evalChecker1D = [&](const std::string& functionString, double evalPoint, double correct) {
+        Function tempFunction("", functionString, variableNames);
+        std::vector<double> inputPoints;
+        inputPoints.push_back(evalPoint);
+        double result = tempFunction.evaluate(inputPoints);
+        if(!withinEpslion(result, correct)) {
+            std::cout<<"Fail: " << functionString << "\t" <<result << "\t" << correct << "\n";
+        }
+        XCTAssert(withinEpslion(result, correct));
+    };
     
-    functionString = "5+8+13";
-    Function tempFunction2("", functionString, variableNames);
-    result = tempFunction2.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 26));
+    evalChecker1D("5+2*x", 5, 15);
+    evalChecker1D("5+8+13", 5, 26);
+    evalChecker1D("sin(x)*cos(x)", 5, sin(5)*cos(5));
+    evalChecker1D("5*4*3*cosh(x)", 5, 60*cosh(5));
+    evalChecker1D("5/8/ln(x)", 5, .625/log(5));
+    evalChecker1D("log(x,125)", 5, 3);
+    evalChecker1D("log(5,x)", 5, 1);
+    evalChecker1D("5*x^2", 5, 125);
+    evalChecker1D("5*x**2", 5, 125);
+    evalChecker1D("2*T3(x)", 2, 52);
+    evalChecker1D("2*T3(0)", 2, 0); //TODO: Make sure this is interpreted as a constant.
+    evalChecker1D("-3*T12(x)", cos(12), -3*cos(144));
+    evalChecker1D("2*x^4*x^5", 2, 1024);
+    evalChecker1D("2*(x-1)", 5, 8);
+    evalChecker1D("2(x-1)", 5, 8);
+    evalChecker1D("10^(-9)", 5, 1e-9);
+    evalChecker1D("1-x^2", 2, -3);
+    evalChecker1D("1-2x^2", 2, -7);
+    evalChecker1D("1-2^x", 2, -3);
+    //Test Scientific Notation
+    evalChecker1D("1e-4cos(x)", 0, 1e-4);
+    evalChecker1D("1e-4*cos(x)", 0, 1e-4);
+    evalChecker1D("1e4*cos(x)", 0, 1e4);
+    evalChecker1D("1.2e-3.3*4x", 5, 20*(1.2*power(10.0,-3.3)));
+    evalChecker1D("1.2e-.3*4x", 5, 20*(1.2*power(10.0,-.3)));
+    evalChecker1D("1.2e.3*4x", 5, 20*(1.2*power(10.0,.3)));
+    evalChecker1D("1.2e-3-3", 5, (1.2e-3)-3);
+    evalChecker1D("1.2e3-3", 5, (1.2e3)-3);
+    evalChecker1D("1.e-3-3", 5, (1.e-3)-3);
+    evalChecker1D("1.e3-3", 5, (1.e3)-3);
+    evalChecker1D("-1.e-3-3", 5, (-1.e-3)-3);
+    //Test splitting in parenthesis
+    evalChecker1D("cos(x^2)", 3, cos(9));
+    evalChecker1D("cos(x**2)", 3, cos(9));
+    evalChecker1D("cos(x+2)", 3, cos(5));
+    evalChecker1D("cos(x-2)", 3, cos(1));
+    evalChecker1D("cos(x/2)", 3, cos(1.5));
+    evalChecker1D("cos(x*2)", 3, cos(6));
 
-    functionString = "sin(x0)*cos(x0)";
-    Function tempFunction3("", functionString, variableNames);
-    result = tempFunction3.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, sin(5)*cos(5)));
-
-    functionString = "5*4*3*cosh(x0)";
-    Function tempFunction4("", functionString, variableNames);
-    result = tempFunction4.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 60*cosh(5)));
-    
-    functionString = "5/8/ln(x0)";
-    Function tempFunction5("", functionString, variableNames);
-    result = tempFunction5.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, .625*log(5)));
-    
-    functionString = "log(x0,125)";
-    Function tempFunction6("", functionString, variableNames);
-    result = tempFunction6.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 3.0));
-
-    functionString = "log(5,x0)";
-    Function tempFunction7("", functionString, variableNames);
-    result = tempFunction7.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 1.0));
-
-    functionString = "5*x0^2";
-    Function tempFunction8("", functionString, variableNames);
-    result = tempFunction8.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 125.));
-
-    functionString = "2*T3(x0)";
-    Function tempFunction9("", functionString, variableNames);
-    inputPoints[0] = 2;
-    result = tempFunction9.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 52));
-
-    functionString = "-3*T12(x0)";
-    Function tempFunction10("", functionString, variableNames);
-    inputPoints[0] = cos(12);
-    result = tempFunction10.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, -3*cos(144)));
-
-    functionString = "2*x0^4*x0^5";
-    Function tempFunction11("", functionString, variableNames);
-    inputPoints[0] = 2;
-    result = tempFunction11.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 1024));
-
-    functionString = "2*(x0-1)";
-    Function tempFunction12("", functionString, variableNames);
-    inputPoints[0] = 5;
-    result = tempFunction12.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 8));
-
-    functionString = "10^(-9)";
-    Function tempFunction13("", functionString, variableNames);
-    inputPoints[0] = 5;
-    result = tempFunction13.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, 1e-9));
-
-    functionString = "1-x0^2";
-    Function tempFunction14("", functionString, variableNames);
-    inputPoints[0] = 2;
-    result = tempFunction14.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, -3));
-
-    functionString = "1-2x0^2";
-    Function tempFunction15("", functionString, variableNames);
-    inputPoints[0] = 2;
-    result = tempFunction15.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, -7));
-
-    functionString = "1-2^x0";
-    Function tempFunction16("", functionString, variableNames);
-    inputPoints[0] = 2;
-    result = tempFunction16.evaluate(inputPoints);
-    XCTAssert(withinEpslion(result, -3));
+    //TODO: Add tests that it fails to parse.
 }
 
 - (void)testFunction2DBasic {
