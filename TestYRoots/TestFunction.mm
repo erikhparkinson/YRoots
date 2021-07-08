@@ -44,9 +44,7 @@
     evalChecker1D("5+8+13", 5, 26);
     evalChecker1D("sin(x)*cos(x)", 5, sin(5)*cos(5));
     evalChecker1D("5*4*3*cosh(x)", 5, 60*cosh(5));
-    evalChecker1D("5/8/ln(x)", 5, .625/log(5));
-    evalChecker1D("log(x,125)", 5, 3);
-    evalChecker1D("log(5,x)", 5, 1);
+    evalChecker1D("5/8/log(x)", 5, .625/log(5));
     evalChecker1D("5*x^2", 5, 125);
     evalChecker1D("5*x**2", 5, 125);
     evalChecker1D("2*T3(x)", 2, 52);
@@ -78,6 +76,10 @@
     evalChecker1D("cos(x-2)", 3, cos(1));
     evalChecker1D("cos(x/2)", 3, cos(1.5));
     evalChecker1D("cos(x*2)", 3, cos(6));
+    //Test logs
+    evalChecker1D("log(x)", 3, log(3));
+    evalChecker1D("log2(x)", 3, log2(3));
+    evalChecker1D("log10(x)", 3, log10(3));
 
     //TODO: Add tests that it fails to parse.
 }
