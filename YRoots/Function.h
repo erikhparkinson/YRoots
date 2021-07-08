@@ -24,8 +24,9 @@ enum FunctionType {
     COSH, //Syntax: cosh(x)
     SINH, //Syntax: sinh(x)
     TANH, //Syntax: tanh(x)
-    LOG, //Syntax: log(base, x)
-    LN, //Syntax: ln(x)
+    LOG, //Syntax: log(x)
+    LOG10, //Syntax: log10(x)
+    LOG2, //Syntax: log2(x)
     POWER, //Syntax: x^y
     SQRT, //Syntax: sqrt(x)
     EXP, //Syntax: exp(x)
@@ -147,7 +148,9 @@ public:
             case FunctionType::SINH:
             case FunctionType::COSH:
             case FunctionType::TANH:
-            case FunctionType::LN:
+            case FunctionType::LOG:
+            case FunctionType::LOG10:
+            case FunctionType::LOG2:
             case FunctionType::SQRT:
             case FunctionType::EXP:
             case FunctionType::CHEBYSHEV:
@@ -155,7 +158,6 @@ public:
                 m_evaluateGridType = EvaluateGridType::SIMPLE;
                 break;
             case FunctionType::POWER:
-            case FunctionType::LOG:
             case FunctionType::SUM:
             case FunctionType::PRODUCT:
                 m_evaluateGridType = EvaluateGridType::COMBINE;
@@ -346,9 +348,19 @@ public:
                     _results[i] =  m_value * tanh(childEvals[i]);
                 }
                 break;
-            case FunctionType::LN:
+            case FunctionType::LOG:
                 for(size_t i = 0; i < numEvals; i++) {
                     _results[i] =  m_value * log(childEvals[i]);
+                }
+                break;
+            case FunctionType::LOG10:
+                for(size_t i = 0; i < numEvals; i++) {
+                    _results[i] =  m_value * log10(childEvals[i]);
+                }
+                break;
+            case FunctionType::LOG2:
+                for(size_t i = 0; i < numEvals; i++) {
+                    _results[i] =  m_value * log2(childEvals[i]);
                 }
                 break;
             case FunctionType::SQRT:
@@ -386,18 +398,6 @@ public:
                 const std::vector<double>& childEvals2 = m_subfunctions[1]->getPartialEvals();
                 for(size_t i = 0; i < currSpots.size(); i++) {
                     _results[i] =  m_value * pow(childEvals1[currSpots[i][0]], childEvals2[currSpots[i][1]]);
-                }
-                break;
-            }
-            case FunctionType::LOG:{
-                const std::vector<double>& childEvals1 = m_subfunctions[0]->getPartialEvals();
-                const std::vector<double>& childEvals2 = m_subfunctions[1]->getPartialEvals();
-                for(size_t i = 0; i < currSpots.size(); i++) {
-                    //TOOD: This could be more efficent by just taking the logs for each dimensions, and then doing the division
-                    //In the cross product, but that's not a priority as the function is only used for things of variable base,
-                    //which I expect to be rare. Maybe I should just turn things of variable base into a product type and then
-                    //it isn't an issue.
-                    _results[i] =  m_value * log(childEvals1[currSpots[i][0]]) / log(childEvals2[currSpots[i][1]]);
                 }
                 break;
             }
@@ -556,9 +556,11 @@ public:
             case FunctionType::TANH:
                 return m_value * tanh(m_subfunctions[0]->evaluate(_inputPoints));
             case FunctionType::LOG:
-                return m_value * log(m_subfunctions[1]->evaluate(_inputPoints)) / log(m_subfunctions[0]->evaluate(_inputPoints));
-            case FunctionType::LN:
                 return m_value * log(m_subfunctions[0]->evaluate(_inputPoints));
+            case FunctionType::LOG10:
+                return m_value * log10(m_subfunctions[0]->evaluate(_inputPoints));
+            case FunctionType::LOG2:
+                return m_value * log2(m_subfunctions[0]->evaluate(_inputPoints));
             case FunctionType::POWER:
                 return m_value * pow(m_subfunctions[0]->evaluate(_inputPoints), m_subfunctions[1]->evaluate(_inputPoints));
             case FunctionType::SQRT:
@@ -683,20 +685,29 @@ private:
             m_functionType = FunctionType::CONSTANT;
         }
     }
-
-    //Check for a constant LOG base
+    
+    //Check for a constant LOG
     if(m_functionType == FunctionType::LOG) {
         if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value /= log(m_subfunctions[0]->getValue());
+            m_value *= log(m_subfunctions[0]->getValue());
             m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::LN;
+            m_functionType = FunctionType::CONSTANT;
         }
     }
-    
-    //Check for a constant LN
-    if(m_functionType == FunctionType::LN) {
+
+    //Check for a constant LOG10
+    if(m_functionType == FunctionType::LOG10) {
         if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= log(m_subfunctions[0]->getValue());
+            m_value *= log10(m_subfunctions[0]->getValue());
+            m_subfunctions.erase(m_subfunctions.begin());
+            m_functionType = FunctionType::CONSTANT;
+        }
+    }
+
+    //Check for a constant LOG2
+    if(m_functionType == FunctionType::LOG2) {
+        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+            m_value *= log2(m_subfunctions[0]->getValue());
             m_subfunctions.erase(m_subfunctions.begin());
             m_functionType = FunctionType::CONSTANT;
         }
@@ -1229,8 +1240,6 @@ private:
     }
     
     void parseComplexType(std::string& _functionString) {
-        size_t stringLenth = _functionString.length();
-
         //Parse the Coefficient
         std::string coeffString = parseCoeff(_functionString);
 
@@ -1261,6 +1270,18 @@ private:
             return;
         }
         
+        size_t stringLenth = _functionString.length();
+        
+        //Parse LOG10
+        if(stringLenth > 5) {
+            std::string lowercase5 = toLowerSubstring(_functionString, 0, 5);
+            if(lowercase5 == "log10") {
+                m_functionType = FunctionType::LOG10;
+                parseComplexFunctionParenthesis(_functionString.substr(5));
+                return;
+            }
+        }
+        
         //Parse hyperbolic trig and SQRT
         if(stringLenth > 4) {
             std::string lowercase4 = toLowerSubstring(_functionString, 0, 4);
@@ -1281,6 +1302,11 @@ private:
             }
             if(lowercase4 == "sqrt") {
                 m_functionType = FunctionType::SQRT;
+                parseComplexFunctionParenthesis(_functionString.substr(4));
+                return;
+            }
+            if(lowercase4 == "log2") {
+                m_functionType = FunctionType::LOG2;
                 parseComplexFunctionParenthesis(_functionString.substr(4));
                 return;
             }
@@ -1311,17 +1337,7 @@ private:
             }
             if(lowercase3 == "log") {
                 m_functionType = FunctionType::LOG;
-                parseComplexFunctionParenthesis2(_functionString.substr(3));
-                return;
-            }
-        }
-
-        //Parse LN
-        if(stringLenth > 2) {
-            std::string lowercase2 = toLowerSubstring(_functionString, 0, 2);
-            if(lowercase2 == "ln") {
-                m_functionType = FunctionType::LN;
-                parseComplexFunctionParenthesis(_functionString.substr(2));
+                parseComplexFunctionParenthesis(_functionString.substr(3));
                 return;
             }
         }
@@ -1355,42 +1371,6 @@ private:
             printAndThrowRuntimeError("Failed to Parse Function!");
         }
         addSubfunction(_functionString.substr(1, _functionString.length() - 2));
-    }
-
-    void parseComplexFunctionParenthesis2(const std::string& _functionString) {
-        if(_functionString[0] != CHAR::LEFT_PAREN || _functionString[_functionString.length() - 1] != CHAR::RIGHT_PAREN) {
-            printAndThrowRuntimeError("Failed to Parse Function!");
-        }
-        std::string substring1;
-        std::string substring2;
-        bool part2 = false;
-        size_t parenthesisCount = 0;
-        //The two subfunctions are seperated by a comma
-        for(size_t i = 1; i + 1 < _functionString.length(); i++) {
-            char c = _functionString[i];
-            //Update the parenthesisCount
-            if(c == CHAR::RIGHT_PAREN) {
-                if(parenthesisCount == 0) {
-                    printAndThrowRuntimeError("Mismatched Parenthesis in Function!");
-                }
-                parenthesisCount--;
-            }
-            else if(c == CHAR::LEFT_PAREN) {
-                parenthesisCount++;
-            }
-            //Check for a comma and add to the right substring
-            if(c == CHAR::COMMA && parenthesisCount == 0) {
-                part2 = true;
-            }
-            else if (part2) {
-                substring2 += c;
-            }
-            else {
-                substring1 += c;
-            }
-        }
-        addSubfunction(substring1);
-        addSubfunction(substring2);
     }
 
     void parseChebyshevFunction(const std::string& _functionString) {

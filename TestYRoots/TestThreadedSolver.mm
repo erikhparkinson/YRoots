@@ -436,8 +436,8 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
 
 - (void)testChebSuite {
     //Read through all the ChebSuite files, run the test, and then check the results against what ChebFun gets.
-    const std::string testFolder = "ChebSuiteTests/";
-    const std::string testResultFolder = "Chebfun_results/";
+    const std::string testFolder = "TestFiles/ChebSuiteTests/";
+    const std::string testResultFolder = "TestFiles/ChebSuiteResults/";
     std::vector<std::string> testNames;
     testNames.push_back("test_1.1");
     testNames.push_back("test_1.2");
@@ -466,6 +466,42 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     testNames.push_back("test_9.1");
     testNames.push_back("test_9.2");
     testNames.push_back("test_10.1");
+
+    for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
+        const std::string testName = testNames[testNum];
+        std::cout << "Running Test " + testName << "\n";
+
+        //Get file names
+        std::vector<std::string> splitName = split(testName, "_");
+        const std::string testInputFile = testFolder + testName + ".txt";
+        const std::string testResultFile = testResultFolder + splitName[0] + "_roots_" + splitName[1] + ".csv";
+        const std::string testOutputFile = "roots.txt";
+
+        //Solve it
+        Function::clearSavedFunctions();
+        std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
+        mainSolver(testInputFile);
+        std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+        double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
+        std::cout << "Solves in " <<formatTimePretty(nanos)<< ".\n";
+        
+        //Grab functions
+        Function::clearSavedFunctions();
+        InputFileParser inputParser(testInputFile);
+        inputParser.parse();
+        std::vector<Function::SharedFunctionPtr>& functions = inputParser.getFunctions()[0];
+
+        //Check it
+        XCTAssert(compareTestFiles(testOutputFile, testResultFile, functions));
+    }
+}
+
+- (void)testDemoNotebook {
+    //Read through all the DemoNotebook examples, run the test, and then check the results against what our python code gets.
+    const std::string testFolder = "TestFiles/DemoNotebookTests/";
+    const std::string testResultFolder = "TestFiles/DemoNotebookResults/";
+    std::vector<std::string> testNames;
+    testNames.push_back("test_1");
 
     for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
         const std::string testName = testNames[testNum];
