@@ -111,8 +111,7 @@ Specifically, the function parser works recursively with the following supported
 * `<subfunction1> / <subfunction2>` - Division. Example: `x/y`.
 * `<Number><subfunction1> ^ <subfunction2>` - Power. The Number is optional. Example: `3x^2`.
 * `<Number><subfunction1> ** <subfunction2>` - Power. Same as above but makes copying functions from Python easier. The Number is optional.  Example: `3x**2`.
-* `<Number><Expression>(<subfunction>)` - More complicated expressions as defined below with one input. The Number is optional.
-* `<Number><Expression>(<subfunction1>, <subfunction2>)` - More complicated expressions as defined below with 2 inputs. The Number is optional.
+* `<Number><Expression>(<subfunction>)` - More complicated expressions as defined below. The Number is optional.
 * `<Variable Name>` - The name of one of the variable inputs.
 * `<Function Name>` - The name of one of the funtion inputs. This function must have been previously defined.
 * `<Number>` - Numbers, as defined below.
@@ -120,10 +119,9 @@ Specifically, the function parser works recursively with the following supported
 
 The supported `Expression` for complex functions with one input are
 * `sin`, `cos`, `tan`,`sinh`, `cosh`, `tanh` - Trigonimetric Functions. Example: `3sin(x)`.
-* `sqrt`,`exp`,`ln` - Square root, Exponential Function, and Natural Logarithm.  Example: `-2.5ln(x)`.
+* `sqrt`,`exp` - Square root, Exponential Function, and Natural Logarithm.  Example: `-2.5exp(x)`.
+* `log`,`log2`,`log10` - Logarithm base e, 2, 10. Example: `3log(x)`.
 * `T<n>` - Chebyshev Polynomials. gives the nth Chebyshev polynomials of the first kind. Example: `T2(x)`.
-The supported `Expression` for complex functions with two inputs are
-* `log` - A variable base logirithm. Takes the log of `<subfunction1>` base `<subfunction2>`. Example: `5log(x,10)`.
 
 The supported `Number` expressions can be of the following foramts.
 * `<LiteralNumber><NumbericConstant>` - Currently supported Numeric Constants are `pi` and `e`, not case sensitive. The LiteralNumber in front is optional. Example: `4pi`.
