@@ -40,9 +40,16 @@ enum FunctionType {
     POWER_BASIS_POLYNOMIAL, //Sums of POWER_BASIS_MONOMIAL, for faster evaluation.
     CHEBYSHEV_BASIS_POLYNOMIAL, //Sums of CHEBYSHEV_BASIS_MONOMIAL, for faster evaluation.
     VARIABLE, //A single monomial of one variable. Includes signed coefficient.
-    PASS_THROUGH, //A constant times one subfunction. Used for things like -<subfunction>
     UNKNOWN //Something went wrong
 };
+
+//TODO: Add product and sum functions
+//prod(f, i, 0, 10)
+//sum(f, i, 0, 10)
+//For simplicity, get rid of the coeff in front of functions feature. No 2sin(x), just 2*sin(x)
+//  This makes it it much simpler. We can always split on +-, then */, then ^, then be done.
+//  Remove pass through types.
+//  Make it so sum and prod functions can roll right into what I have.
 
 enum EvaluateGridType {
     BASE,
@@ -69,7 +76,8 @@ struct EvaluateGridInfo {
     size_t childEvalSize;
 };
 
-#define SIGNCHECKPRODUCT(isPositive, sum, number) (isPositive ? sum *= number : sum /= number)
+#define SIGNCHECKSUM(isPositive, result, number) (isPositive ? result += number : result -= number)
+#define SIGNCHECKPRODUCT(isPositive, result, number) (isPositive ? result *= number : result /= number)
 
 class Function {
 public:
@@ -154,7 +162,6 @@ public:
             case FunctionType::SQRT:
             case FunctionType::EXP:
             case FunctionType::CHEBYSHEV:
-            case FunctionType::PASS_THROUGH:
                 m_evaluateGridType = EvaluateGridType::SIMPLE;
                 break;
             case FunctionType::POWER:
@@ -379,11 +386,6 @@ public:
                     _results[i] =  m_value * chebPower(childEvals[i], m_varIndex);
                 }
                 break;
-            case FunctionType::PASS_THROUGH:
-                for(size_t i = 0; i < numEvals; i++) {
-                    _results[i] =  m_value * childEvals[i];
-                }
-                break;
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
@@ -406,7 +408,7 @@ public:
                 for(size_t i = 0; i < currSpots.size(); i++) {
                     result = m_value;
                     for(size_t j = 0; j < currSpots[i].size(); j++) {
-                        result += m_subfunctions[j]->getPartialEvals()[currSpots[i][j]];
+                        SIGNCHECKSUM(m_operatorSigns[j], result, m_subfunctions[j]->getPartialEvals()[currSpots[i][j]]);
                     }
                     _results[i] = result;
                 }
@@ -417,7 +419,7 @@ public:
                 for(size_t i = 0; i < currSpots.size(); i++) {
                     result = m_value;
                     for(size_t j = 0; j < currSpots[i].size(); j++) {
-                        SIGNCHECKPRODUCT(m_isMultiply[j], result, m_subfunctions[j]->getPartialEvals()[currSpots[i][j]]);
+                        SIGNCHECKPRODUCT(m_operatorSigns[j], result, m_subfunctions[j]->getPartialEvals()[currSpots[i][j]]);
                     }
                     _results[i] = result;
                 }
@@ -585,8 +587,6 @@ public:
                 return m_value * chebPower(m_subfunctions[0]->evaluate(_inputPoints), m_varIndex);
             case FunctionType::VARIABLE:
                 return m_value * _inputPoints[m_varIndex];
-            case FunctionType::PASS_THROUGH:
-                return m_value * m_subfunctions[0]->evaluate(_inputPoints);
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate! Fix Switch Statement!");
                 break;
@@ -600,35 +600,43 @@ private:
         // ( and ) make subfunctions
         // +,-,*,/,^ are math symbols
         //numbers, e, pi are constants
-        //Everything else must be a FunctionType string variable name, or subfunction name
+        //Everything else must be a FunctionType, string variable name, or subfunction name
                 
         //Remove excess parenthesis surrounding the entire function.
         removeExtraParenthesis(_functionString);
         
         //To start, split on +-.
-        std::vector<std::string> subparts = splitSum(_functionString);
+        std::vector<std::string> subparts;
+        splitSum(_functionString, subparts, m_operatorSigns);
         
-        if(subparts.size() == 0) {
-            //This is an empty string! Something went wrong
-            printAndThrowRuntimeError("Error Parsing Functions!");
+        if(subparts.size() == 0) { //This is an empty string! Something went wrong
+            printAndThrowRuntimeError("Error Parsing Functions! Found Empty string in recursive step!");
         }
-        else if(subparts.size() == 1) {
-            //Reparse to look for product
+        //If m_operatorSigns[0] is false, then the function is of the form -<expression>. This must be parsed as a sum type.
+        else if(subparts.size() == 1 && m_operatorSigns[0]) {
+            //Reparse to split on */
             subparts.clear();
-            splitProduct(_functionString, subparts, m_isMultiply);
+            m_operatorSigns.clear();
+            splitProduct(_functionString, subparts, m_operatorSigns);
             
             if(subparts.size() == 1) {
-                //The whole thing is a more complex function
-                parseComplexType(_functionString);
+                //Reparse to splt on ^
+                subparts.clear();
+                m_operatorSigns.clear();
+                splitPower(_functionString, subparts);
+
+                if(subparts.size() == 1) { //This is a more complex type.
+                    parseComplexType(_functionString);
+                }
+                else { //Make this a POWER type and split it up
+                    parsePower(subparts);
+                }
             }
-            else {
-                //Make this a PRODUCT type and split it up
-                m_value = 1;
+            else { //Make this a PRODUCT type and split it up
                 parseProduct(subparts);
             }
         }
-        else {
-            //Make this a SUM type and split it up
+        else { //Make this a SUM type and split it up
             parseSum(subparts);
         }
         
@@ -653,8 +661,9 @@ private:
         size_t funcIndex = 0;
         while(funcIndex < m_subfunctions.size()) {
             if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT) {
-                m_value += m_subfunctions[funcIndex]->getValue();
+                SIGNCHECKSUM(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
                 m_subfunctions.erase(m_subfunctions.begin() + funcIndex);
+                m_operatorSigns.erase(m_operatorSigns.begin() + funcIndex);
             }
             else {
                 funcIndex++;
@@ -672,9 +681,9 @@ private:
         size_t funcIndex = 0;
         while(funcIndex < m_subfunctions.size()) {
             if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT) {
-                SIGNCHECKPRODUCT(m_isMultiply[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
+                SIGNCHECKPRODUCT(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
                 m_subfunctions.erase(m_subfunctions.begin() + funcIndex);
-                m_isMultiply.erase(m_isMultiply.begin() + funcIndex);
+                m_operatorSigns.erase(m_operatorSigns.begin() + funcIndex);
             }
             else {
                 funcIndex++;
@@ -862,7 +871,7 @@ private:
         size_t funcIndex = 0;
         bool foundMonoimal = false;
         while(funcIndex < m_subfunctions.size()) {
-            if((m_subfunctions[funcIndex]->getFunctionType() == FunctionType::POWER_BASIS_MONOMIAL || m_subfunctions[funcIndex]->getFunctionType() == FunctionType::VARIABLE) && m_isMultiply[funcIndex]) {
+            if((m_subfunctions[funcIndex]->getFunctionType() == FunctionType::POWER_BASIS_MONOMIAL || m_subfunctions[funcIndex]->getFunctionType() == FunctionType::VARIABLE) && m_operatorSigns[funcIndex]) {
                 foundMonoimal = true;
                 break;
             }
@@ -875,7 +884,7 @@ private:
         if(foundMonoimal) {
             size_t funcIndex2 = funcIndex + 1;
             while(funcIndex2 < m_subfunctions.size()) {
-                if((m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::POWER_BASIS_MONOMIAL || m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::VARIABLE) && m_isMultiply[funcIndex2]) {
+                if((m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::POWER_BASIS_MONOMIAL || m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::VARIABLE) && m_operatorSigns[funcIndex2]) {
                     m_subfunctions[funcIndex]->mergePowerMonomialProduct(m_subfunctions[funcIndex2]);
                     m_subfunctions.erase(m_subfunctions.begin() + funcIndex2);
                 }
@@ -901,7 +910,7 @@ private:
         size_t funcIndex = 0;
         bool foundMonoimal = false;
         while(funcIndex < m_subfunctions.size()) {
-            if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CHEBYSHEV_BASIS_MONOMIAL && m_isMultiply[funcIndex]) {
+            if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CHEBYSHEV_BASIS_MONOMIAL && m_operatorSigns[funcIndex]) {
                 foundMonoimal = true;
                 break;
             }
@@ -914,7 +923,7 @@ private:
         if(foundMonoimal) {
             size_t funcIndex2 = funcIndex + 1;
             while(funcIndex2 < m_subfunctions.size()) {
-                if(m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::CHEBYSHEV_BASIS_MONOMIAL && m_isMultiply[funcIndex2]) {
+                if(m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::CHEBYSHEV_BASIS_MONOMIAL && m_operatorSigns[funcIndex2]) {
                     //We can't merge CHEBYSHEV_BASIS_MONOMIAL if it has the same mons
                     if(m_subfunctions[funcIndex]->mergeChebyshevMonomialProduct(m_subfunctions[funcIndex2])) {
                         m_subfunctions.erase(m_subfunctions.begin() + funcIndex2);
@@ -1079,11 +1088,11 @@ private:
         return spots;
     }
     
-    std::vector<std::string> splitSum(const std::string& _functionString) {
+    void splitSum(const std::string& _functionString, std::vector<std::string>& _subparts, std::vector<bool>& _isSum) {
         std::unordered_set<size_t> scientificNotationMinusLocs = getScientificNotationMinusLocs(_functionString);
         
-        std::vector<std::string> subparts;
         std::string currentSubstring = "";
+        bool currentIsSum = true;
         size_t parenthesisCount = 0;
         for (std::string::size_type stringSpot = 0; stringSpot < _functionString.size(); stringSpot++) {
             char currChar = _functionString[stringSpot];
@@ -1093,29 +1102,37 @@ private:
                     printAndThrowRuntimeError("Mismatched Parenthesis in Function!");
                 }
                 parenthesisCount--;
+                currentSubstring += currChar;
             }
             else if(currChar == CHAR::LEFT_PAREN) {
                 parenthesisCount++;
+                currentSubstring += currChar;
             }
             else if(parenthesisCount > 0) {
                 //Do nothing, we are inside parenthesis
+                currentSubstring += currChar;
             }
             else if(currChar == CHAR::MINUS && scientificNotationMinusLocs.find(stringSpot) != scientificNotationMinusLocs.end()) {
                 //Do nothing, this MINUS is part of scientific notation.
+                currentSubstring += currChar;
             }
             //Store the current substring if it exists
             else if(currChar == CHAR::PLUS || currChar == CHAR::MINUS) {
                 if(currentSubstring.length() > 0) {
-                    subparts.push_back(currentSubstring);
+                    _subparts.push_back(currentSubstring);
+                    _isSum.push_back(currentIsSum);
                 }
                 currentSubstring = "";
+                currentIsSum = currChar == CHAR::PLUS;
             }
-            currentSubstring += currChar;
+            else {
+                currentSubstring += currChar;
+            }
         }
         
         //Add Anything Remaining
-        subparts.push_back(currentSubstring);
-        return subparts;
+        _subparts.push_back(currentSubstring);
+        _isSum.push_back(currentIsSum);
     }
 
     void splitProduct(const std::string& _functionString, std::vector<std::string>& _subparts, std::vector<bool>& _isMultiply) {
@@ -1166,6 +1183,48 @@ private:
         _isMultiply.push_back(currentIsMultiply);
     }
 
+    void splitPower(const std::string& _functionString, std::vector<std::string>& _subparts) {
+        std::string currentSubstring = "";
+        size_t parenthesisCount = 0;
+        for (std::string::size_type stringSpot = 0; stringSpot < _functionString.size(); stringSpot++) {
+            char currChar = _functionString[stringSpot];
+            //Update the parenthesisCount
+            if(currChar == CHAR::RIGHT_PAREN) {
+                if(parenthesisCount == 0) {
+                    printAndThrowRuntimeError("Mismatched Parenthesis in Function!");
+                }
+                parenthesisCount--;
+                currentSubstring += currChar;
+            }
+            else if(currChar == CHAR::LEFT_PAREN) {
+                parenthesisCount++;
+                currentSubstring += currChar;
+            }
+            else if(parenthesisCount > 0) {
+                //Do nothing, we are inside parenthesis
+                currentSubstring += currChar;
+
+            }
+            //Check for a power split ^
+            else if(currChar == CHAR::POWER) {
+                _subparts.push_back(currentSubstring);
+                currentSubstring = "";
+            }
+            //Check for a power split **
+            else if(currChar == CHAR::TIMES && stringSpot + 1 < _functionString.length() && _functionString[stringSpot+1] == CHAR::TIMES) {
+                _subparts.push_back(currentSubstring);
+                currentSubstring = "";
+                stringSpot++; //Skip past the second CHAR::TIMES
+            }
+            else {
+                currentSubstring += currChar;
+            }
+        }
+        
+        //Add Anything Remaining
+        _subparts.push_back(currentSubstring);
+    }
+
     void parseSum(const std::vector<std::string>& _subparts) {
         m_functionType = FunctionType::SUM;
         m_value = 0;
@@ -1177,94 +1236,58 @@ private:
 
     void parseProduct(const std::vector<std::string>& _subparts) {
         m_functionType = FunctionType::PRODUCT;
+        m_value = 1;
         //Add all the subfunctions
         for(size_t i = 0; i < _subparts.size(); i++) {
             addSubfunction(_subparts[i]);
         }
     }
-    
-    std::string parseCoeff(std::string& _functionString) {
-        //Parses a number from the front of the string and removes it.
-        std::string numStr1 = "";
-        std::string numStr2 = "";
-        bool foundE = false;
-        size_t toRemove = 0;
-        size_t toRemoveNoE = 0;
-        size_t stringLength = _functionString.length();
-        //Check if the next char is valid.
-        while(stringLength > toRemove) {
-            std::string& stringToAddTo = foundE ? numStr2 : numStr1;
-            if(_functionString[toRemove] == 'e' || _functionString[toRemove] == 'E') { //Check for scientific notation.
-                toRemoveNoE = toRemove;
-                foundE = true;
-                toRemove++;
-            }
-            else if(isNumericDigit(_functionString[toRemove]) || _functionString[toRemove] == '.') {
-                stringToAddTo += _functionString[toRemove++];
-            }
-            else if(stringToAddTo == "" && _functionString[toRemove] == CHAR::MINUS) { //- can only show up as first character.
-                stringToAddTo += _functionString[toRemove++];
-            }
-            else {
-                break;
-            }
-        }
-        if(!foundE) {
-            toRemoveNoE = toRemove;
+
+    void parsePower(const std::vector<std::string>& _subparts) {
+        //Power must have exactly 2 subparts!
+        if(_subparts.size() != 2) {
+            printAndThrowRuntimeError("Error Parsing Functions! More than 1 power sign used in string! Note: 2^2^2 is not allowed, split up with parenthesis!");
         }
         
-        std::string coeffString;
-        //If we are using scientific notation
-        if(foundE && numStr1 != "" && numStr1 != "-" && numStr2 != "" && numStr2 != "-") {
-            coeffString = _functionString.substr(0, toRemove);
-            _functionString = _functionString.substr(toRemove);
-            //Parse the value.
-            m_value = std::stod(numStr1) * power(10.0, std::stod(numStr2));
+        m_functionType = FunctionType::POWER;
+        m_value = 1;
+        //Add all the subfunctions
+        for(size_t i = 0; i < _subparts.size(); i++) {
+            addSubfunction(_subparts[i]);
         }
-        else {
-            coeffString = _functionString.substr(0, toRemoveNoE);
-            _functionString = _functionString.substr(toRemoveNoE);
-            //Parse the value.
-            if(numStr1 == "") {
-                m_value = 1.0;
-            }
-            else if(numStr1 == "-") {
-                m_value = -1.0;
-            }
-            else {
-                m_value = std::stod(numStr1);
-            }
+    }
+
+    bool parseNumber(std::string& _functionString) {
+        //Checks if this is a valid number.
+        try{
+            //TODO: std::stod doesn't always throw and error if things are wrong.
+            //      Example: 2(x-1) parses as 2.
+            //      Write my own parser that will parse from numbers to doubles!
+            m_value = std::stod(_functionString);
+            return true;
         }
-        
-        return coeffString;
+        catch(...) {
+            return false;
+        }
     }
     
     void parseComplexType(std::string& _functionString) {
-        //Parse the Coefficient
-        std::string coeffString = parseCoeff(_functionString);
-
-        //Parse Power. Note we have already parsed the coeff, which might be the whole rhs.
-        //So if it is 10^x, remember the 10.
-        //If it is 10x^2, the 10 is the coeff.
-        if(parsePower(_functionString, coeffString)) {
-            m_functionType = FunctionType::POWER;
-            return;
-        }
-        
-        //Everything below this must be able to a have a coeff in front of it that is pulled out and
-        //multiplied by it. So all operations +,-,*,/,^ are handeled above this
+        //These all start being multiplied by 1. They have the ability to have an m_value multiplied by it so
+        //in simplifyExpressions we could pull constants in the multiply out and put it in m_value.
+        //TODO: Is this a good idea or should I just drop m_value from complex things?
+        m_value = 1;
         
         //Parse constants
-        if(_functionString == "") {
+        if(parseNumber(_functionString)) { //Numbers
             m_functionType = FunctionType::CONSTANT;
             return;
         }
-        if(_functionString == "e" || _functionString == "E") {
+        if(_functionString == "e" || _functionString == "E") { //e
             m_functionType = FunctionType::CONSTANT;
             m_value *= M_E;
             return;
         }
-        if(_functionString == "pi" || _functionString == "PI" || _functionString == "Pi" || _functionString == "pI") {
+        if(_functionString == "pi" || _functionString == "PI" || _functionString == "Pi" || _functionString == "pI") { //pi
             m_functionType = FunctionType::CONSTANT;
             m_value *= M_PI;
             return;
@@ -1360,10 +1383,8 @@ private:
             return;
         }
         
-        //At this point parse it again, it may be a changed func
-        //TODO: Assert that it is surrounded by parenthesis at this point?
-        m_functionType = FunctionType::PASS_THROUGH;
-        addSubfunction(_functionString);
+        //It's not a function we recogize, throw an error!
+        printAndThrowRuntimeError("Failed to Parse Function! Unknown Type: " + _functionString);
     }
     
     void parseComplexFunctionParenthesis(const std::string& _functionString) {
@@ -1515,7 +1536,7 @@ private:
     double sumEval(const std::vector<double>& _inputPoints) {
         double result = m_value;
         for(size_t i = 0; i < m_subfunctions.size(); i++) {
-            result += m_subfunctions[i]->evaluate(_inputPoints);
+            SIGNCHECKSUM(m_operatorSigns[i], result, m_subfunctions[i]->evaluate(_inputPoints));
         }
         return result;
         
@@ -1530,8 +1551,8 @@ private:
     
     double productEval(const std::vector<double>& _inputPoints) {
         double result = m_value;
-        for(size_t i = 0; i < m_isMultiply.size(); i++) {
-            SIGNCHECKPRODUCT(m_isMultiply[i], result, m_subfunctions[i]->evaluate(_inputPoints));
+        for(size_t i = 0; i < m_operatorSigns.size(); i++) {
+            SIGNCHECKPRODUCT(m_operatorSigns[i], result, m_subfunctions[i]->evaluate(_inputPoints));
         }
         return result;
     }
@@ -1590,8 +1611,8 @@ public:
         return m_varPowers;
     }
 
-    const std::vector<bool>& getIsMultiply() const {
-        return m_isMultiply;
+    const std::vector<bool>& getOperatorSigns() const {
+        return m_operatorSigns;
     }
 
     FunctionType getFunctionType() const {
@@ -1714,7 +1735,7 @@ public:
     Function(const Function& other, bool isShallowCopy = false) :
     m_isTopFunction(other.isTopFunction()),
     m_functionLevel(other.getFunctionLevel()),
-    m_isMultiply(other.getIsMultiply()),
+    m_operatorSigns(other.getOperatorSigns()),
     m_functionType(other.getFunctionType()),
     m_value(other.getValue()),
     m_varIndex(other.getVarIndex()),
@@ -1813,7 +1834,7 @@ private:
 
     //The subfunctions and coresponding signs
     std::vector<SharedFunctionPtr>              m_subfunctions;
-    std::vector<bool>                           m_isMultiply;
+    std::vector<bool>                           m_operatorSigns; //True is + or *. False is - or /.
     
     //The type of function
     FunctionType                               m_functionType;

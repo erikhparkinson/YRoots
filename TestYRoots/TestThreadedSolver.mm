@@ -502,6 +502,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     const std::string testResultFolder = "TestFiles/DemoNotebookResults/";
     std::vector<std::string> testNames;
     testNames.push_back("test_1");
+    testNames.push_back("test_2");
 
     for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
         const std::string testName = testNames[testNum];

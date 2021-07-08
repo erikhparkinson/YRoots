@@ -52,18 +52,13 @@
     evalChecker1D("-3*T12(x)", cos(12), -3*cos(144));
     evalChecker1D("2*x^4*x^5", 2, 1024);
     evalChecker1D("2*(x-1)", 5, 8);
-    evalChecker1D("2(x-1)", 5, 8);
     evalChecker1D("10^(-9)", 5, 1e-9);
     evalChecker1D("1-x^2", 2, -3);
-    evalChecker1D("1-2x^2", 2, -7);
     evalChecker1D("1-2^x", 2, -3);
+    evalChecker1D("-cos(x)", 0, -1);
     //Test Scientific Notation
-    evalChecker1D("1e-4cos(x)", 0, 1e-4);
     evalChecker1D("1e-4*cos(x)", 0, 1e-4);
     evalChecker1D("1e4*cos(x)", 0, 1e4);
-    evalChecker1D("1.2e-3.3*4x", 5, 20*(1.2*power(10.0,-3.3)));
-    evalChecker1D("1.2e-.3*4x", 5, 20*(1.2*power(10.0,-.3)));
-    evalChecker1D("1.2e.3*4x", 5, 20*(1.2*power(10.0,.3)));
     evalChecker1D("1.2e-3-3", 5, (1.2e-3)-3);
     evalChecker1D("1.2e3-3", 5, (1.2e3)-3);
     evalChecker1D("1.e-3-3", 5, (1.e-3)-3);
