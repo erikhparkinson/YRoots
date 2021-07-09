@@ -1,0 +1,16 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-2, 2];
+[-1, 3];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = 2*(x-1) + 200*(y-x**2)*(-2*x);
+f2 = 200*(y-x**2);
+FUNCTIONS_END;
+
+END;

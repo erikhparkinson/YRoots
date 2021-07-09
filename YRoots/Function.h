@@ -43,6 +43,8 @@ enum FunctionType {
     UNKNOWN //Something went wrong
 };
 
+//TOOD: If it fails to parse make it call a class error message that prints the name of the function and detials.
+//      That way we always can see the name of a function that it can't parse.
 //TODO: Add product and sum functions
 //prod(f, i, 0, 10)
 //sum(f, i, 0, 10)
@@ -1295,7 +1297,7 @@ private:
         
         size_t stringLenth = _functionString.length();
         
-        //Parse LOG10
+        //Parse 5 char subfunctions: log10
         if(stringLenth > 5) {
             std::string lowercase5 = toLowerSubstring(_functionString, 0, 5);
             if(lowercase5 == "log10") {
@@ -1305,7 +1307,7 @@ private:
             }
         }
         
-        //Parse hyperbolic trig and SQRT
+        //Parse 4 char subfunctions: hyperbolic trig, sqrt, log2 and prod
         if(stringLenth > 4) {
             std::string lowercase4 = toLowerSubstring(_functionString, 0, 4);
             if(lowercase4 == "sinh") {
@@ -1333,9 +1335,15 @@ private:
                 parseComplexFunctionParenthesis(_functionString.substr(4));
                 return;
             }
+            if(lowercase4 == "prod") {
+                m_value = 1;
+                m_functionType = FunctionType::PRODUCT;
+                parseComplexFunctionExpansionParenthesis(_functionString.substr(4));
+                return;
+            }
         }
         
-        //Parse Normal Trig, EXP and LOG
+        //Parse 3 char subfunctions: Normal Trig, exp, log and sum
         if(stringLenth > 3) {
             std::string lowercase3 = toLowerSubstring(_functionString, 0, 3);
             if(lowercase3 == "sin") {
@@ -1363,6 +1371,12 @@ private:
                 parseComplexFunctionParenthesis(_functionString.substr(3));
                 return;
             }
+            if(lowercase3 == "sum") {
+                m_value = 0;
+                m_functionType = FunctionType::SUM;
+                parseComplexFunctionExpansionParenthesis(_functionString.substr(3));
+                return;
+            }
         }
         
         //Parse VARIABLE
@@ -1382,19 +1396,89 @@ private:
             m_functionType = FunctionType::CHEBYSHEV;
             return;
         }
-        
+                
         //It's not a function we recogize, throw an error!
         printAndThrowRuntimeError("Failed to Parse Function! Unknown Type: " + _functionString);
     }
     
     void parseComplexFunctionParenthesis(const std::string& _functionString) {
+        //Following most complex functions is (<subfunction>). Strip the () and add the subfunction.
         if(_functionString[0] != CHAR::LEFT_PAREN || _functionString[_functionString.length() - 1] != CHAR::RIGHT_PAREN) {
             printAndThrowRuntimeError("Failed to Parse Function!");
         }
         addSubfunction(_functionString.substr(1, _functionString.length() - 2));
     }
+    
+    void parseComplexFunctionExpansionParenthesis(const std::string& _functionString) {
+        //This is for sum and prod expansions. The are of the form <sum/prod>(<function>, <var>, <start>, <end>)
+        
+        //Make sure the parenthesis are there.
+        if(_functionString[0] != CHAR::LEFT_PAREN || _functionString[_functionString.length() - 1] != CHAR::RIGHT_PAREN) {
+            printAndThrowRuntimeError("Failed to Parse Function!");
+        }
+        //Split up the subparts on the comma
+        std::vector<std::string> parts = split(_functionString.substr(1, _functionString.length() - 2), ",");
+        if(parts.size() != 4) {
+            printAndThrowRuntimeError("Failed to Parse Function! Incorrect format!");
+        }
+        //Make sure the <var> isn't also the name of some function, constant, or variable, as the causes ambiguity.
+        checkNameNotClaimed(parts[1], "Sum/Prod Var");
+        
+        //Get the subtrings we will use.
+        std::vector<std::string> subFunctionStrings = split(parts[0], parts[1]);
+        //If subFunctionStrings[i][-1] and subFunctionStrings[i+1][0] are not both ()+-*/^ types, then combine them.
+        //This avoids replacing the i in sin for example, or other variable names.
+        size_t indexToCheck = 1;
+        while(indexToCheck < subFunctionStrings.size()) { //Note that subFunctionStrings could be size 0 at the end of this.
+            //Make sure the subFunctionStrings have size
+            if(subFunctionStrings[indexToCheck-1].length() == 0) {
+                subFunctionStrings.erase(subFunctionStrings.begin() + (indexToCheck-1));
+                continue;
+            }
+            else if(subFunctionStrings[indexToCheck].length() == 0) {
+                subFunctionStrings.erase(subFunctionStrings.begin() + indexToCheck);
+                continue;
+            }
+            
+            //Check if the chars are valid delimiters
+            char lastOfFirst = subFunctionStrings[indexToCheck-1][subFunctionStrings[indexToCheck-1].length() - 1];
+            char firstOfLast = subFunctionStrings[indexToCheck][0];
+            const bool firstGood = lastOfFirst == CHAR::LEFT_PAREN || lastOfFirst == CHAR::RIGHT_PAREN || lastOfFirst == CHAR::PLUS || lastOfFirst == CHAR::MINUS || lastOfFirst == CHAR::DIVIDE || lastOfFirst == CHAR::TIMES || lastOfFirst == CHAR::POWER;
+            const bool lastGood = firstOfLast == CHAR::LEFT_PAREN || firstOfLast == CHAR::RIGHT_PAREN || firstOfLast == CHAR::PLUS || firstOfLast == CHAR::MINUS || firstOfLast == CHAR::DIVIDE || firstOfLast == CHAR::TIMES || firstOfLast == CHAR::POWER;
+            //Recombine if needed, otherwise move on.
+            if(!firstGood || !lastGood) {
+                subFunctionStrings[indexToCheck-1] += parts[1] + subFunctionStrings[indexToCheck];
+                subFunctionStrings.erase(subFunctionStrings.begin() + indexToCheck);
+            }
+            else {
+                indexToCheck++;
+            }
+        }
+        
+        //Get the bounds for the sum/prod
+        int64_t start, end;
+        try {
+            start = std::stoll(parts[2]);
+            end = std::stoll(parts[3]);
+        }
+        catch(...) {
+            printAndThrowRuntimeError("Failed to Parse Function! Illegal Bound Value in sum/prod, not an integer");
+        }
+        
+        //Add the subfunctions with the number replaced
+        m_operatorSigns.clear();
+        for(int64_t replaceNum = start; replaceNum <= end; replaceNum++) {
+            std::string resultFunc = subFunctionStrings[0];
+            std::string replaceString = "(" + std::to_string(replaceNum) + ")";
+            for(size_t i = 1; i < subFunctionStrings.size(); i++) {
+                resultFunc += replaceString + subFunctionStrings[i];
+            }
+            addSubfunction(resultFunc);
+            m_operatorSigns.push_back(true); //This is always + or *.
+        }
+    }
 
-    void parseChebyshevFunction(const std::string& _functionString) {
+    void parseChebyshevFunction(const std::string& _functionString) { //TODO: This could be updated and needs better comments.
         if(_functionString[_functionString.length() - 1] != CHAR::RIGHT_PAREN) {
             printAndThrowRuntimeError("Failed to Parse Function!");
         }
@@ -1534,6 +1618,7 @@ private:
     }
     
     double sumEval(const std::vector<double>& _inputPoints) {
+        assert(m_subfunctions.size() == m_operatorSigns.size());
         double result = m_value;
         for(size_t i = 0; i < m_subfunctions.size(); i++) {
             SIGNCHECKSUM(m_operatorSigns[i], result, m_subfunctions[i]->evaluate(_inputPoints));
@@ -1550,6 +1635,7 @@ private:
     }
     
     double productEval(const std::vector<double>& _inputPoints) {
+        assert(m_subfunctions.size() == m_operatorSigns.size());
         double result = m_value;
         for(size_t i = 0; i < m_operatorSigns.size(); i++) {
             SIGNCHECKPRODUCT(m_operatorSigns[i], result, m_subfunctions[i]->evaluate(_inputPoints));
@@ -1779,6 +1865,22 @@ public:
         }
     }
     
+private:
+    static void checkNameNotClaimed(const std::string& _name, const std::string& _type) {
+        if(s_claimedVariableNames.find(_name) != s_claimedVariableNames.end()) {
+            printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Variable Name.");
+        }
+        else if(s_allFunctionNames[0].find(_name) != s_allFunctionNames[0].end()) {
+            printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Function Name.");
+        }
+        else if(s_claimedFunctionNames.find(_name) != s_claimedFunctionNames.end()) {
+            printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Set Function Name.");
+        }
+        else if(s_claimedConstantNames.find(_name) != s_claimedConstantNames.end()) {
+            printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Set Constant Name.");
+        }
+    }
+    
 public:
     //A function should only be created through this. It adds them to the maps correctly.
     static SharedFunctionPtr addFunction(const std::string& _functionName, const std::string& _functionString, const std::vector<std::string>& _variableNames) {
@@ -1786,13 +1888,18 @@ public:
             s_allFunctions.resize(1);
             s_allFunctionNames.resize(1);
         }
+        
+        //Claim the variable names
+        for(size_t i = 0; i < _variableNames.size(); i++) {
+            s_claimedVariableNames.insert(_variableNames[i]);
+        }
+        
+        //Make sure this is a valid name.
+        checkNameNotClaimed(_functionName, "Function");
 
         //Check if we are double adding it
         bool namedFuncAlreadyExists = false;
         if(_functionName != "") {
-            if(s_allFunctionNames[0].find(_functionName) != s_allFunctionNames[0].end()) {
-                printAndThrowRuntimeError("Trying to add function Twice! Name is " + _functionName + " String is " + _functionString);
-            }
             if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
                 namedFuncAlreadyExists = true;
             }
@@ -1817,7 +1924,7 @@ public:
             return function;
         }
     }
-    
+        
     static void clearSavedFunctions() {
         s_allFunctions.clear();
         s_allFunctionNames.clear();
@@ -1864,11 +1971,23 @@ private:
     
     static size_t           m_timerEvaluateGridIndex;
     Timer&                  m_timer = Timer::getInstance();
+    
+    static                  std::unordered_set<std::string> s_claimedConstantNames;
+    static                  std::unordered_set<std::string> s_claimedFunctionNames;
+    static                  std::unordered_set<std::string> s_claimedVariableNames;
 };
 
 std::vector<Function::FunctionMap>    Function::s_allFunctions;
 std::vector<Function::FunctionMap>    Function::s_allFunctionNames;
 size_t                      Function::m_timerEvaluateGridIndex = -1;
 
+//Create the s_claimedConstantNames, e, and pi, things that nothing else can be named.
+//TOOD: And pi, as well as all function names that we parse. So cos, sin, ...
+//      Maybe just have this be a lowercase list? And then when we check if something is in this list, take the lowercase of it?
+//      Have a static function called nameAllowed() that checks this.
+//          We should also check the a function isn't called a variable name.
+std::unordered_set<std::string> Function::s_claimedConstantNames({"e","pi",});
+std::unordered_set<std::string> Function::s_claimedFunctionNames({"sin","cos","tan","sinh","cosh","tanh","sqrt","exp","log","log2","log10"});
+std::unordered_set<std::string> Function::s_claimedVariableNames;
 
 #endif /* Function_h */

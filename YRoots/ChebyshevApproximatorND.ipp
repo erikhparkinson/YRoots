@@ -90,7 +90,7 @@ void ChebyshevApproximator<D>::approximate(const Function::SharedFunctionPtr _fu
 
     m_intervalApproximators[m_firstApproximator]->approximate(_function, _currentInterval, false);
     m_intervalApproximators[m_secondApproximator]->approximate(_function, _currentInterval, true);
-    m_infNorm = m_intervalApproximators[m_secondApproximator]->getInfoNorm();
+    m_infNorm = m_intervalApproximators[m_secondApproximator]->getInfNorm();
     m_signChange = m_intervalApproximators[m_secondApproximator]->getSignChange();
     calculateApproximationError();
         

@@ -29,7 +29,7 @@ public:
         return m_signChange;
     }
     
-    double getInfoNorm() {
+    double getInfNorm() {
         return m_infNorm;
     }
     

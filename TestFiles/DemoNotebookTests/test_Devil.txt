@@ -2,8 +2,8 @@ PARAMETERS;
 PARAMETERS_END;
 
 INTERVAL;
-[-5, 5];
-[-5, 5];
+[-1, 1];
+[-1, 1];
 INTERVAL_END;
 
 FUNCTIONS;

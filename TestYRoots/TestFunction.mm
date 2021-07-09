@@ -75,6 +75,9 @@
     evalChecker1D("log(x)", 3, log(3));
     evalChecker1D("log2(x)", 3, log2(3));
     evalChecker1D("log10(x)", 3, log10(3));
+    //Test sum notation
+    evalChecker1D("sum(sin(x+i),i,-5,5)", 5, sin(0)+sin(1)+sin(2)+sin(3)+sin(4)+sin(5)+sin(6)+sin(7)+sin(8)+sin(9)+sin(10));
+    evalChecker1D("prod(sin(x+i),i,-4,2)", 5, sin(1)*sin(2)*sin(3)*sin(4)*sin(5)*sin(6)*sin(7));
 
     //TODO: Add tests that it fails to parse.
 }

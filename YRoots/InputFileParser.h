@@ -19,6 +19,8 @@
 #include "Function.h"
 #include "Timer.h"
 
+//TODO: Make this ignore any line that starts with a #
+
 class InputFileParser {
 public:
     InputFileParser(std::string _filename):
@@ -36,7 +38,9 @@ public:
         std::string inputString;
         inputFile.open(m_filename);
         while(std::getline(inputFile, line)) {
-            inputString += line;
+            if(line.length() > 0 && line[0] != '#') {
+                inputString += line;
+            }
         }
         inputFile.close();
         
@@ -171,6 +175,12 @@ private:
                 m_subdivisionParameters.absApproxTol = parseConstantNum(parameterString[1]);
                 if(m_subdivisionParameters.absApproxTol < 0) {
                     printAndThrowRuntimeError("Parameter Error! relApproxTol must be >= 0!");
+                }
+            }
+            else if(parameterString[0] == "targetTol") {
+                m_subdivisionParameters.targetTol = parseConstantNum(parameterString[1]);
+                if(m_subdivisionParameters.targetTol < 0) {
+                    printAndThrowRuntimeError("Parameter Error! targetTol must be >= 0!");
                 }
             }
             else if(parameterString[0] == "goodZerosFactor") {
