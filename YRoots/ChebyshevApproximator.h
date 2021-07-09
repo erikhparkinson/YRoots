@@ -30,7 +30,7 @@ public:
     ChebyshevApproximation<D>& getApproximation() {
         return m_approximation;
     }
-
+    
 private:
     void calculateApproximationError();
     

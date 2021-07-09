@@ -35,6 +35,9 @@ public:
     size_t  getDegree();
     size_t  getPartialSideLength(); //Spots 0 through getPartialSideLength()-1 are good values
     void    clear();
+    double  getInfNorm() {
+        return m_infNorm;
+    }
     
 private:
     void setDegreeSpots(size_t index);

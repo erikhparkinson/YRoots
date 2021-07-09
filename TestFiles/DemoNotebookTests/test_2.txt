@@ -1,0 +1,17 @@
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+n = 30;
+f1 = sin(n*x-y/n)+y;
+f2 = cos(x/n-n*y)-x;
+FUNCTIONS_END;
+
+END;
