@@ -2,3 +2,7 @@ DerivedData/*
 input.txt
 output.txt
 YRoots.xcodeproj
+input.txt
+roots.csv
+intervals.txt
+timing.txt
