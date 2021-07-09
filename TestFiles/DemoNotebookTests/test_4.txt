@@ -1,0 +1,20 @@
+#This is the 3D example from the notebook
+
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2, f3;
+variable_group x, y, z;
+f1 = sin(5*x+y+z);
+f2 = sin(x*y*z);
+f3 = x**2+y**2-z**2-1;
+FUNCTIONS_END;
+
+END;

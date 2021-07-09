@@ -1,0 +1,22 @@
+#This is the 4D example from the notebook
+
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[4, 4.5];
+[3.5, 4];
+[2, 3];
+[1.5,2];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2, f3, f4;
+variable_group x1, x2, x3, x4;
+f1 = cos(x1) + x4 - 1;
+f2 = cos(x2) + x3 - 2;
+f3 = cos(x3) + x2 - 3;
+f4 = cos(x4) + x1 - 4;
+FUNCTIONS_END;
+
+END;

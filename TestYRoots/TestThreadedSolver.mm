@@ -301,40 +301,13 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     XCTAssert(363 == foundRoots.size());
 }
 
-std::vector<std::vector<double>> parseYRootsFile(const std::string& _yrootsFile) {
+std::vector<std::vector<double>> parseRootsFile(const std::string& _yrootsFile) {
     std::vector<std::vector<double>> roots;
     
     std::ifstream inputFile;
     std::string line;
     inputFile.open(_yrootsFile);
     while(std::getline(inputFile, line)) {
-        if(line.substr(0,6) == "Thread") {
-            continue;
-        }
-        
-        std::vector<double> root;
-        std::vector<std::string> rootString = split(line, "\t");
-        for(auto&& s : rootString) {
-            root.push_back(std::stod(s));
-        }
-        roots.push_back(root);
-    }
-    inputFile.close();
-
-    return roots;
-}
-
-std::vector<std::vector<double>> parseChebFile(const std::string& _chebRootsFile) {
-    std::vector<std::vector<double>> roots;
-    
-    std::ifstream inputFile;
-    std::string line;
-    inputFile.open(_chebRootsFile);
-    while(std::getline(inputFile, line)) {
-        if(line.substr(0,6) == "Thread") {
-            continue;
-        }
-        
         std::vector<double> root;
         std::vector<std::string> rootString = split(line, ",");
         for(auto&& s : rootString) {
@@ -343,7 +316,7 @@ std::vector<std::vector<double>> parseChebFile(const std::string& _chebRootsFile
         roots.push_back(root);
     }
     inputFile.close();
-    
+
     return roots;
 }
 
@@ -361,8 +334,8 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     //const double maxDistanceAllowed = 1e-5;
     const double maxResidualAllowed = 1e-5;
 
-    std::vector<std::vector<double>> myRoots = parseYRootsFile(_yrootsFile);
-    std::vector<std::vector<double>> chebRoots = parseChebFile(_chebRootsFile);
+    std::vector<std::vector<double>> myRoots = parseRootsFile(_yrootsFile);
+    std::vector<std::vector<double>> chebRoots = parseRootsFile(_chebRootsFile);
     
     if(myRoots.size() != chebRoots.size()) {
         std::cout<<"Unequal number of roots found!\n";
@@ -475,7 +448,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         std::vector<std::string> splitName = split(testName, "_");
         const std::string testInputFile = testFolder + testName + ".txt";
         const std::string testResultFile = testResultFolder + splitName[0] + "_roots_" + splitName[1] + ".csv";
-        const std::string testOutputFile = "roots.txt";
+        const std::string testOutputFile = "roots.csv";
 
         //Solve it
         Function::clearSavedFunctions();
@@ -518,7 +491,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         std::vector<std::string> splitName = split(testName, "_");
         const std::string testInputFile = testFolder + testName + ".txt";
         const std::string testResultFile = testResultFolder + splitName[0] + "_roots_" + splitName[1] + ".csv";
-        const std::string testOutputFile = "roots.txt";
+        const std::string testOutputFile = "roots.csv";
 
         //Solve it
         Function::clearSavedFunctions();

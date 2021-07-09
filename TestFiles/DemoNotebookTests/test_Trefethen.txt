@@ -1,0 +1,18 @@
+#This is the Hundred Dollar Hundred Digit Challange
+
+PARAMETERS;
+PARAMETERS_END;
+
+INTERVAL;
+[-1, 1];
+[-1, 1];
+INTERVAL_END;
+
+FUNCTIONS;
+function f1, f2;
+variable_group x, y;
+f1 = 50*cos(50*x)*exp(sin(50*x)) + 70*cos(x)*cos(70*sin(x)) - 10*cos(10*(x+y)) + .5 * x;
+f2 = 60*exp(y)*cos(60*exp(y)) + 80*cos(80*y)*cos(sin(80*y))- 10*cos(10*(x+y)) + .5 * y;
+FUNCTIONS_END;
+
+END;
