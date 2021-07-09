@@ -91,6 +91,10 @@ public:
     }
     
     void logResults() {
+        if(!m_trackIntervals) {
+            return;
+        }
+        
         std::ofstream file;
         int precision = std::numeric_limits<double>::digits10 + 1;
         file.open (m_outputFile);
