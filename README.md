@@ -9,6 +9,7 @@ Yroots can be run from the command line with the following syntax.
 # File Input
 
 The input file is of the following format. All whitespace is ignored by the parser.
+Any line that starts with a `#` is ignored by the parser.
 
 ```
 PARAMETERS;
@@ -60,6 +61,8 @@ Currently supported parameters are
   * Must be a positive number. Used with absApproxTol to determine if an approximation is good.
 * absApproxTol : Defaults to 1e-10
   * Must be a positive number. An approximation if good if `error < absApproxTol + inf_norm * relApproxTol`.
+* targetTol : Defaults to 1e-15
+  * Must be a positive number. An approximation if good if `error < absApproxTol + inf_norm * relApproxTol`.
 * goodZerosFactor : Defaults to 100
   * Must be a non-negative number. A zero is declared to be on the real line [-1,1] if it's real and imaginary parts are no more than tol * approx_error away from it.
 * minGoodZerosTol: Defaults to 1e-5
@@ -109,23 +112,29 @@ Specifically, the function parser works recursively with the following supported
 * `<subfunction1> - <subfunction2>` - Subtraction. Example: `x-y`.
 * `<subfunction1> * <subfunction2>` - Multiplication. Example: `x*y`.
 * `<subfunction1> / <subfunction2>` - Division. Example: `x/y`.
-* `<Number><subfunction1> ^ <subfunction2>` - Power. The Number is optional. Example: `3x^2`.
-* `<Number><subfunction1> ** <subfunction2>` - Power. Same as above but makes copying functions from Python easier. The Number is optional.  Example: `3x**2`.
-* `<Number><Expression>(<subfunction>)` - More complicated expressions as defined below. The Number is optional.
+* `<subfunction1> ^ <subfunction2>` - Power. The Number is optional. Example: `3x^2`.
+* `<subfunction1> ** <subfunction2>` - Power. Same as above but makes copying functions from Python easier.  Example: `3x**2`.
+* `<Expression>(<subfunction>)` - More complicated expressions as defined below.
 * `<Variable Name>` - The name of one of the variable inputs.
 * `<Function Name>` - The name of one of the funtion inputs. This function must have been previously defined.
-* `<Number>` - Numbers, as defined below.
-* `<Number>`(<subfunction>)` - Using parenthesis.
+* `<Number>` - Numbers.
+* `<Constants>` - Numeric constants. Currently `e` and `pi` are supported, not case sensitive.
+* `(<subfunction>)` - Using parenthesis.
 
 The supported `Expression` for complex functions with one input are
 * `sin`, `cos`, `tan`,`sinh`, `cosh`, `tanh` - Trigonimetric Functions. Example: `3sin(x)`.
 * `sqrt`,`exp` - Square root, Exponential Function, and Natural Logarithm.  Example: `-2.5exp(x)`.
 * `log`,`log2`,`log10` - Logarithm base e, 2, 10. Example: `3log(x)`.
+* `prod`,`sum` - Product and sum notation. `sum(<func>,<var>,start,end)` will sum `func` for the values of `[start,end]` for `var`. The syntax for `prod` is the same, but it will take the product of the functions. `start` and `end` must be integerts, it will be included in the sum/product. Examples: `prod(sin(x+i),i,0,10)`, `sum(x^i,i,-50,-1).`
 * `T<n>` - Chebyshev Polynomials. gives the nth Chebyshev polynomials of the first kind. Example: `T2(x)`.
-
-The supported `Number` expressions can be of the following foramts.
-* `<LiteralNumber><NumbericConstant>` - Currently supported Numeric Constants are `pi` and `e`, not case sensitive. The LiteralNumber in front is optional. Example: `4pi`.
-* `<LiteralNumber>` - Your basic numbers folks. An optional negative sign in front, an optional decimal sign somewhere. And any amount of `[0-9]` numbers. Example: `-1283618.123973`.
-* `<ScientificNotation>` - The syntax for this is  `<LiteralNumber>e<LiteralNumber>`, and is interpreted as `Num1*10^Num2`. The `e` is not case sensitive. Example: `3.1e-2`
  
-Note that the occurance of the `e` in both scientific notation and as a constant creates ambiguity sometimes. If there is a `LiteralNumber` before and after the `e`, it will always be interpreted as scientific notation. For example, `2.6e-3.3*4` will be interpreted as `(2.6*10^-3.3)*4`. If you want `e` to be interpreted as the constant in this case, then you can write it as `2.6*e-3.3*4` or `(2.6e)-3.3*4`.
+# File Output
+
+## Roots
+The roots will be outputted into a file called roots.csv. Each line will contain one root, with the coordinate in each dimension seperated by a comma.
+
+## Intervals
+If the option trackIntervals is set true, the intervals that were solved will be printed to the file intervals.txt.
+
+## Timing
+If the option useTimer is set true, timing information about the solve will be printed to the file timing.txt.
