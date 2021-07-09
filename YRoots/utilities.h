@@ -266,7 +266,7 @@ struct SubdivisionParameters {
     //Approx Tols
     double relApproxTol = 1.e-10; //TODO: Test to figure out the best defaults.
     double absApproxTol = 1.e-10;
-    double targetTol = 1e-15; // TODO: To polish to really good residuals we can make this 1e-15. This causes some things to lose roots though. Figure out a happy medium/why it loses roots when smaller/a better way to polish at the end? Newton Polish?
+    double targetTol = 1e-15;
     bool check_eval_error = true;
     //Good Zeros
     double goodZerosFactor = 100;
@@ -278,7 +278,7 @@ struct SubdivisionParameters {
 };
 
 struct GeneralParameters {
-    bool trackIntervals = true;
+    bool trackIntervals = false;
     bool trackProgress = true;
     bool useTimer = false;
     size_t numThreads = 1;
