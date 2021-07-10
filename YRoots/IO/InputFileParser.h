@@ -16,10 +16,8 @@
 #include <set>
 #include <thread>
 #include <algorithm>
-#include "Function.h"
-#include "Timer.h"
-
-//TODO: Make this ignore any line that starts with a #
+#include "../Functions/Function.h"
+#include "../Utilities/Timer.h"
 
 class InputFileParser {
 public:

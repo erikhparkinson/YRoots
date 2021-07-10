@@ -9,9 +9,9 @@
 #ifndef ChebyshevApproximator_h
 #define ChebyshevApproximator_h
 
-#include "IntervalApproximator.h"
-#include "ChebyshevApproximation.hpp"
-#include "Timer.h"
+#include "../Approximation/IntervalApproximator.h"
+#include "../Approximation/ChebyshevApproximation.hpp"
+#include "../Utilities/Timer.h"
 
 template <Dimension D>
 class ChebyshevApproximator

@@ -10,9 +10,9 @@
 #define IntervalApproximator_hpp
 
 #include <fftw3.h>
-#include "Function.h"
-#include "utilities.h"
 #include <iostream>
+#include "../Functions/Function.h"
+#include "../Utilities/utilities.h"
 
 template <Dimension D>
 class IntervalApproximator

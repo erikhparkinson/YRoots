@@ -9,9 +9,9 @@
 #ifndef IntervalData_h
 #define IntervalData_h
 
-#include "utilities.h"
 #include <fstream>
 #include <numeric>
+#include "../Utilities/utilities.h"
 
 struct IntervalResult {
     Interval    m_interval;
