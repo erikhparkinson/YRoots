@@ -9,9 +9,9 @@
 #ifndef RootTracker_h
 #define RootTracker_h
 
-#include "utilities.h"
 #include <complex>
 #include <fstream>
+#include "../Utilities/utilities.h"
 
 struct FoundRoot {
     std::vector<double> root;

@@ -18,6 +18,7 @@
 #include <math.h>
 #include <iostream>
 #include <cmath>
+#include <stddef.h>
 #include <Eigen/Core>
 
 //TODO: Make unit tests for these functions!

@@ -11,11 +11,11 @@
 
 #include <thread>
 #include <atomic>
-#include "SubdivisionSolver.h"
-#include "IntervalTracker.h"
-#include "RootTracker.h"
-#include "MultiPool.h"
-#include "ConcurrentStack.h"
+#include "../Subdivision/SubdivisionSolver.h"
+#include "../SolutionTracking/IntervalTracker.h"
+#include "../SolutionTracking/RootTracker.h"
+#include "../Utilities/MultiPool.h"
+#include "../Utilities/ConcurrentStack.h"
 
 template <Dimension D>
 class ThreadedSolver {

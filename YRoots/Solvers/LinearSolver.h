@@ -10,13 +10,12 @@
 #define LinearSolver_h
 
 #include <complex>
-
-#include "utilities.h"
-#include "IntervalTracker.h"
-#include "RootTracker.h"
-
 #include <Eigen/Core>
 #include <Eigen/Dense>
+
+#include "../Utilities/utilities.h"
+#include "../SolutionTracking/IntervalTracker.h"
+#include "../SolutionTracking/RootTracker.h"
 
 template <Dimension D>
 class LinearSolver {
