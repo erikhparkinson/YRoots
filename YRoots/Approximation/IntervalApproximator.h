@@ -9,8 +9,8 @@
 #ifndef IntervalApproximator_hpp
 #define IntervalApproximator_hpp
 
-#include <fftw3.h>
 #include <iostream>
+#include "../Libraries/FFTW/include/fftw3.h"
 #include "../Functions/Function.h"
 #include "../Utilities/utilities.h"
 

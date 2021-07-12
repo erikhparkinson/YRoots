@@ -19,7 +19,7 @@
 #include <iostream>
 #include <cmath>
 #include <stddef.h>
-#include <Eigen/Core>
+#include "../Libraries/Eigen/Core"
 
 //TODO: Make unit tests for these functions!
 

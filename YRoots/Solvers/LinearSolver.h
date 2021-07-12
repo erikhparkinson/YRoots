@@ -10,8 +10,8 @@
 #define LinearSolver_h
 
 #include <complex>
-#include <Eigen/Core>
-#include <Eigen/Dense>
+#include "../Libraries/Eigen/Core"
+#include "../Libraries/Eigen/Dense"
 
 #include "../Approximation/ChebyshevApproximation.hpp"
 #include "../Utilities/utilities.h"
