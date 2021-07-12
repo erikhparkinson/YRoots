@@ -48,8 +48,8 @@ std::string formatTimePretty(double nanoseconds) {
 }
 
 void printMatrix(const Eigen::MatrixXd& matrix) {
-    for(size_t i = 0; i < matrix.rows(); i++) {
-        for(size_t j = 0; j < matrix.cols(); j++) {
+    for(size_t i = 0; i < static_cast<size_t>(matrix.rows()); i++) {
+        for(size_t j = 0; j < static_cast<size_t>(matrix.cols()); j++) {
             std::cout<<matrix(i,j)<<"\t";
         }
         std::cout<<"\n";
@@ -58,7 +58,7 @@ void printMatrix(const Eigen::MatrixXd& matrix) {
 }
 
 void printVector(const Eigen::VectorXd& vector) {
-    for(size_t i = 0; i < vector.rows(); i++) {
+    for(size_t i = 0; i < static_cast<size_t>(vector.rows()); i++) {
         std::cout<<vector(i)<<"\t";
     }
     std::cout<<"\n\n";
