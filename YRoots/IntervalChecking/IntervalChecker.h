@@ -28,12 +28,12 @@ public:
     IntervalChecker(size_t _rank, IntervalTracker& _intervalTracker, size_t _threadNum, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>&        _solveParametersPool);
     
     bool runIntervalChecks(ChebyshevApproximation<D>& _approximation, Interval& _currentInterval);
-    void runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters* _currentParameters, size_t _numGoodApproximations);
+    void runSubintervalChecks(std::vector<ChebyshevApproximation<D> >& _chebyshevApproximations, SolveParameters* _currentParameters, size_t _numGoodApproximations);
     
 protected:
     bool runConstantTermCheck(ChebyshevApproximation<D>& _approximation);
     void runQuadraticCheck(ChebyshevApproximation<D>& _approximation);
-    double getBoundingInterval(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations);
+    double getBoundingInterval(std::vector<ChebyshevApproximation<D> >& _chebyshevApproximations);
     void pushIntervalToSolve(SolveParameters* _currentParameters, Interval& _newInterval);
     
     inline EvalSign getEvalSign(double _eval, double _error) {
@@ -60,7 +60,7 @@ protected:
     
     //For BoundingIntervals
     std::vector<size_t>                             m_biggestArraySizeChecked; //Len Dim, one for each approximation
-    std::vector<std::vector<std::vector<double>>>   m_reducedChebEvals; //Dim x (Dim-1) x length
+    std::vector<std::vector<std::vector<double> > >   m_reducedChebEvals; //Dim x (Dim-1) x length
                                                                         //For the x,y spot length is degree^y. Check degree against m_biggestArraySizeChecked each run.
     
     //Multithreading objects

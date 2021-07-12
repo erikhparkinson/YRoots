@@ -44,7 +44,7 @@ m_rootTracker(m_numThreads)
 
     //Create the solvers
     for(int threadNum = 0; threadNum < m_numThreads; threadNum++) {
-        m_subdivisionSolvers.emplace_back(std::make_unique<SubdivisionSolver<D>>(threadNum, m_allFunctions[threadNum], m_intervalsToRun, m_solveParametersPool[threadNum], _subdivisionParameters, m_intervalTracker, m_rootTracker));
+        m_subdivisionSolvers.emplace_back(::make_unique<SubdivisionSolver<D>>(threadNum, m_allFunctions[threadNum], m_intervalsToRun, m_solveParametersPool[threadNum], _subdivisionParameters, m_intervalTracker, m_rootTracker));
     }
 }
 

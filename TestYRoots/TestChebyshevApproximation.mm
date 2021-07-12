@@ -7,7 +7,7 @@
 //
 
 #import <XCTest/XCTest.h>
-#include "ChebyshevApproximation.hpp"
+#include "Approximation/ChebyshevApproximation.hpp"
 
 @interface TestChebyshevApproximation : XCTestCase
 

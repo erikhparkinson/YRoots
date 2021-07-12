@@ -93,7 +93,7 @@ private:
     
 private:
     T                               m_defaultObject;
-    std::vector<std::vector<T>>     m_objects;          //The pool of objects
+    std::vector<std::vector<T> >     m_objects;          //The pool of objects
     std::vector<T*>                 m_pointers;
     uint64_t                        m_head;             //The next place to pop from.
     uint64_t                        m_tail;             //Next place to push to
@@ -102,6 +102,6 @@ private:
 };
 
 template<typename T>
-using MultiPool = std::vector<ObjectPool<T>>;
+using MultiPool = std::vector<ObjectPool<T> >;
 
 #endif /* MultiPool_h */

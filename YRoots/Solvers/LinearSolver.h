@@ -22,7 +22,7 @@ class LinearSolver {
 public:
     LinearSolver(size_t _threadNum, size_t _rank, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
     
-    void solve(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, Interval& _interval, double _goodZerosTol);
+    void solve(std::vector<ChebyshevApproximation<D> >& _chebyshevApproximations, Interval& _interval, double _goodZerosTol);
 
 private:
     size_t                  m_threadNum;
@@ -34,7 +34,7 @@ private:
     Eigen::VectorXd         m_constants;
     Eigen::VectorXd         m_result;
     
-    std::vector<std::complex<double>>     m_root;
+    std::vector<std::complex<double> >     m_root;
 };
 
 #include "LinearSolver1D.ipp"

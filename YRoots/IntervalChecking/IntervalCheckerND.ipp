@@ -75,7 +75,7 @@ bool IntervalChecker<D>::runIntervalChecks(ChebyshevApproximation<D>& _approxima
 }
 
 template <Dimension D>
-void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, SolveParameters* _currentParameters, size_t _numGoodApproximations)
+void IntervalChecker<D>::runSubintervalChecks(std::vector<ChebyshevApproximation<D> >& _chebyshevApproximations, SolveParameters* _currentParameters, size_t _numGoodApproximations)
 {
     //TODO: Do I need this or should I just use the size in the Interval???
     m_timer.startTimer(m_timerBoundingIntervalIndex);
@@ -150,7 +150,7 @@ void IntervalChecker<D>::runQuadraticCheck(ChebyshevApproximation<D>& _approxima
 }
 
 template <Dimension D>
-double IntervalChecker<D>::getBoundingInterval(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations) {
+double IntervalChecker<D>::getBoundingInterval(std::vector<ChebyshevApproximation<D> >& _chebyshevApproximations) {
     //TODO: Updates m_boundingInterval. Returns the size of the bounding interval
     return std::numeric_limits<double>::max();
 }

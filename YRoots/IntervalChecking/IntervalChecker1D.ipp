@@ -58,7 +58,7 @@ void IntervalChecker<Dimension::One>::runQuadraticCheck(ChebyshevApproximation<D
 }
 
 template <>
-double IntervalChecker<Dimension::One>::getBoundingInterval(std::vector<ChebyshevApproximation<Dimension::One>>& _chebyshevApproximations) {
+double IntervalChecker<Dimension::One>::getBoundingInterval(std::vector<ChebyshevApproximation<Dimension::One> >& _chebyshevApproximations) {
     return std::numeric_limits<double>::max();
     
     //Constants for this function

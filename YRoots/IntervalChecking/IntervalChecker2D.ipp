@@ -211,7 +211,7 @@ void IntervalChecker<Dimension::Two>::runQuadraticCheck(ChebyshevApproximation<D
 }
 
 template <>
-double IntervalChecker<Dimension::Two>::getBoundingInterval(std::vector<ChebyshevApproximation<Dimension::Two>>& _chebyshevApproximations) {
+double IntervalChecker<Dimension::Two>::getBoundingInterval(std::vector<ChebyshevApproximation<Dimension::Two> >& _chebyshevApproximations) {
     //Constants for this function
     /*const double MIN_MOVE = 0.001;
     const double MIN_HEIGHT = 0.0;

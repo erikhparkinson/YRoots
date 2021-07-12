@@ -11,7 +11,7 @@
 #endif
 
 #include "Solve.h"
-#include "Timer.h"
+#include "Utilities/Timer.h"
 
 int main(int argc, const char * argv[]) {
     #ifdef USE_TIMING

@@ -58,7 +58,7 @@ private:
     double      m_sumAbsVal;
     size_t      m_goodDegree;
     
-    std::vector<std::vector<std::vector<size_t>>>    m_degreeSpots;
+    std::vector<std::vector<std::vector<size_t> > >    m_degreeSpots;
 };
 
 #include "ChebyshevApproximation1D.ipp"

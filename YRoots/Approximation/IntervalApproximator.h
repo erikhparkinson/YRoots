@@ -67,8 +67,8 @@ private:
     std::vector<size_t> m_partialToFullTransition;
     
     //Precomputed Points
-    std::vector<std::vector<double>>    m_evaluationPointsPreTransform;
-    std::vector<std::vector<double>>    m_evaluationPoints;
+    std::vector<std::vector<double> >    m_evaluationPointsPreTransform;
+    std::vector<std::vector<double> >    m_evaluationPoints;
     std::vector<size_t>                 m_divideByTwoPoints;
     
     //Other

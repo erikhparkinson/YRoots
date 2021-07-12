@@ -11,9 +11,9 @@
 
 #include <iostream>
 #include <math.h>
-#include "utilities.h"
 #include <unordered_map>
 #include <unordered_set>
+#include "../Utilities/utilities.h"
 
 class FunctionInterface{
 public:

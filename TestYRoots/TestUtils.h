@@ -10,8 +10,8 @@
 #define TestUtils_h
 
 #include <iostream>
-
 #include <cmath>
+
 template<class T1, class T2>
 bool withinEpslion(T1 a, T2 b, double epsilon = 1.e-10) {
     return std::abs(a-b) < epsilon;

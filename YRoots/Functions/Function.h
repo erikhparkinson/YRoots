@@ -15,8 +15,6 @@
 #include "../Utilities/utilities.h"
 #include "../Utilities/Timer.h"
 
-//TODO: Maybe I should set this up so that coeffs are stored seperately on sums and products? So 4cos(x)+5cos(x) use the same cos(x)?
-
 enum FunctionType {
     SIN, //Syntax: sin(x)
     COS, //Syntax: cos(x)
@@ -45,13 +43,6 @@ enum FunctionType {
 
 //TOOD: If it fails to parse make it call a class error message that prints the name of the function and detials.
 //      That way we always can see the name of a function that it can't parse.
-//TODO: Add product and sum functions
-//prod(f, i, 0, 10)
-//sum(f, i, 0, 10)
-//For simplicity, get rid of the coeff in front of functions feature. No 2sin(x), just 2*sin(x)
-//  This makes it it much simpler. We can always split on +-, then */, then ^, then be done.
-//  Remove pass through types.
-//  Make it so sum and prod functions can roll right into what I have.
 
 enum EvaluateGridType {
     BASE,
@@ -74,7 +65,7 @@ struct CHAR {
 
 struct EvaluateGridInfo {
     bool precomputed = false;
-    std::vector<std::vector<size_t>> childEvalIndexes;
+    std::vector<std::vector<size_t> > childEvalIndexes;
     size_t childEvalSize;
 };
 
@@ -263,7 +254,7 @@ public:
         }
     }
     
-    void evaluateGridBase(const std::vector<std::vector<double>>& _grid) {
+    void evaluateGridBase(const std::vector<std::vector<double> >& _grid) {
         switch(m_functionType) {
             case FunctionType::CONSTANT:
                 m_partialEvaluations[0] =  m_value;
@@ -287,7 +278,7 @@ public:
         }
     }
 
-    void evaluateGridBaseTop(const std::vector<std::vector<double>>& _grid, std::vector<double>& _results) {
+    void evaluateGridBaseTop(const std::vector<std::vector<double> >& _grid, std::vector<double>& _results) {
         size_t gridSize = _grid[0].size();
         size_t numEvals = power(gridSize, _grid.size());;
         
@@ -395,7 +386,7 @@ public:
     }
 
     void evaluateGridCombine(size_t _gridSize, std::vector<double>& _results) {
-        std::vector<std::vector<size_t>>& currSpots = m_evaluateGridInfo[_gridSize].childEvalIndexes;
+        std::vector<std::vector<size_t> >& currSpots = m_evaluateGridInfo[_gridSize].childEvalIndexes;
         switch(m_functionType) {
             case FunctionType::POWER: {
                 const std::vector<double>& childEvals1 = m_subfunctions[0]->getPartialEvals();
@@ -433,7 +424,7 @@ public:
         }
     }
     
-    void evaluateGridMain(const std::vector<std::vector<double>>& _grid) {
+    void evaluateGridMain(const std::vector<std::vector<double> >& _grid) {
         //Prep the evaluate grid info if it hasn't already been done
         size_t gridSize = _grid[0].size();
         if(unlikely(m_evaluateGridInfo.size() <= gridSize)) {
@@ -459,7 +450,7 @@ public:
         }
     }
 
-    void evaluateGridMain(const std::vector<std::vector<double>>& _grid, std::vector<double>& _results) {
+    void evaluateGridMain(const std::vector<std::vector<double> >& _grid, std::vector<double>& _results) {
         //Prep the evaluate grid info if it hasn't already been done
         size_t gridSize = _grid[0].size();
         if(unlikely(m_evaluateGridInfo.size() <= gridSize)) {
@@ -485,7 +476,7 @@ public:
         }
     }
     
-    void evaluateGrid(const std::vector<std::vector<double>>& _grid, std::vector<double>& _results) {
+    void evaluateGrid(const std::vector<std::vector<double> >& _grid, std::vector<double>& _results) {
         //Evaluates the grid so that the evaluation of (grid[0][i], grid[1][j]) is in _results[j+grid.size() + i]
         m_timer.startTimer(m_timerEvaluateGridIndex);
         
@@ -1644,7 +1635,7 @@ private:
     }
     
 public:
-    void getFunctionLevels(std::vector<std::vector<SharedFunctionPtr>>& allFunctionLevels) {
+    void getFunctionLevels(std::vector<std::vector<SharedFunctionPtr> >& allFunctionLevels) {
         //The function level is 1 + max(function level of subfunctions).
         //If a function has no subfunctions, the function level is 0.
         //This way when we evaluate we can evaluate all the functions starting a level 0 at going up.
@@ -1765,7 +1756,7 @@ public:
         return m_evaluateGridType;
     }
 
-    const std::vector<std::vector<SharedFunctionPtr>>& getAllFunctionLevels() const {
+    const std::vector<std::vector<SharedFunctionPtr> >& getAllFunctionLevels() const {
         return m_allFunctionLevels;
     }
 
@@ -1793,7 +1784,7 @@ public:
             //Copy all s_allFunctions.
             for(FunctionMap::const_iterator it = s_allFunctions[0].begin(); it != s_allFunctions[0].end(); it++) {
                 //Copy this function
-                SharedFunctionPtr currFunction = std::make_shared<Function>(*it->second.get(), true);
+                SharedFunctionPtr currFunction = std::make_shared<Function>(*it->second.get());
                 //Add it to s_allFunctions
                 s_allFunctions[size].insert({it->first,currFunction});
             }
@@ -1818,7 +1809,7 @@ public:
     }
     
     //Copy Constructor that doesn't copy the pointers.
-    Function(const Function& other, bool isShallowCopy = false) :
+    Function(const Function& other) :
     m_isTopFunction(other.isTopFunction()),
     m_functionLevel(other.getFunctionLevel()),
     m_operatorSigns(other.getOperatorSigns()),
@@ -1836,19 +1827,14 @@ public:
     m_partialEvaluations(other.getPartialEvals()),
     m_evaluateGridInfo(other.getEvaluateGridInfo()),
     m_evaluateGridType(other.getEvaluateGridType())
-    {
-        //Copies everything except the pointers
-        if(!isShallowCopy) {
-            printAndThrowRuntimeError("Can only do a shallow copy of functions!");
-        }
-    }
+    {}
     
     //Helper to the copy constructor, updates the pointers
     void finalizeCopy(const Function& other) {
         const size_t threadNum = s_allFunctions.size() - 1; //Copy from this spot in the s_allFunctions
         
         //Copy m_allFunctionLevels
-        const std::vector<std::vector<SharedFunctionPtr>>& functionLevelsToCopy = other.getAllFunctionLevels();
+        const std::vector<std::vector<SharedFunctionPtr> >& functionLevelsToCopy = other.getAllFunctionLevels();
         m_allFunctionLevels.resize(functionLevelsToCopy.size());
         for(size_t level = 0; level < functionLevelsToCopy.size(); level++) {
             m_allFunctionLevels[level].resize(functionLevelsToCopy[level].size());
@@ -1937,14 +1923,14 @@ private:
     
     bool                                        m_isTopFunction;
     size_t                                      m_functionLevel;
-    std::vector<std::vector<SharedFunctionPtr>> m_allFunctionLevels;
+    std::vector<std::vector<SharedFunctionPtr> > m_allFunctionLevels;
 
     //The subfunctions and coresponding signs
     std::vector<SharedFunctionPtr>              m_subfunctions;
     std::vector<bool>                           m_operatorSigns; //True is + or *. False is - or /.
     
     //The type of function
-    FunctionType                               m_functionType;
+    FunctionType                                m_functionType;
     
     //The Signed Coefficient of anything that isn't a sum. Sums all have coefficient of 1.
     double                                      m_value;

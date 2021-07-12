@@ -8,7 +8,7 @@
 
 #import <XCTest/XCTest.h>
 #include "TestUtils.h"
-#include "Function.h"
+#include "Functions/Function.h"
 
 @interface TestFunction : XCTestCase
 
@@ -147,7 +147,7 @@
         
         size_t dimension = variableNames.size();
         for(size_t numPoints = 1; numPoints < 100; numPoints++) {
-            std::vector<std::vector<double>> grid;
+            std::vector<std::vector<double> > grid;
             grid.resize(dimension);
             for(size_t i = 0; i < dimension; i++) {
                 for(size_t j = 0; j < numPoints; j++) {
@@ -215,7 +215,7 @@
     double numToEval = 1.7;
     
     Function tempFunction("", functionString, variableNames);
-    std::vector<std::vector<double>> grid;
+    std::vector<std::vector<double> > grid;
     grid.resize(dimension);
     for(size_t i = 0; i < dimension; i++) {
         for(size_t j = 0; j < numPoints; j++) {

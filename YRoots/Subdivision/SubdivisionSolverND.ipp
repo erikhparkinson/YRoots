@@ -30,7 +30,7 @@ m_minApproxTols(m_functions.size(), 0.0)
 
     for(size_t i = 0; i < m_functions.size(); i++) {
         //Create the Chebyshev Approximators
-        m_chebyshevApproximators.emplace_back(std::make_unique<ChebyshevApproximator<D>>(m_rank, m_subdivisionParameters.approximationDegree, m_chebyshevApproximations[i]));
+        m_chebyshevApproximators.emplace_back(::make_unique<ChebyshevApproximator<D>>(m_rank, m_subdivisionParameters.approximationDegree, m_chebyshevApproximations[i]));
     }
 }
 
