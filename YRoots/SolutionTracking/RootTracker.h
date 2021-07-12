@@ -65,7 +65,7 @@ public:
         m_outputFile = "roots.csv";
     }
     
-    void storeRoot(size_t threadNum, std::vector<std::complex<double>>& _root, Interval& _interval, SolveMethod _howFound, double _conditionNumber, double _goodZerosTol) {
+    void storeRoot(size_t threadNum, std::vector<std::complex<double> >& _root, Interval& _interval, SolveMethod _howFound, double _conditionNumber, double _goodZerosTol) {
         //Check if the root is in the boundary
         for(size_t i = 0; i < _root.size(); i++) {
             if(std::abs(std::real(_root[i])) > 1 + _goodZerosTol) {
@@ -141,7 +141,7 @@ public:
 
 private:
     size_t                                  m_numThreads;
-    std::vector<std::vector<FoundRoot>>     m_foundRoots;
+    std::vector<std::vector<FoundRoot> >    m_foundRoots;
     std::string                             m_outputFile;
 };
 

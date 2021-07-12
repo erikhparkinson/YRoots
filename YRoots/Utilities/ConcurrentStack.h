@@ -61,7 +61,7 @@ private:
     
 private:
     std::atomic<StackNode<T>*>          m_top;
-    MultiPool<StackNode<T>>             m_pools;
+    MultiPool<StackNode<T> >             m_pools;
 };
 
 #endif /* ConcurrentStack_h */

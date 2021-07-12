@@ -11,7 +11,7 @@
 
 #import <XCTest/XCTest.h>
 #include "TestUtils.h"
-#include "PowerBasisPolynomial.h"
+#include "Functions/PowerBasisPolynomial.h"
 
 @interface TestPolynomialPowerBasis : XCTestCase
 
@@ -189,7 +189,7 @@
     variableNames.push_back("x1");
     std::string polynomialString = "5+2*x0+3*x1+x0*x1";
     PowerBasisPolynomial testPoly(polynomialString, variableNames);
-    std::vector<std::vector<double>> grid;
+    std::vector<std::vector<double> > grid;
     grid.resize(2);
     grid[0].resize(2);
     grid[1].resize(2);

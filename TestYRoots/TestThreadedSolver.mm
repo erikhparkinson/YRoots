@@ -7,17 +7,15 @@
 //
 
 #import <XCTest/XCTest.h>
-#include "TestUtils.h"
-#include "ThreadedSolver.h"
-
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "InputFileParser.h"
-#include "ThreadedSolver.h"
-#include "thread"
-#include "Timer.h"
-#include "utilities.h"
+#include <thread>
+#include "TestUtils.h"
+#include "Subdivision/ThreadedSolver.h"
+#include "IO/InputFileParser.h"
+#include "Utilities/Timer.h"
+#include "Utilities/utilities.h"
 #include "Solve.h"
 
 @interface TestThreadedSolver : XCTestCase
@@ -35,9 +33,9 @@
 - (void)tearDown {
 }
 
-std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const std::vector<std::string> functionStrings, const std::vector<std::string>& variablesNames, size_t numThreads) {
+std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const std::vector<std::string> functionStrings, const std::vector<std::string>& variablesNames, size_t numThreads) {
     Function::clearSavedFunctions();
-    std::vector<std::vector<Function::SharedFunctionPtr>> result;
+    std::vector<std::vector<Function::SharedFunctionPtr> > result;
     result.resize(numThreads);
     for(size_t i = 0; i < functionStrings.size(); i++) {
         Function::addFunction("f" + std::to_string(i), functionStrings[i], variablesNames);
@@ -81,7 +79,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     std::cout<<"\n";
     for(size_t numThreads = 1; numThreads <= 4; numThreads++) {
         generalParameters.numThreads = numThreads;
-        std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, numThreads);
+        std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
         ThreadedSolver<Dimension::One> solver(functions, generalParameters, startInterval, subdivisionParameters);
             
         size_t trials = 1;
@@ -139,7 +137,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
 
             //Set up the solver
             generalParameters.numThreads = numThreads;
-            std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, numThreads);
+            std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
             ThreadedSolver<Dimension::One> solver(functions, generalParameters, startInterval, subdivisionParameters);
                 
             //Solve it
@@ -224,7 +222,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
 
             //Set up the solver
             generalParameters.numThreads = numThreads;
-            std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, numThreads);
+            std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
             ThreadedSolver<Dimension::Two> solver(functions, generalParameters, startInterval, subdivisionParameters);
                 
             //Solve it
@@ -282,7 +280,7 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     generalParameters.numThreads = 1;
     
     //Set up the solver
-    std::vector<std::vector<Function::SharedFunctionPtr>> functions = createAllFunctions(functionStrings, variablesNames, generalParameters.numThreads);
+    std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, generalParameters.numThreads);
     ThreadedSolver<Dimension::Two> solver(functions, generalParameters, startInterval, subdivisionParameters);
     
     //Solve it
@@ -301,8 +299,8 @@ std::vector<std::vector<Function::SharedFunctionPtr>> createAllFunctions(const s
     XCTAssert(363 == foundRoots.size());
 }
 
-std::vector<std::vector<double>> parseRootsFile(const std::string& _yrootsFile) {
-    std::vector<std::vector<double>> roots;
+std::vector<std::vector<double> > parseRootsFile(const std::string& _yrootsFile) {
+    std::vector<std::vector<double> > roots;
     
     std::ifstream inputFile;
     std::string line;
@@ -334,8 +332,8 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     //const double maxDistanceAllowed = 1e-5;
     const double maxResidualAllowed = 1e-5;
 
-    std::vector<std::vector<double>> myRoots = parseRootsFile(_yrootsFile);
-    std::vector<std::vector<double>> chebRoots = parseRootsFile(_chebRootsFile);
+    std::vector<std::vector<double> > myRoots = parseRootsFile(_yrootsFile);
+    std::vector<std::vector<double> > chebRoots = parseRootsFile(_chebRootsFile);
     
     if(myRoots.size() != chebRoots.size()) {
         std::cout<<"Unequal number of roots found!\n";
@@ -345,8 +343,8 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     
     std::set<double> spotsFound;
     std::vector<double> distances(numRoots);
-    std::vector<std::vector<double>> yrootsResiduals(numRoots);
-    std::vector<std::vector<double>> chebResiduals(numRoots);
+    std::vector<std::vector<double> > yrootsResiduals(numRoots);
+    std::vector<std::vector<double> > chebResiduals(numRoots);
     for(size_t rootSpot1 = 0; rootSpot1 < numRoots; rootSpot1++) {
         const std::vector<double>& myRoot = myRoots[rootSpot1];
         //Find the closest root

@@ -10,10 +10,10 @@
 #define TestIntervalApproximater_mm
 
 #import <XCTest/XCTest.h>
-#include "TestUtils.h"
-#include "IntervalApproximator.h"
-#include "PowerBasisPolynomial.h"
 #include <chrono>
+#include "TestUtils.h"
+#include "Approximation/IntervalApproximator.h"
+#include "Functions/PowerBasisPolynomial.h"
 
 @interface TestIntervalApproximater : XCTestCase
 

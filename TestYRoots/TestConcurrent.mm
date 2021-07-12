@@ -7,9 +7,9 @@
 //
 
 #import <XCTest/XCTest.h>
-#include "MultiPool.h"
-#include "ConcurrentStack.h"
 #include <random>
+#include "Utilities/MultiPool.h"
+#include "Utilities/ConcurrentStack.h"
 
 @interface TestConcurrent : XCTestCase
 
@@ -151,9 +151,9 @@ struct tempStruct {
         }
     };
     
-    std::vector<std::unique_ptr<std::thread>> threadPool;
+    std::vector<std::unique_ptr<std::thread> > threadPool;
     for(size_t i = 0 ; i< numThreads; i++) {
-        threadPool.emplace_back(std::make_unique<std::thread>(threadFunc, i, 1000, std::ref(myPools[i]), std::ref(myStack)));
+        threadPool.emplace_back(::make_unique<std::thread>(threadFunc, i, 1000, std::ref(myPools[i]), std::ref(myStack)));
     }
     for(size_t i = 0 ; i< numThreads; i++) {
         threadPool[i]->join();

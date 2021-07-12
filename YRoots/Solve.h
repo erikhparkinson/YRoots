@@ -20,7 +20,7 @@
 #include "Utilities/Timer.h"
 
 template<Dimension D>
-void runSolve(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, const GeneralParameters& _generalParameters, Interval& _interval, const SubdivisionParameters& _subdivisionParameters) {
+void runSolve(std::vector<std::vector<Function::SharedFunctionPtr> >& _functions, const GeneralParameters& _generalParameters, Interval& _interval, const SubdivisionParameters& _subdivisionParameters) {
     Timer& m_timer = Timer::getInstance();
     size_t mainConstructorIndex = -1;
     size_t mainSolveIndex = -1;
@@ -39,7 +39,7 @@ void mainSolver(const std::string& inputFileName) {
     InputFileParser inputParser(inputFileName);
     inputParser.parse();
         
-    std::vector<std::vector<Function::SharedFunctionPtr>>& functions = inputParser.getFunctions();
+    std::vector<std::vector<Function::SharedFunctionPtr> >& functions = inputParser.getFunctions();
     Interval& interval = inputParser.getInterval();
     const GeneralParameters& generalParameters = inputParser.getGeneralParameters();
     const SubdivisionParameters& subdivisionParameters = inputParser.getSubdivisionParameters();

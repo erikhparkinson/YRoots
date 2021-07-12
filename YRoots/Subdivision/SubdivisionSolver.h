@@ -39,8 +39,8 @@ private:
     SubdivisionParameters                                   m_subdivisionParameters;
     IntervalTracker&                                        m_intervalTracker;
     RootTracker&                                            m_rootTracker;
-    std::vector<ChebyshevApproximation<D>>                  m_chebyshevApproximations;
-    std::vector<std::unique_ptr<ChebyshevApproximator<D>>>  m_chebyshevApproximators;
+    std::vector<ChebyshevApproximation<D> >                 m_chebyshevApproximations;
+    std::vector<std::unique_ptr<ChebyshevApproximator<D> > >m_chebyshevApproximators;
     IntervalChecker<D>                                      m_intervalChecker;
     LinearSolver<D>                                         m_linearSolver;
     std::vector<double>                                     m_minApproxTols;

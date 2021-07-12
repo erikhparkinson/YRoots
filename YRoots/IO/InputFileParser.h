@@ -89,7 +89,7 @@ public:
     }
     
     //Getters
-    std::vector<std::vector<Function::SharedFunctionPtr>>& getFunctions() {
+    std::vector<std::vector<Function::SharedFunctionPtr> >& getFunctions() {
         return m_functions;
     }
     
@@ -322,7 +322,7 @@ private:
     std::string m_filename;
     
     //Parsed Variables
-    std::vector<std::vector<Function::SharedFunctionPtr>> m_functions;
+    std::vector<std::vector<Function::SharedFunctionPtr> > m_functions;
     Interval m_interval;
     SubdivisionParameters m_subdivisionParameters;
     GeneralParameters     m_generalParameters;

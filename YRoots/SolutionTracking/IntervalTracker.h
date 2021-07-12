@@ -57,7 +57,7 @@ public:
             }
 
             if(m_trackProgress) {
-                m_intervalResults[_threadNum].emplace_back(_interval, _howFound);
+                m_intervalResults[_threadNum].push_back(IntervalResult(_interval, _howFound));
             }
             
             if(unlikely(_howFound == SolveMethod::TooDeep && !m_printedTooDeepWarning.exchange(true))) {
@@ -174,7 +174,7 @@ private:
     bool                                        m_trackIntervals;
     bool                                        m_trackProgress;
     
-    std::vector<std::vector<IntervalResult>>    m_intervalResults;
+    std::vector<std::vector<IntervalResult> >   m_intervalResults;
     std::string                                 m_outputFile;
     
     double                                      m_totalArea;

@@ -23,7 +23,7 @@ m_rootTracker(_rootTracker)
 }
 
 template <Dimension D>
-void LinearSolver<D>::solve(std::vector<ChebyshevApproximation<D>>& _chebyshevApproximations, Interval& _interval, double _goodZerosTol) {
+void LinearSolver<D>::solve(std::vector<ChebyshevApproximation<D> >& _chebyshevApproximations, Interval& _interval, double _goodZerosTol) {
     //The i,j spot in the m_linears matrix is the jth linear term of the ith approximation
     //The ith spot in the m_constants vector is the 0th spot in the ith approximation.
     

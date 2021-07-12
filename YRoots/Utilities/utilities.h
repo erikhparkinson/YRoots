@@ -23,6 +23,11 @@
 
 //TODO: Make unit tests for these functions!
 
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
 std::string formatTimePretty(double nanoseconds) {
     static constexpr double thousand = 1000;
     static constexpr double million = thousand*thousand;
