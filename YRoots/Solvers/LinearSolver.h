@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+#include "../Approximation/ChebyshevApproximation.hpp"
 #include "../Utilities/utilities.h"
 #include "../SolutionTracking/IntervalTracker.h"
 #include "../SolutionTracking/RootTracker.h"

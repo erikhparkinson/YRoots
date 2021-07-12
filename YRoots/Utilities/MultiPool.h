@@ -10,6 +10,7 @@
 #define MultiPool_h
 
 #include <atomic>
+#include <vector>
 #include "macros.h"
 
 //This pool is only ever accessed by a single thread, but it can

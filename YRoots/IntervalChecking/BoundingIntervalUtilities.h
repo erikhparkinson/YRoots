@@ -10,6 +10,9 @@
 #define BoundingIntervalUtilities_h
 
 #include <stddef.h>
+#include <cmath.h>
+#include <cstdlib.h>
+#include <vector.h>
 
 double getLipshitzConstant1D(const double* _array, size_t _arraySize) {
     double value = 0.0;
