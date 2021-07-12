@@ -1740,11 +1740,11 @@ public:
         return m_hasDimension;
     }
 
-    const size_t getDimension() const {
+    size_t getDimension() const {
         return m_dimension;
     }
 
-    const size_t getNumUsedDimensions() const {
+    size_t getNumUsedDimensions() const {
         return m_numUsedDimensions;
     }
 
@@ -1752,7 +1752,7 @@ public:
         return m_evaluateGridInfo;
     }
 
-    const EvaluateGridType getEvaluateGridType() const {
+    EvaluateGridType getEvaluateGridType() const {
         return m_evaluateGridType;
     }
 

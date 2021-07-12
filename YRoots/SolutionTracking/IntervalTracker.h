@@ -34,8 +34,8 @@ public:
     m_trackProgress(_trackProgress),
     m_totalArea(totalArea),
     m_unitIntervalArea(power(2, _rank)),
-    m_updatingProgressBar(0),
     m_lastAreaSolved(0),
+    m_updatingProgressBar(0),
     m_printedTooDeepWarning(false)
     {
         m_intervalResults.resize(m_numThreads);

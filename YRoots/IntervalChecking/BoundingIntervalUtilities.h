@@ -9,6 +9,8 @@
 #ifndef BoundingIntervalUtilities_h
 #define BoundingIntervalUtilities_h
 
+#include <stddef.h>
+
 double getLipshitzConstant1D(const double* _array, size_t _arraySize) {
     double value = 0.0;
     for(size_t i = 1; i < _arraySize; i++) {
@@ -24,7 +26,7 @@ void getLipshitzConstant2D(const double* _array, size_t _arraySize, size_t _arra
     
     //Iterate through the array
     for(size_t i = 0; i < _arraySize; i++) {
-        for(size_t j = 0; 0 < _arraySize; j++) {
+        for(size_t j = 0; j < _arraySize; j++) {
             double arrayVal = std::abs(_array[i*_arrayFullSize + j]);
             _valueX += arrayVal*i*i;
             _valueY += arrayVal*j*j;

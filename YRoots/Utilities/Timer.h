@@ -110,7 +110,8 @@ public:
             return;
         }
         
-        if(index == -1) {
+        constexpr size_t UnusedIndexVal = -1;
+        if(index == UnusedIndexVal) {
             index = m_index++;
             m_timingDetails.resize(m_index);
         }
