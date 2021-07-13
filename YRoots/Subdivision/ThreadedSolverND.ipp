@@ -32,7 +32,7 @@ m_rootTracker(m_numThreads)
     defaultSolveParameters.interval.lowerBounds.resize(rank);
     defaultSolveParameters.interval.upperBounds.resize(rank);
     defaultSolveParameters.goodDegrees.resize(rank);
-    for(int threadNum = 0; threadNum < m_numThreads; threadNum++) {
+    for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
         m_solveParametersPool.emplace_back(defaultSolveParameters, 1024);
     }
     
@@ -43,7 +43,7 @@ m_rootTracker(m_numThreads)
     m_firstSolveParameters->currentLevel = 0;
 
     //Create the solvers
-    for(int threadNum = 0; threadNum < m_numThreads; threadNum++) {
+    for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
         m_subdivisionSolvers.emplace_back(::make_unique<SubdivisionSolver<D>>(threadNum, m_allFunctions[threadNum], m_intervalsToRun, m_solveParametersPool[threadNum], _subdivisionParameters, m_intervalTracker, m_rootTracker));
     }
 }
@@ -65,7 +65,7 @@ void ThreadedSolver<D>::solve() {
     //Also, why do I have the sleep for a millisecond here???
     
     m_intervalsToRun.push(0, m_firstSolveParameters);
-    for(int threadNum = 0; threadNum < m_numThreads - 1; threadNum++) {
+    for(size_t threadNum = 0; threadNum + 1 < m_numThreads; threadNum++) {
         //Create the threads
         m_threadPool.push_back(std::thread(&ThreadedSolver<D>::runThread, this, threadNum));
         std::this_thread::sleep_for(std::chrono::microseconds(1500));
