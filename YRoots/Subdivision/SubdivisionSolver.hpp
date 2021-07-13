@@ -9,14 +9,14 @@
 #ifndef Subdivision_Solver_h
 #define Subdivision_Solver_h
 
-#include "../SolutionTracking/IntervalTracker.h"
-#include "../SolutionTracking/RootTracker.h"
-#include "../Utilities/utilities.h"
-#include "../Utilities/MultiPool.h"
-#include "../Utilities/ConcurrentStack.h"
-#include "../IntervalChecking/IntervalChecker.h"
-#include "../Approximation/ChebyshevApproximator.h"
-#include "../Solvers/LinearSolver.h"
+#include "../SolutionTracking/IntervalTracker.hpp"
+#include "../SolutionTracking/RootTracker.hpp"
+#include "../Utilities/utilities.hpp"
+#include "../Utilities/MultiPool.hpp"
+#include "../Utilities/ConcurrentStack.hpp"
+#include "../IntervalChecking/IntervalChecker.hpp"
+#include "../Approximation/ChebyshevApproximator.hpp"
+#include "../Solvers/LinearSolver.hpp"
 
 template <Dimension D>
 class SubdivisionSolver

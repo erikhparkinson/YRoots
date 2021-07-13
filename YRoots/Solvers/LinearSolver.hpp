@@ -14,9 +14,9 @@
 #include "../Libraries/Eigen/Dense"
 
 #include "../Approximation/ChebyshevApproximation.hpp"
-#include "../Utilities/utilities.h"
-#include "../SolutionTracking/IntervalTracker.h"
-#include "../SolutionTracking/RootTracker.h"
+#include "../Utilities/utilities.hpp"
+#include "../SolutionTracking/IntervalTracker.hpp"
+#include "../SolutionTracking/RootTracker.hpp"
 
 template <Dimension D>
 class LinearSolver {

@@ -11,7 +11,7 @@
 
 #include <complex>
 #include <fstream>
-#include "../Utilities/utilities.h"
+#include "../Utilities/utilities.hpp"
 
 struct FoundRoot {
     std::vector<double> root;

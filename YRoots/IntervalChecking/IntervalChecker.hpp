@@ -10,10 +10,10 @@
 #define IntervalChecker_h
 
 #include "../Approximation/ChebyshevApproximation.hpp"
-#include "../SolutionTracking/IntervalTracker.h"
-#include "../Utilities/MultiPool.h"
-#include "../Utilities/ConcurrentStack.h"
-#include "../Utilities/Timer.h"
+#include "../SolutionTracking/IntervalTracker.hpp"
+#include "../Utilities/MultiPool.hpp"
+#include "../Utilities/ConcurrentStack.hpp"
+#include "../Utilities/Timer.hpp"
 
 enum EvalSign {
     //If we & to signs together as a bool, we get true if we can throw out an interval
@@ -79,7 +79,7 @@ size_t IntervalChecker<D>::m_timerBoundingIntervalIndex = -1;
 template<Dimension D>
 size_t IntervalChecker<D>::m_timerQuadraticCheckIndex = -1;
 
-#include "BoundingIntervalUtilities.h"
+#include "BoundingIntervalUtilities.hpp"
 #include "IntervalChecker1D.ipp"
 #include "IntervalChecker2D.ipp"
 #include "IntervalChecker3D.ipp"

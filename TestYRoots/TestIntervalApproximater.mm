@@ -11,9 +11,9 @@
 
 #import <XCTest/XCTest.h>
 #include <chrono>
-#include "TestUtils.h"
-#include "Approximation/IntervalApproximator.h"
-#include "Functions/PowerBasisPolynomial.h"
+#include "TestUtils.hpp"
+#include "Approximation/IntervalApproximator.hpp"
+#include "Functions/PowerBasisPolynomial.hpp"
 
 @interface TestIntervalApproximater : XCTestCase
 

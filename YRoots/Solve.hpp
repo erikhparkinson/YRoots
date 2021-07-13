@@ -14,10 +14,10 @@
 #include <vector>
 #include <thread>
 
-#include "IO/InputFileParser.h"
-#include "Subdivision/ThreadedSolver.h"
-#include "Functions/Function.h"
-#include "Utilities/Timer.h"
+#include "IO/InputFileParser.hpp"
+#include "Subdivision/ThreadedSolver.hpp"
+#include "Functions/Function.hpp"
+#include "Utilities/Timer.hpp"
 
 template<Dimension D>
 void runSolve(std::vector<std::vector<Function::SharedFunctionPtr> >& _functions, const GeneralParameters& _generalParameters, Interval& _interval, const SubdivisionParameters& _subdivisionParameters) {

@@ -11,8 +11,8 @@
 
 #include <iostream>
 #include "../Libraries/FFTW/include/fftw3.h"
-#include "../Functions/Function.h"
-#include "../Utilities/utilities.h"
+#include "../Functions/Function.hpp"
+#include "../Utilities/utilities.hpp"
 
 template <Dimension D>
 class IntervalApproximator

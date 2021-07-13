@@ -9,8 +9,6 @@
 #ifndef utilities_h
 #define utilities_h
 
-#include "macros.h"
-
 #include <algorithm>
 #include <cctype>
 #include <vector>
@@ -20,6 +18,7 @@
 #include <cmath>
 #include <stddef.h>
 #include "../Libraries/Eigen/Core"
+#include "../Utilities/macros.hpp"
 
 //TODO: Make unit tests for these functions!
 

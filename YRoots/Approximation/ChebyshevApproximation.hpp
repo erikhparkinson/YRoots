@@ -10,7 +10,7 @@
 #define ChebyshevApproximation_hpp
 
 #include <stdio.h>
-#include "../Utilities/utilities.h"
+#include "../Utilities/utilities.hpp"
 
 template <Dimension D>
 class ChebyshevApproximation

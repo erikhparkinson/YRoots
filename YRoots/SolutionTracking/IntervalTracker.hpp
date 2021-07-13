@@ -11,7 +11,7 @@
 
 #include <fstream>
 #include <numeric>
-#include "../Utilities/utilities.h"
+#include "../Utilities/utilities.hpp"
 
 struct IntervalResult {
     Interval    m_interval;

@@ -7,8 +7,8 @@
 //
 
 #import <XCTest/XCTest.h>
-#include "TestUtils.h"
-#include "IntervalChecking/IntervalChecker.h"
+#include "TestUtils.hpp"
+#include "IntervalChecking/IntervalChecker.hpp"
 
 template <Dimension D>
 class IntervalCheckerMock : public IntervalChecker<D> {
