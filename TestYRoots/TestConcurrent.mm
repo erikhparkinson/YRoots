@@ -8,8 +8,8 @@
 
 #import <XCTest/XCTest.h>
 #include <random>
-#include "Utilities/MultiPool.h"
-#include "Utilities/ConcurrentStack.h"
+#include "Utilities/MultiPool.hpp"
+#include "Utilities/ConcurrentStack.hpp"
 
 @interface TestConcurrent : XCTestCase
 

@@ -10,8 +10,8 @@
 #define TestPolynomialPowerBasis_mm
 
 #import <XCTest/XCTest.h>
-#include "TestUtils.h"
-#include "Functions/PowerBasisPolynomial.h"
+#include "TestUtils.hpp"
+#include "Functions/PowerBasisPolynomial.hpp"
 
 @interface TestPolynomialPowerBasis : XCTestCase
 

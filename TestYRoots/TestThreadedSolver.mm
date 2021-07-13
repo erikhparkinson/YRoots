@@ -11,12 +11,12 @@
 #include <fstream>
 #include <vector>
 #include <thread>
-#include "TestUtils.h"
-#include "Subdivision/ThreadedSolver.h"
-#include "IO/InputFileParser.h"
-#include "Utilities/Timer.h"
-#include "Utilities/utilities.h"
-#include "Solve.h"
+#include "TestUtils.hpp"
+#include "Subdivision/ThreadedSolver.hpp"
+#include "IO/InputFileParser.hpp"
+#include "Utilities/Timer.hpp"
+#include "Utilities/utilities.hpp"
+#include "Solve.hpp"
 
 @interface TestThreadedSolver : XCTestCase
 

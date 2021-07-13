@@ -7,8 +7,8 @@
 //
 
 #import <XCTest/XCTest.h>
-#include "TestUtils.h"
-#include "Functions/Function.h"
+#include "TestUtils.hpp"
+#include "Functions/Function.hpp"
 
 @interface TestFunction : XCTestCase
 

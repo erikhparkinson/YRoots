@@ -10,8 +10,8 @@
 #define USE_TIMING
 #endif
 
-#include "Solve.h"
-#include "Utilities/Timer.h"
+#include "Solve.hpp"
+#include "Utilities/Timer.hpp"
 
 int main(int argc, const char * argv[]) {
     #ifdef USE_TIMING
