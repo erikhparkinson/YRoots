@@ -11,7 +11,7 @@
 
 #include <fstream>
 #include <numeric>
-#include "../Utilities/utilities.hpp"
+#include "Utilities/utilities.hpp"
 
 struct IntervalResult {
     Interval    m_interval;
@@ -29,7 +29,7 @@ public:
     IntervalTracker(size_t _rank, size_t _numThreads, bool _trackIntervals, bool _trackProgress, double totalArea):
     m_rank(_rank),
     m_numThreads(_numThreads),
-    m_enabled(_trackIntervals || (_trackProgress)),
+    m_enabled(_trackIntervals || _trackProgress),
     m_trackIntervals(_trackIntervals),
     m_trackProgress(_trackProgress),
     m_totalArea(totalArea),
@@ -44,9 +44,16 @@ public:
     }
     
     void storeResult(size_t _threadNum, Interval& _interval, SolveMethod _howFound, double newSize = 0.0) {
+        if(unlikely(_howFound == SolveMethod::TooDeep && !m_printedTooDeepWarning.exchange(true))) {
+            printWarning("Max Depth recusrion depth reached on solve, program may never finish. Try running with higher tolerances!");
+        }
         //TODO: I could template the class off of these options? Might be messy and not worth the few bool checks.
         if (m_enabled) {
             if(m_trackIntervals) {
+                m_intervalResults[_threadNum].push_back(IntervalResult(_interval, _howFound));
+            }
+
+            if(m_trackProgress) {
                 //New Size is on the [-1,1] scale. So take (1-newSize/2^n) * _interval.getArea()
                 double areaSolved = (1 - newSize / m_unitIntervalArea) * _interval.getArea();
                 assert(areaSolved >= 0); //TODO: If the size if 0 I should just be returning too deep immediately.
@@ -54,14 +61,6 @@ public:
 #ifndef TESTING
                 updateProgressBar();
 #endif
-            }
-
-            if(m_trackProgress) {
-                m_intervalResults[_threadNum].push_back(IntervalResult(_interval, _howFound));
-            }
-            
-            if(unlikely(_howFound == SolveMethod::TooDeep && !m_printedTooDeepWarning.exchange(true))) {
-                printWarning("Max Depth recusrion depth reached on solve, program may never finish. Try running with higher tolerances!");
             }
         }
     }

@@ -6,10 +6,6 @@
 //  Copyright © 2020 Erik Hales Parkinson. All rights reserved.
 //
 
-#ifndef USE_TIMING
-#define USE_TIMING
-#endif
-
 #include "Solve.hpp"
 #include "Utilities/Timer.hpp"
 

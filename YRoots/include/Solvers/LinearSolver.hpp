@@ -10,13 +10,13 @@
 #define LinearSolver_h
 
 #include <complex>
-#include "../Libraries/Eigen/Core"
-#include "../Libraries/Eigen/Dense"
+#include "Eigen/Core"
+#include "Eigen/Dense"
 
-#include "../Approximation/ChebyshevApproximation.hpp"
-#include "../Utilities/utilities.hpp"
-#include "../SolutionTracking/IntervalTracker.hpp"
-#include "../SolutionTracking/RootTracker.hpp"
+#include "Approximation/ChebyshevApproximation.hpp"
+#include "Utilities/utilities.hpp"
+#include "SolutionTracking/IntervalTracker.hpp"
+#include "SolutionTracking/RootTracker.hpp"
 
 template <Dimension D>
 class LinearSolver {

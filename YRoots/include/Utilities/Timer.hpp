@@ -11,7 +11,7 @@
 
 #include <chrono>
 #include <fstream>
-#include "../Utilities/utilities.hpp"
+#include "Utilities/utilities.hpp"
 
 class TimingDetails {
     //TODO: Have this hold a vector of the individual run times, so we can print the median run time, highest 10%, lowest 10% etc

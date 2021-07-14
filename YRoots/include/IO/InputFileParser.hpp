@@ -16,8 +16,8 @@
 #include <set>
 #include <thread>
 #include <algorithm>
-#include "../Functions/Function.hpp"
-#include "../Utilities/Timer.hpp"
+#include "Functions/Function.hpp"
+#include "Utilities/Timer.hpp"
 
 class InputFileParser {
 public:

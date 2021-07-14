@@ -17,8 +17,8 @@
 #include <iostream>
 #include <cmath>
 #include <stddef.h>
-#include "../Libraries/Eigen/Core"
-#include "../Utilities/macros.hpp"
+#include "Eigen/Core"
+#include "Utilities/macros.hpp"
 
 //TODO: Make unit tests for these functions!
 

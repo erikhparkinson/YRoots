@@ -9,11 +9,11 @@
 #ifndef IntervalChecker_h
 #define IntervalChecker_h
 
-#include "../Approximation/ChebyshevApproximation.hpp"
-#include "../SolutionTracking/IntervalTracker.hpp"
-#include "../Utilities/MultiPool.hpp"
-#include "../Utilities/ConcurrentStack.hpp"
-#include "../Utilities/Timer.hpp"
+#include "Approximation/ChebyshevApproximation.hpp"
+#include "SolutionTracking/IntervalTracker.hpp"
+#include "Utilities/MultiPool.hpp"
+#include "Utilities/ConcurrentStack.hpp"
+#include "Utilities/Timer.hpp"
 
 enum EvalSign {
     //If we & to signs together as a bool, we get true if we can throw out an interval
