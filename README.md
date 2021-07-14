@@ -134,7 +134,7 @@ The supported `Expression` for complex functions with one input are
 The roots will be outputted into a file called roots.csv. Each line will contain one root, with the coordinate in each dimension seperated by a comma.
 
 ## Intervals
-If the option trackIntervals is set true, the intervals that were solved will be printed to the file intervals.txt.
+If the option `trackIntervals` is set true, the intervals that were solved will be printed to the file intervals.txt.
 
 ## Timing
-If the option useTimer is set true, timing information about the solve will be printed to the file timing.txt.
+If the option `useTimer` is set true, timing information about the solve will be printed to the file timing.txt.
