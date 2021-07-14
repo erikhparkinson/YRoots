@@ -4,7 +4,7 @@ Implementing BYU's YRoots Rootfinding code in C++
 # Running
 Download the codebase as a zip file, then open a command line and in the main folder run `make`.
 This will create the executable `yroots-solver`.
-Yroots can be run from the command line as `./yroots <input file>`. If no input file is given `input.txt` is assumed.
+YRoots can be run from the command line as `./yroots <input file>`. If no input file is given `input.txt` is assumed.
 
 # File Input
 
