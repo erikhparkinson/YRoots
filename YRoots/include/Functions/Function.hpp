@@ -12,8 +12,8 @@
 #include <math.h>
 #include <unordered_map>
 #include <unordered_set>
-#include "../Utilities/utilities.hpp"
-#include "../Utilities/Timer.hpp"
+#include "Utilities/utilities.hpp"
+#include "Utilities/Timer.hpp"
 
 enum FunctionType {
     SIN, //Syntax: sin(x)

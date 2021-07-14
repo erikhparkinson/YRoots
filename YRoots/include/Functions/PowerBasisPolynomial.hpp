@@ -13,7 +13,7 @@
 #include <math.h>
 #include <unordered_map>
 #include <unordered_set>
-#include "../Utilities/utilities.hpp"
+#include "Utilities/utilities.hpp"
 
 class FunctionInterface{
 public:

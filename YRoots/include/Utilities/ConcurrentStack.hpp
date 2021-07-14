@@ -10,7 +10,7 @@
 #define ConcurrentStack_h
 
 #include <atomic>
-#include "../Utilities/MultiPool.hpp"
+#include "Utilities/MultiPool.hpp"
 
 template<typename T>
 struct StackNode {
