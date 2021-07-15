@@ -3,16 +3,16 @@ numThreads = 3;
 PARAMETERS_END;
 
 INTERVAL;
-[-1, 1/pi];
-[ln(2), e];
+[-1, 1];
+[-1, 1];
 INTERVAL_END;
 
 FUNCTIONS;
-function f1, f2;
-variable_group x1, x2;
-a = sqrt(x1^2 + x2^2)
-f1 = sin(x1) + 2 + ln(a);
-f2 = cos(a)/(log(x2, 10)) + 2 + ln(x1 + 3);
+function f, g;
+variable_group x, y;
+n = 30;
+f = sin(n*x-y/n)+y;
+g = cos(x/n-n*y)-x;
 FUNCTIONS_END;
 
 END;
