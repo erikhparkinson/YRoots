@@ -120,13 +120,18 @@ public:
 #endif
     }
     
-    static void getTimingResultsAndClear() {
+    inline static void getTimingResultsAndClear() {
+#ifdef USE_TIMING
+        //Only print the results if timing is enabled
+        if(m_enabled) {
 #ifdef TESTING
-        getInstance().printTimingResults();
+            getInstance().printTimingResults();
 #else
-        getInstance().logResults();
+            getInstance().logResults();
 #endif
+        }
         getInstance().clearClaims();
+#endif
     }
     
     static void enable() {
@@ -143,10 +148,8 @@ public:
     
 private:
     
-    void printTimingResults() {
-#ifdef USE_TIMING
+    inline void printTimingResults() {
         printResults(std::cout);
-#endif
     }
     
     void logResults() {

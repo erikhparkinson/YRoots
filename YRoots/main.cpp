@@ -10,9 +10,9 @@
 #include "Utilities/Timer.hpp"
 
 int main(int argc, const char * argv[]) {
-    #ifdef USE_TIMING
-        Timer::enable();
-    #endif
+#ifdef USE_TIMING
+    Timer::enable();
+#endif
 
     //Get the file names
     std::string inputFileName;
