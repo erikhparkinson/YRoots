@@ -137,7 +137,7 @@ private:
             assert(currentArea <= MaxAreaVal);
             if(currentArea > m_lastAreaSolved) {
                 //Print the progress
-                int barWidth = 70;
+                const int barWidth = 71 - DecimalsSpots;
                 std::cout << "\r[";
                 int pos = barWidth * currentArea/MaxAreaVal;
                 for (int i = 0; i < barWidth; ++i) {
