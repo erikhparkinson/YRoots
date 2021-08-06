@@ -93,7 +93,27 @@ public:
             thisRoot.root[i] = ((_interval.upperBounds[i] - _interval.lowerBounds[i]) * std::real(_root[i]) + (_interval.upperBounds[i] + _interval.lowerBounds[i])) /2.0;
         }
     }
-    
+
+    void storeRoot(size_t threadNum, std::vector<double>& _root, Interval& _interval, SolveMethod _howFound, double _conditionNumber) {
+        //For a root that is already transformed and real, and we know is good.
+        
+        //Created the stored root.
+        //TODO: Make this more efficient.
+        m_foundRoots[threadNum].resize(m_foundRoots[threadNum].size() + 1);
+        FoundRoot& thisRoot = m_foundRoots[threadNum][m_foundRoots[threadNum].size() - 1];
+        
+        //Store the root information
+        thisRoot.conditionNumber = _conditionNumber;
+        thisRoot.interval = _interval;
+        thisRoot.solveMethod = _howFound;
+
+        //Transform the root
+        thisRoot.root.resize(_root.size());
+        for(size_t i = 0; i < _root.size(); i++) {
+            thisRoot.root[i] = _root[i];
+        }
+    }
+
     void printResults() {
         std::cout<<"Roots found:\n";
         for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
@@ -130,6 +150,7 @@ public:
     }
     
     std::vector<FoundRoot> getRoots() {
+        //printResults();
         std::vector<FoundRoot> allRoots;
         for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
             for(size_t rootNum = 0; rootNum < m_foundRoots[threadNum].size(); rootNum++) {

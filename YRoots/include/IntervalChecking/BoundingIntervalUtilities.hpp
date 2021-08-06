@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <cmath>
 #include <vector>
+#include <math.h>
 
 double getLipshitzConstant1D(const double* _array, size_t _arraySize) {
     double value = 0.0;
