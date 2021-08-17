@@ -9,6 +9,7 @@
 #ifndef IntervalData_h
 #define IntervalData_h
 
+#include <iomanip>
 #include <fstream>
 #include <numeric>
 #include "Utilities/utilities.hpp"
