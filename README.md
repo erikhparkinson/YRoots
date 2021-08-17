@@ -71,8 +71,14 @@ Currently supported parameters are
   * The initial approximation degree used.
 * maxLevel : Defaults to 50
   * How many levls deep the subdivision will go before giving up.
-* trackIntervals : Defaults to true
+* trackIntervals : Defaults to false
   * If true the intervals are tracked and the results of how each one is solved is saved in `intervals.txt`.
+* trackRootIntervals : Defaults to false
+  * Same as trackIntervals but only tracks the intervals in which as root was found.
+* trackProgress : Defaults to true
+  * If true will track what percent of the interval has been solved and will print a progress bar to track the percent solved.
+* computeResiduals : Defaults to false
+  * If true will create a file called `residuals.csv` with the residuals of the roots. Then nth row will contain the details of the root in the nth row of `roots.csv`. Column 2i is the function evaluation of the root on the ith function, and column 2i+1 is the evaluation error of that function evaluation.
 * useTimer : Defaults to false
   * If true timing details are recorded and saved in `timing.txt`.
  
