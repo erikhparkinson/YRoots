@@ -163,10 +163,10 @@ T chebPower(T base, size_t exponent) {
     }
     
     //Variables for calculating linear part
-    double twoBase = 2*base;
-    double temp;
-    double temp0 = 1;
-    double temp1 = base;
+    T twoBase = 2*base;
+    T temp;
+    T temp0 = 1;
+    T temp1 = base;
 
     //Log(n) complexity recursion
     if ((exponent&1) == 0) { //Fast Check if exponent is even
@@ -193,14 +193,30 @@ T chebPower(T base, size_t exponent) {
     }
 }
 
+template <int B, int E>
+struct PowerStruct {
+    enum { value = B * PowerStruct<B, E-1>::value };
+};
 
-enum Dimension {
-    NDim,
-    One,
-    Two,
-    Three,
-    Four,
-    Five
+template <int B>
+struct PowerStruct<B, 1> {
+    enum { value = B };
+};
+
+template<int Rank>
+struct EigenTypes {
+    typedef Eigen::Matrix<double, Rank, 2> Matrix2Columns;
+    typedef Eigen::Matrix<double, Rank, PowerStruct<2, Rank>::value> MatrixPowerColumns;
+    typedef Eigen::Matrix<double, Rank, Rank> Matrix;
+    typedef Eigen::Matrix<double, Rank, 1> Vector;
+};
+
+template<>
+struct EigenTypes<-1> {
+    typedef Eigen::Matrix<double, Eigen::Dynamic, 2> Matrix2Columns;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixPowerColumns;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Matrix;
+    typedef Eigen::Matrix<double, Eigen::Dynamic, 1> Vector;
 };
 
 enum SolveMethod {
@@ -277,12 +293,13 @@ struct SubdivisionParameters {
     double goodZerosFactor = 100;
     double minGoodZerosTol = 1e-5;
     //Degrees
-    size_t approximationDegree = 20;
+    size_t approximationDegree = 10; //TODO: Set a default of this per dimension
     size_t targetDegree = 1;
     size_t maxLevel = 50;
 };
 
 struct GeneralParameters {
+    bool trackRootIntervals = false;
     bool trackIntervals = false;
     bool trackProgress = true;
     bool useTimer = false;

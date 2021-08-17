@@ -80,7 +80,7 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
     for(size_t numThreads = 1; numThreads <= 4; numThreads++) {
         generalParameters.numThreads = numThreads;
         std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-        ThreadedSolver<Dimension::One> solver(functions, generalParameters, startInterval, subdivisionParameters);
+        ThreadedSolver<1> solver(functions, generalParameters, startInterval, subdivisionParameters);
             
         size_t trials = 1;
         std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
@@ -138,7 +138,7 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
             //Set up the solver
             generalParameters.numThreads = numThreads;
             std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-            ThreadedSolver<Dimension::One> solver(functions, generalParameters, startInterval, subdivisionParameters);
+            ThreadedSolver<1> solver(functions, generalParameters, startInterval, subdivisionParameters);
                 
             //Solve it
             size_t trials = 1;
@@ -223,7 +223,7 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
             //Set up the solver
             generalParameters.numThreads = numThreads;
             std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-            ThreadedSolver<Dimension::Two> solver(functions, generalParameters, startInterval, subdivisionParameters);
+            ThreadedSolver<2> solver(functions, generalParameters, startInterval, subdivisionParameters);
                 
             //Solve it
             size_t trials = 1;
@@ -281,7 +281,7 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
     
     //Set up the solver
     std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, generalParameters.numThreads);
-    ThreadedSolver<Dimension::Two> solver(functions, generalParameters, startInterval, subdivisionParameters);
+    ThreadedSolver<2> solver(functions, generalParameters, startInterval, subdivisionParameters);
     
     //Solve it
     size_t trials = 1;
@@ -369,8 +369,8 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         //Get the residuals
         const std::vector<double>& chebRoot = chebRoots[bestIndex];
         for(size_t funcNum = 0; funcNum < functions.size(); funcNum++) {
-            yrootsResiduals[rootSpot1].push_back(std::abs(functions[funcNum]->evaluate(myRoot)));
-            chebResiduals[rootSpot1].push_back(std::abs(functions[funcNum]->evaluate(chebRoot)));
+            yrootsResiduals[rootSpot1].push_back(std::abs(functions[funcNum]->evaluate<double>(myRoot)));
+            chebResiduals[rootSpot1].push_back(std::abs(functions[funcNum]->evaluate<double>(chebRoot)));
         }
     }
     
@@ -406,6 +406,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
 }
 
 - (void)testChebSuite {
+    Timer::enable();
     //Read through all the ChebSuite files, run the test, and then check the results against what ChebFun gets.
     const std::string testFolder = "TestFiles/ChebSuiteTests/";
     const std::string testResultFolder = "TestFiles/ChebSuiteResults/";
@@ -465,9 +466,11 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         //Check it
         XCTAssert(compareTestFiles(testOutputFile, testResultFile, functions));
     }
+    Timer::getTimingResultsAndClear();
 }
 
 - (void)testDemoNotebook {
+    Timer::enable();
     //Read through all the DemoNotebook examples, run the test, and then check the results against what our python code gets.
     const std::string testFolder = "TestFiles/DemoNotebookTests/";
     const std::string testResultFolder = "TestFiles/DemoNotebookResults/";
@@ -508,6 +511,57 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         //Check it
         XCTAssert(compareTestFiles(testOutputFile, testResultFile, functions));
     }
+    Timer::getTimingResultsAndClear();
 }
+
+- (void)testRandomStuffTiming {
+    //Vars to run the test on
+    std::vector<double> approximation(10000,0.0);
+    size_t rank = 2;
+    size_t sideLength = 20;
+    size_t partialSideLength = 10;
+    double sumAbsVal = 0.0;
+    
+    //Solve it
+    size_t trials = 1;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
+    for(size_t trailNum = 0; trailNum < trials; trailNum++) {
+        //The code to test
+
+        //Set up the needed variables
+        std::vector<size_t> inputSpot(rank,0);
+        std::vector<size_t> multipliers(rank, 1);
+        for(size_t i = 1; i < rank; i++) {
+            multipliers[i] = sideLength*multipliers[i-1];
+        }
+
+        //Iterate through all the combinations
+        size_t spotToInc = 0;
+        sumAbsVal += std::abs(approximation[0]);
+        while (spotToInc < rank) {
+            bool firstPass = true;
+            while(++inputSpot[spotToInc] < partialSideLength) {
+                size_t spot = 0;
+                for (size_t i = 0; i < rank; i++) {
+                    spot += inputSpot[i]*multipliers[i];//TODO: get rid of this for loop, inc the spot as we go. Replace this slow piece of code all over
+                }
+                std::cout<<"Spot " << spot << "\n";
+                sumAbsVal += std::abs(approximation[spot]);
+                
+                if(firstPass && spotToInc != 0) {
+                    spotToInc = 0;
+                }
+                firstPass = false;
+            }
+            inputSpot[spotToInc] = 0;
+            spotToInc++;
+        }
+    }
+    std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
+    double nanos = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count());
+
+    std::cout << "This code takes " << formatTimePretty(nanos/trials)<< ".\n";
+}
+
 
 @end

@@ -14,7 +14,7 @@
 #include "Functions/Function.hpp"
 #include "Utilities/utilities.hpp"
 
-template <Dimension D>
+template <int Rank>
 class IntervalApproximator
 {
 public:
@@ -82,14 +82,14 @@ private:
     Timer&                  m_timer = Timer::getInstance();
 };
 
-template<Dimension D>
-size_t IntervalApproximator<D>::m_timerIntervalApproximatorIndex = -1;
-template<Dimension D>
-size_t IntervalApproximator<D>::m_timerFFT = -1;
-template<Dimension D>
-size_t IntervalApproximator<D>::m_timerInitIndex = -1;
-template<Dimension D>
-size_t IntervalApproximator<D>::m_timerPlanIndex = -1;
+template<int Rank>
+size_t IntervalApproximator<Rank>::m_timerIntervalApproximatorIndex = -1;
+template<int Rank>
+size_t IntervalApproximator<Rank>::m_timerFFT = -1;
+template<int Rank>
+size_t IntervalApproximator<Rank>::m_timerInitIndex = -1;
+template<int Rank>
+size_t IntervalApproximator<Rank>::m_timerPlanIndex = -1;
 
 #include "IntervalApproximator1D.ipp"
 #include "IntervalApproximator2D.ipp"

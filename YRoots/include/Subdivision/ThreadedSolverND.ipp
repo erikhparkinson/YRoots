@@ -9,14 +9,14 @@
 #ifndef ThreadedSolverND_ipp
 #define ThreadedSolverND_ipp
 
-template <Dimension D>
-ThreadedSolver<D>::ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, const GeneralParameters& _generalParameters, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters) :
+template <int Rank>
+ThreadedSolver<Rank>::ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, const GeneralParameters& _generalParameters, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters) :
 m_allFunctions(_functions),
 m_numThreads(_generalParameters.numThreads),
 m_killThreads(false),
 m_numRunningThreads(0),
 m_intervalsToRun(m_numThreads),
-m_intervalTracker(_functions[0].size(), _generalParameters.numThreads, _generalParameters.trackIntervals, _generalParameters.trackProgress, _startInterval.getArea()),
+m_intervalTracker(_functions[0].size(), _generalParameters, _startInterval.getArea()),
 m_rootTracker(m_numThreads)
 {
     if(m_numThreads == 0) {
@@ -44,12 +44,12 @@ m_rootTracker(m_numThreads)
 
     //Create the solvers
     for(size_t threadNum = 0; threadNum < m_numThreads; threadNum++) {
-        m_subdivisionSolvers.emplace_back(::make_unique<SubdivisionSolver<D>>(threadNum, m_allFunctions[threadNum], m_intervalsToRun, m_solveParametersPool[threadNum], _subdivisionParameters, m_intervalTracker, m_rootTracker));
+        m_subdivisionSolvers.emplace_back(::make_unique<SubdivisionSolver<Rank>>(threadNum, m_allFunctions[threadNum], m_intervalsToRun, m_solveParametersPool[threadNum], _subdivisionParameters, m_intervalTracker, m_rootTracker));
     }
 }
 
-template <Dimension D>
-ThreadedSolver<D>::~ThreadedSolver() {
+template <int Rank>
+ThreadedSolver<Rank>::~ThreadedSolver() {
     //Kill the threads
     m_killThreads.store(true);
     //Wait for them to finish
@@ -59,15 +59,15 @@ ThreadedSolver<D>::~ThreadedSolver() {
     m_threadPool.clear();
 }
 
-template <Dimension D>
-void ThreadedSolver<D>::solve() {
+template <int Rank>
+void ThreadedSolver<Rank>::solve() {
     //TODO: Create the threads in the constructor and have the threads help create the m_subdivisionSolvers?
     //Also, why do I have the sleep for a millisecond here???
     
     m_intervalsToRun.push(0, m_firstSolveParameters);
     for(size_t threadNum = 0; threadNum + 1 < m_numThreads; threadNum++) {
         //Create the threads
-        m_threadPool.push_back(std::thread(&ThreadedSolver<D>::runThread, this, threadNum));
+        m_threadPool.push_back(std::thread(&ThreadedSolver<Rank>::runThread, this, threadNum));
         std::this_thread::sleep_for(std::chrono::microseconds(1500));
     }
     
@@ -85,8 +85,8 @@ void ThreadedSolver<D>::solve() {
     m_intervalTracker.logResults();
 }
 
-template <Dimension D>
-void ThreadedSolver<D>::runThread(size_t _threadNum){
+template <int Rank>
+void ThreadedSolver<Rank>::runThread(size_t _threadNum){
     //End the loop when kill threads is flipped
     SolveParameters* parameters;
     while(!m_killThreads.load()) {

@@ -11,6 +11,7 @@
 
 #include <complex>
 #include <fstream>
+#include <iomanip>
 #include "Utilities/utilities.hpp"
 
 struct FoundRoot {
@@ -65,14 +66,14 @@ public:
         m_outputFile = "roots.csv";
     }
     
-    void storeRoot(size_t threadNum, std::vector<std::complex<double> >& _root, Interval& _interval, SolveMethod _howFound, double _conditionNumber, double _goodZerosTol) {
+    bool storeRoot(size_t threadNum, std::vector<std::complex<double> >& _root, Interval& _interval, SolveMethod _howFound, double _conditionNumber, double _goodZerosTol) {
         //Check if the root is in the boundary
         for(size_t i = 0; i < _root.size(); i++) {
             if(std::abs(std::real(_root[i])) > 1 + _goodZerosTol) {
-                return;
+                return false;
             }
             else if (std::abs(std::imag(_root[i])) > _goodZerosTol) {
-                return;
+                return false;
             }
         }
         
@@ -92,6 +93,7 @@ public:
         for(size_t i = 0; i < _root.size(); i++) {
             thisRoot.root[i] = ((_interval.upperBounds[i] - _interval.lowerBounds[i]) * std::real(_root[i]) + (_interval.upperBounds[i] + _interval.lowerBounds[i])) /2.0;
         }
+        return true;
     }
 
     void storeRoot(size_t threadNum, std::vector<double>& _root, Interval& _interval, SolveMethod _howFound, double _conditionNumber) {

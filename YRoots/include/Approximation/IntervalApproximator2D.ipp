@@ -10,7 +10,7 @@
 #define IntervalApproximator2D_ipp
 
 template<>
-void IntervalApproximator<Dimension::Two>::preComputeDivideByTwoPoints()
+void IntervalApproximator<2>::preComputeDivideByTwoPoints()
 {
     for(size_t i = 0; i < m_approximationDegree; i++) {
         m_divideByTwoPoints.push_back(i);
@@ -21,7 +21,7 @@ void IntervalApproximator<Dimension::Two>::preComputeDivideByTwoPoints()
 }
 
 template<>
-void IntervalApproximator<Dimension::Two>::printOutputArray()
+void IntervalApproximator<2>::printOutputArray()
 {
     for(size_t i = 0; i <= m_approximationDegree; i++) {
         for(size_t j = 0; j <= m_approximationDegree; j++) {
@@ -33,7 +33,7 @@ void IntervalApproximator<Dimension::Two>::printOutputArray()
 }
 
 template<>
-void IntervalApproximator<Dimension::Two>::printInputArray()
+void IntervalApproximator<2>::printInputArray()
 {
     for(size_t i = 0; i <= m_approximationDegree; i++) {
         for(size_t j = 0; j <= m_approximationDegree; j++) {

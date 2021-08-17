@@ -208,6 +208,9 @@ private:
             else if(parameterString[0] == "trackIntervals") {
                 m_generalParameters.trackIntervals = parseBool(parameterString[1]);
             }
+            else if(parameterString[0] == "trackRootIntervals") {
+                m_generalParameters.trackRootIntervals = parseBool(parameterString[1]);
+            }
             else if(parameterString[0] == "trackProgress") {
                 m_generalParameters.trackProgress = parseBool(parameterString[1]);
             }

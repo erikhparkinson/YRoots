@@ -9,8 +9,8 @@
 #ifndef SubdivisionSolverND_ipp
 #define SubdivisionSolverND_ipp
 
-template <Dimension D>
-SubdivisionSolver<D>::SubdivisionSolver(size_t _threadNum, const std::vector<Function::SharedFunctionPtr>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, const SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
+template <int Rank>
+SubdivisionSolver<Rank>::SubdivisionSolver(size_t _threadNum, const std::vector<Function::SharedFunctionPtr>& _functions, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool, const SubdivisionParameters& _parameters, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
 m_threadNum(_threadNum),
 m_rank(_functions.size()),
 m_functions(_functions),
@@ -30,27 +30,27 @@ m_minApproxTols(m_functions.size(), 0.0)
 
     for(size_t i = 0; i < m_functions.size(); i++) {
         //Create the Chebyshev Approximators
-        m_chebyshevApproximators.emplace_back(::make_unique<ChebyshevApproximator<D>>(m_rank, m_subdivisionParameters.approximationDegree, m_chebyshevApproximations[i]));
+        m_chebyshevApproximators.emplace_back(::make_unique<ChebyshevApproximator<Rank>>(m_rank, m_subdivisionParameters.approximationDegree, m_chebyshevApproximations[i]));
     }
 }
 
-template <Dimension D>
-SubdivisionSolver<D>::~SubdivisionSolver(){
+template <int Rank>
+SubdivisionSolver<Rank>::~SubdivisionSolver(){
 
 }
 
-template <Dimension D>
-void SubdivisionSolver<D>::subdivide(SolveParameters* _parameters, size_t _numGoodApproximations)
+template <int Rank>
+void SubdivisionSolver<Rank>::subdivide(SolveParameters* _parameters, size_t _numGoodApproximations)
 {
     m_intervalChecker.runSubintervalChecks(m_chebyshevApproximations, _parameters, _numGoodApproximations);
 }
 
-template <Dimension D>
-void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
+template <int Rank>
+void SubdivisionSolver<Rank>::solve(SolveParameters* _parameters)
 {
     //Figure out how a speicific number is being solved //TODO: Remove this when I'm confident things work.
-    /*double num1 = 128.8052987971815;
-    double num2 = 0.9367747949648417;
+    /*double num1 = -0.29112527918160658;
+    double num2 = 0.539560264642984;
     if(_parameters->interval.lowerBounds[0] > num1 || _parameters->interval.upperBounds[0] < num1) {
         return;
     }
@@ -62,7 +62,7 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
     if (_parameters->currentLevel > m_subdivisionParameters.maxLevel)
     {
         //TODO: Have this store a root if it gets to deep? Make this a param?
-        m_intervalTracker.storeResult(m_threadNum, _parameters->interval, SolveMethod::TooDeep);
+        m_intervalTracker.storeResult(m_threadNum, _parameters->interval, SolveMethod::TooDeep, false);
         return;
     }
     
@@ -70,7 +70,7 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
         for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {
             //break;
             size_t const degToUse = 2;
-            size_t numVals1 = power(degToUse*2,2) - power(degToUse,2);
+            size_t numVals1 = 1; //power(degToUse*2,2) - power(degToUse,2);
             size_t numVals2 = power(_parameters->goodDegrees[funcNum]*2,2) - power(_parameters->goodDegrees[funcNum],2);
             m_minApproxTols[funcNum] = numVals2 * m_chebyshevApproximators[funcNum]->getAbsApproxTol(m_functions[funcNum], _parameters->interval, degToUse) / numVals1;
         }
@@ -79,7 +79,7 @@ void SubdivisionSolver<D>::solve(SolveParameters* _parameters)
     for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {
         //Get a chebyshev approximation
         m_chebyshevApproximators[funcNum]->approximate(m_functions[funcNum], _parameters->interval, _parameters->goodDegrees[funcNum]);
-        const double absApproxTolToUse = std::max(m_minApproxTols[funcNum], m_subdivisionParameters.absApproxTol);
+        const double absApproxTolToUse = std::max(1e5 * m_minApproxTols[funcNum], m_subdivisionParameters.absApproxTol);
         if(!m_chebyshevApproximations[funcNum].isGoodApproximation(absApproxTolToUse, m_subdivisionParameters.relApproxTol)) {
             //Increase the goodDegree by 1 up to the max.
             _parameters->goodDegrees[funcNum] = std::min(_parameters->goodDegrees[funcNum]+1, m_subdivisionParameters.approximationDegree);

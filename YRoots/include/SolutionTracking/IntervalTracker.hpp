@@ -26,12 +26,13 @@ struct IntervalResult {
 
 class IntervalTracker {
 public:
-    IntervalTracker(size_t _rank, size_t _numThreads, bool _trackIntervals, bool _trackProgress, double totalArea):
+    IntervalTracker(size_t _rank, const GeneralParameters& _generalParameters, double totalArea):
     m_rank(_rank),
-    m_numThreads(_numThreads),
-    m_enabled(_trackIntervals || _trackProgress),
-    m_trackIntervals(_trackIntervals),
-    m_trackProgress(_trackProgress),
+    m_numThreads(_generalParameters.numThreads),
+    m_enabled(_generalParameters.trackIntervals || _generalParameters.trackProgress || _generalParameters.trackRootIntervals),
+    m_trackIntervals(_generalParameters.trackIntervals),
+    m_trackRootIntervals(_generalParameters.trackRootIntervals),
+    m_trackProgress(_generalParameters.trackProgress),
     m_totalArea(totalArea),
     m_unitIntervalArea(power(2, _rank)),
     m_lastAreaSolved(0),
@@ -43,13 +44,13 @@ public:
         m_areaSolved.resize(m_numThreads, 0);
     }
     
-    void storeResult(size_t _threadNum, Interval& _interval, SolveMethod _howFound, double newSize = 0.0) {
+    void storeResult(size_t _threadNum, Interval& _interval, SolveMethod _howFound, const bool containsRoot, double newSize = 0.0) {
         if(unlikely(_howFound == SolveMethod::TooDeep && !m_printedTooDeepWarning.exchange(true))) {
             printWarning("Max Depth recusrion depth reached on solve, program may never finish. Try running with higher tolerances!");
         }
         //TODO: I could template the class off of these options? Might be messy and not worth the few bool checks.
         if (m_enabled) {
-            if(m_trackIntervals) {
+            if(m_trackIntervals || (m_trackRootIntervals && containsRoot)) {
                 m_intervalResults[_threadNum].push_back(IntervalResult(_interval, _howFound));
             }
 
@@ -171,6 +172,7 @@ private:
     size_t                                      m_numThreads;
     bool                                        m_enabled;
     bool                                        m_trackIntervals;
+    bool                                        m_trackRootIntervals;
     bool                                        m_trackProgress;
     
     std::vector<std::vector<IntervalResult> >   m_intervalResults;
