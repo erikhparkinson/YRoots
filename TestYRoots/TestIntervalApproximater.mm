@@ -126,7 +126,7 @@ void allocateMemoryTestIntervalApproximater()
     std::string functionString = "5+x1^2+x2+5*x1*x2*x3";
     
     Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
-    IntervalApproximator<2> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_partialArrayLength);
+    IntervalApproximator<3> intervalApproximator(m_rank, m_approximationDegree, m_input, m_output, m_kinds, m_partialArrayLength);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0);

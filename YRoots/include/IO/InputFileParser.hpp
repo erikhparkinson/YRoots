@@ -211,6 +211,9 @@ private:
             else if(parameterString[0] == "trackRootIntervals") {
                 m_generalParameters.trackRootIntervals = parseBool(parameterString[1]);
             }
+            else if(parameterString[0] == "computeResiduals") {
+                m_generalParameters.computeResiduals = parseBool(parameterString[1]);
+            }
             else if(parameterString[0] == "trackProgress") {
                 m_generalParameters.trackProgress = parseBool(parameterString[1]);
             }

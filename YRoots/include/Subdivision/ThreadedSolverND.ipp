@@ -17,7 +17,7 @@ m_killThreads(false),
 m_numRunningThreads(0),
 m_intervalsToRun(m_numThreads),
 m_intervalTracker(_functions[0].size(), _generalParameters, _startInterval.getArea()),
-m_rootTracker(m_numThreads)
+m_rootTracker(m_numThreads, m_allFunctions, _generalParameters)
 {
     if(m_numThreads == 0) {
         printAndThrowRuntimeError("Can't run with 0 threads!");

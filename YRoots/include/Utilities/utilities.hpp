@@ -303,6 +303,7 @@ struct GeneralParameters {
     bool trackIntervals = false;
     bool trackProgress = true;
     bool useTimer = false;
+    bool computeResiduals = false;
     size_t numThreads = 1;
 };
 
