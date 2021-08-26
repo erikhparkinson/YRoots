@@ -18,7 +18,7 @@
 #include "Approximation/ChebyshevApproximator.hpp"
 #include "Solvers/LinearSolver.hpp"
 
-template <Dimension D>
+template <int Rank>
 class SubdivisionSolver
 {
 public:
@@ -39,10 +39,10 @@ private:
     SubdivisionParameters                                   m_subdivisionParameters;
     IntervalTracker&                                        m_intervalTracker;
     RootTracker&                                            m_rootTracker;
-    std::vector<ChebyshevApproximation<D> >                 m_chebyshevApproximations;
-    std::vector<std::unique_ptr<ChebyshevApproximator<D> > >m_chebyshevApproximators;
-    IntervalChecker<D>                                      m_intervalChecker;
-    LinearSolver<D>                                         m_linearSolver;
+    std::vector<ChebyshevApproximation<Rank> >                 m_chebyshevApproximations;
+    std::vector<std::unique_ptr<ChebyshevApproximator<Rank> > >m_chebyshevApproximators;
+    IntervalChecker<Rank>                                      m_intervalChecker;
+    LinearSolver<Rank>                                         m_linearSolver;
     std::vector<double>                                     m_minApproxTols;
     
     static size_t m_subdivisionSolverTimerIndex1;
@@ -50,11 +50,11 @@ private:
     Timer& m_timer = Timer::getInstance();
 };
 
-template<Dimension D>
-size_t SubdivisionSolver<D>::m_subdivisionSolverTimerIndex1 = -1;
+template<int Rank>
+size_t SubdivisionSolver<Rank>::m_subdivisionSolverTimerIndex1 = -1;
 
-template<Dimension D>
-size_t SubdivisionSolver<D>::m_subdivisionSolverTimerIndex2 = -1;
+template<int Rank>
+size_t SubdivisionSolver<Rank>::m_subdivisionSolverTimerIndex2 = -1;
 
 
 #include "SubdivisionSolverND.ipp"

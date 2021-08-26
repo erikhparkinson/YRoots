@@ -9,8 +9,8 @@
 #ifndef ChebyshevApproximationND_ipp
 #define ChebyshevApproximationND_ipp
 
-template <Dimension D>
-ChebyshevApproximation<D>::ChebyshevApproximation(size_t _rank):
+template <int Rank>
+ChebyshevApproximation<Rank>::ChebyshevApproximation(size_t _rank):
 m_rank(_rank),
 m_partialSideLength(0),
 m_degree(0),
@@ -26,8 +26,8 @@ m_goodDegree(std::numeric_limits<size_t>::max() - 1)
     clear();
 }
 
-template <Dimension D>
-void ChebyshevApproximation<D>::setApproximation(size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError)
+template <int Rank>
+void ChebyshevApproximation<Rank>::setApproximation(size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError)
 {
     m_partialSideLength = _degree+1;
     m_degree = _degree*m_rank;
@@ -49,8 +49,8 @@ void ChebyshevApproximation<D>::setApproximation(size_t _degree, size_t _sideLen
     }
 }
 
-template <Dimension D>
-void ChebyshevApproximation<D>::sumAbsValues() {
+template <int Rank>
+void ChebyshevApproximation<Rank>::sumAbsValues() {
     if(!m_absValWasSummed){
         //Set up the needed variables
         std::vector<size_t> inputSpot(m_rank,0);
@@ -84,8 +84,8 @@ void ChebyshevApproximation<D>::sumAbsValues() {
     }
 }
 
-template <Dimension D>
-inline bool ChebyshevApproximation<D>::isGoodApproximationSetDegree(double absApproxTol, double relApproxTol) {
+template <int Rank>
+inline bool ChebyshevApproximation<Rank>::isGoodApproximationSetDegree(double absApproxTol, double relApproxTol) {
     if(m_approximationError < (absApproxTol + relApproxTol*m_infNorm)) {
         m_goodDegree = m_degree;
         return true;
@@ -95,13 +95,13 @@ inline bool ChebyshevApproximation<D>::isGoodApproximationSetDegree(double absAp
     }
 }
 
-template <Dimension D>
-inline bool ChebyshevApproximation<D>::isGoodApproximation(double absApproxTol, double relApproxTol) {
+template <int Rank>
+inline bool ChebyshevApproximation<Rank>::isGoodApproximation(double absApproxTol, double relApproxTol) {
     return m_approximationError < (absApproxTol + relApproxTol*m_infNorm);
 }
 
-template <Dimension D>
-void ChebyshevApproximation<D>::setDegreeSpots(size_t index) {
+template <int Rank>
+void ChebyshevApproximation<Rank>::setDegreeSpots(size_t index) {
     size_t degree = index-1;
     
     //Set up the needed variables
@@ -139,8 +139,8 @@ void ChebyshevApproximation<D>::setDegreeSpots(size_t index) {
     }
 }
 
-template <Dimension D>
-bool ChebyshevApproximation<D>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
+template <int Rank>
+bool ChebyshevApproximation<Rank>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
     while(isGoodApproximationSetDegree(_absApproxTol, _relApproxTol)) {
         if(m_degree <= _targetDegree) {
             return true;
@@ -157,56 +157,59 @@ bool ChebyshevApproximation<D>::trimCoefficients(double _absApproxTol, double _r
     return false;
 }
 
-template <Dimension D>
-void ChebyshevApproximation<D>::clear() {
+template <int Rank>
+void ChebyshevApproximation<Rank>::clear() {
     m_absValWasSummed = false;
     m_sumAbsVal = 0;
     m_goodDegree = std::numeric_limits<size_t>::max() - 1;
 }
 
 
-template <Dimension D>
-double* ChebyshevApproximation<D>::getArray() {
+template <int Rank>
+double* ChebyshevApproximation<Rank>::getArray() {
     return m_approximation;
 }
 
-template <Dimension D>
-bool ChebyshevApproximation<D>::isLinear() {
+template <int Rank>
+bool ChebyshevApproximation<Rank>::isLinear() {
     return m_degree == 1;
 }
 
-template <Dimension D>
-double ChebyshevApproximation<D>::getSumAbsVal() {
+template <int Rank>
+double ChebyshevApproximation<Rank>::getSumAbsVal() {
+    if(!m_absValWasSummed){
+        sumAbsValues();
+    }
     return m_sumAbsVal;
 }
 
-template <Dimension D>
-bool ChebyshevApproximation<D>::hasSignChange() {
+template <int Rank>
+bool ChebyshevApproximation<Rank>::hasSignChange() {
     return m_signChange;
 }
 
-template <Dimension D>
-double ChebyshevApproximation<D>::getApproximationError() {
+template <int Rank>
+double ChebyshevApproximation<Rank>::getApproximationError() {
     return m_approximationError;
 }
 
-template <Dimension D>
-size_t ChebyshevApproximation<D>::getSideLength() {
+template <int Rank>
+size_t ChebyshevApproximation<Rank>::getSideLength() {
     return m_sideLength;
 }
 
-template <Dimension D>
-size_t ChebyshevApproximation<D>::getGoodDegree() {
+template <int Rank>
+size_t ChebyshevApproximation<Rank>::getGoodDegree() {
     return m_goodDegree;
 }
 
-template <Dimension D>
-size_t ChebyshevApproximation<D>::getDegree() {
+template <int Rank>
+size_t ChebyshevApproximation<Rank>::getDegree() {
     return m_degree;
 }
 
-template <Dimension D>
-size_t ChebyshevApproximation<D>::getPartialSideLength() {
+template <int Rank>
+size_t ChebyshevApproximation<Rank>::getPartialSideLength() {
     return m_partialSideLength;
 }
 

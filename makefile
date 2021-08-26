@@ -7,7 +7,7 @@ LDIR = -LYRoots/lib
 IDIRTEST = -ITestYRoots
 
 LIBS = -lfftw3 -lm
-CXXFLAGS = -std=c++11 -Wall -Ofast
+CXXFLAGS = -std=c++11 -Wall -O3
 MACROS = -Wextra -DUSE_TIMING
 
 all:

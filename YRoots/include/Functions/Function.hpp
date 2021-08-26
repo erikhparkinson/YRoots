@@ -517,14 +517,14 @@ public:
         
         //Iterate through all the combinations
         size_t spotToInc = 0;
-        //assert(_results[evalSpot++] == evaluate(inputPoints));
-        _results[evalSpot++] = evaluate(inputPoints);
+        //assert(_results[evalSpot++] == evaluate<double>(inputPoints));
+        _results[evalSpot++] = evaluate<double>(inputPoints);
         while (spotToInc < dimension) {
             bool firstPass = true;
             while(++inputSpot[spotToInc] < numPoints) {
                 inputPoints[spotToInc] = _grid[spotToInc][inputSpot[spotToInc]];
-                //assert(_results[evalSpot++] == evaluate(inputPoints));
-                _results[evalSpot++] = evaluate(inputPoints);
+                //assert(_results[evalSpot++] == evaluate<double>(inputPoints));
+                _results[evalSpot++] = evaluate<double>(inputPoints);
                 if(firstPass && spotToInc != 0) {
                     spotToInc = 0;
                 }
@@ -535,51 +535,52 @@ public:
             spotToInc++;
         }
     }
-    
-    double evaluate(const std::vector<double>& _inputPoints) {
+
+    template<typename ReturnType>
+    ReturnType evaluate(const std::vector<double>& _inputPoints) {
         switch(m_functionType) {
             case FunctionType::SIN:
-                return m_value * sin(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * sin(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::COS:
-                return m_value * cos(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * cos(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::TAN:
-                return m_value * tan(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * tan(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::SINH:
-                return m_value * sinh(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * sinh(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::COSH:
-                return m_value * cosh(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * cosh(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::TANH:
-                return m_value * tanh(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * tanh(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::LOG:
-                return m_value * log(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * log(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::LOG10:
-                return m_value * log10(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * log10(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::LOG2:
-                return m_value * log2(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * log2(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::POWER:
-                return m_value * pow(m_subfunctions[0]->evaluate(_inputPoints), m_subfunctions[1]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * pow(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints), m_subfunctions[1]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::SQRT:
-                return m_value * sqrt(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * sqrt(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::EXP:
-                return m_value * exp(m_subfunctions[0]->evaluate(_inputPoints));
+                return static_cast<ReturnType>(m_value) * exp(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints));
             case FunctionType::CONSTANT:
-                return m_value;
+                return static_cast<ReturnType>(m_value);
             case FunctionType::POWER_BASIS_POLYNOMIAL:
                 break;
             case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
                 break;
             case FunctionType::SUM:
-                return sumEval(_inputPoints);
+                return sumEval<ReturnType>(_inputPoints);
             case FunctionType::PRODUCT:
-                return productEval(_inputPoints);
+                return productEval<ReturnType>(_inputPoints);
             case FunctionType::POWER_BASIS_MONOMIAL:
-                return powerMonomialEval(_inputPoints);
+                return powerMonomialEval<ReturnType>(_inputPoints);
             case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:
-                return chebyshevMonomialEval(_inputPoints);
+                return chebyshevMonomialEval<ReturnType>(_inputPoints);
             case FunctionType::CHEBYSHEV:
-                return m_value * chebPower(m_subfunctions[0]->evaluate(_inputPoints), m_varIndex);
+                return static_cast<ReturnType>(m_value) * chebPower(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints), m_varIndex);
             case FunctionType::VARIABLE:
-                return m_value * _inputPoints[m_varIndex];
+                return static_cast<ReturnType>(m_value) * ((ReturnType)_inputPoints[m_varIndex]);
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate! Fix Switch Statement!");
                 break;
@@ -1592,27 +1593,30 @@ private:
     }
     
 //Specialized Function Evals
-    double powerMonomialEval(const std::vector<double>& _inputPoints) {
-        double result = m_value;
+    template<typename ReturnType>
+    ReturnType powerMonomialEval(const std::vector<double>& _inputPoints) {
+        ReturnType result = m_value;
         for(size_t i = 0; i < m_varIndexes.size(); i++) {
-            result *= power(_inputPoints[m_varIndexes[i]], m_varPowers[i]);
+            result *= power((ReturnType)_inputPoints[m_varIndexes[i]], m_varPowers[i]);
         }
         return result;
     }
 
-    double chebyshevMonomialEval(const std::vector<double>& _inputPoints) {
-        double result = m_value;
+    template<typename ReturnType>
+    ReturnType chebyshevMonomialEval(const std::vector<double>& _inputPoints) {
+        ReturnType result = m_value;
         for(size_t i = 0; i < m_varIndexes.size(); i++) {
-            result *= chebPower(_inputPoints[m_varIndexes[i]], m_varPowers[i]);
+            result *= chebPower((ReturnType)_inputPoints[m_varIndexes[i]], m_varPowers[i]);
         }
         return result;
     }
     
-    double sumEval(const std::vector<double>& _inputPoints) {
+    template<typename ReturnType>
+    ReturnType sumEval(const std::vector<double>& _inputPoints) {
         assert(m_subfunctions.size() == m_operatorSigns.size());
-        double result = m_value;
+        ReturnType result = m_value;
         for(size_t i = 0; i < m_subfunctions.size(); i++) {
-            SIGNCHECKSUM(m_operatorSigns[i], result, m_subfunctions[i]->evaluate(_inputPoints));
+            SIGNCHECKSUM(m_operatorSigns[i], result, m_subfunctions[i]->evaluate<ReturnType>(_inputPoints));
         }
         return result;
         
@@ -1625,11 +1629,12 @@ private:
         //is a double and then an error, so the end result of the eval returns the answer and the maximum error.
     }
     
-    double productEval(const std::vector<double>& _inputPoints) {
+    template<typename ReturnType>
+    ReturnType productEval(const std::vector<double>& _inputPoints) {
         assert(m_subfunctions.size() == m_operatorSigns.size());
-        double result = m_value;
+        ReturnType result = m_value;
         for(size_t i = 0; i < m_operatorSigns.size(); i++) {
-            SIGNCHECKPRODUCT(m_operatorSigns[i], result, m_subfunctions[i]->evaluate(_inputPoints));
+            SIGNCHECKPRODUCT(m_operatorSigns[i], result, m_subfunctions[i]->evaluate<ReturnType>(_inputPoints));
         }
         return result;
     }

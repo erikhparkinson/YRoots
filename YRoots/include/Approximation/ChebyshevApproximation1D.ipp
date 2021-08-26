@@ -10,7 +10,7 @@
 #define ChebyshevApproximation1D_ipp
 
 template <>
-void ChebyshevApproximation<Dimension::One>::sumAbsValues() {
+void ChebyshevApproximation<1>::sumAbsValues() {
     if(!m_absValWasSummed){
         for(size_t i = 0; i < m_partialSideLength; i++) {
             m_sumAbsVal += std::abs(m_approximation[i]);
@@ -20,7 +20,7 @@ void ChebyshevApproximation<Dimension::One>::sumAbsValues() {
 }
 
 template <>
-void ChebyshevApproximation<Dimension::Two>::sumAbsValues() {
+void ChebyshevApproximation<2>::sumAbsValues() {
     if(!m_absValWasSummed){
         for(size_t i = 0; i < m_partialSideLength; i++) {
             for(size_t j = 0; j < m_partialSideLength; j++) {
@@ -32,7 +32,7 @@ void ChebyshevApproximation<Dimension::Two>::sumAbsValues() {
 }
 
 template <>
-void ChebyshevApproximation<Dimension::Three>::sumAbsValues() {
+void ChebyshevApproximation<3>::sumAbsValues() {
     if(!m_absValWasSummed){
         for(size_t i = 0; i < m_partialSideLength; i++) {
             for(size_t j = 0; j < m_partialSideLength; j++) {
@@ -46,7 +46,7 @@ void ChebyshevApproximation<Dimension::Three>::sumAbsValues() {
 }
 
 template <>
-void ChebyshevApproximation<Dimension::One>::setApproximation(size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError)
+void ChebyshevApproximation<1>::setApproximation(size_t _degree, size_t _sideLength, double* _appoximation, double _infNorm, bool _signChange, double _approximationError)
 {
     //Specialized to not set m_degreeSpots as they aren't used.
     m_partialSideLength = _degree+1;
@@ -60,7 +60,7 @@ void ChebyshevApproximation<Dimension::One>::setApproximation(size_t _degree, si
 }
 
 template <>
-bool ChebyshevApproximation<Dimension::One>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
+bool ChebyshevApproximation<1>::trimCoefficients(double _absApproxTol, double _relApproxTol, size_t _targetDegree) {
     //Continue while the approximation is good. This call updates goodDegree as well.
     while(isGoodApproximationSetDegree(_absApproxTol, _relApproxTol)) {
         if(m_degree <= _targetDegree) {

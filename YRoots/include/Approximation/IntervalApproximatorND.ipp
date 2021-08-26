@@ -9,8 +9,8 @@
 #ifndef IntervalApproximatorND_ipp
 #define IntervalApproximatorND_ipp
 
-template <Dimension D>
-IntervalApproximator<D>::IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, size_t _inputPartialSize):
+template <int Rank>
+IntervalApproximator<Rank>::IntervalApproximator(size_t _rank, size_t _approximationDegree, double* _input, double* _output, fftw_r2r_kind* _kinds, size_t _inputPartialSize):
 m_rank(_rank),
 m_approximationDegree(_approximationDegree),
 m_sideLength(2*_approximationDegree),
@@ -66,16 +66,16 @@ m_signChange(false)
     m_timer.stopTimer(m_timerInitIndex);
 }
 
-template <Dimension D>
-IntervalApproximator<D>::~IntervalApproximator()
+template <int Rank>
+IntervalApproximator<Rank>::~IntervalApproximator()
 {
     //Deallocate everything
     fftw_destroy_plan(m_plan);
     free(m_dimensions);
 }
 
-template<Dimension D>
-void IntervalApproximator<D>::preComputeEvaluationPointsPreTransform()
+template<int Rank>
+void IntervalApproximator<Rank>::preComputeEvaluationPointsPreTransform()
 {
     for(size_t i = 0; i < m_partialSideLength; i++) {
         double val = cos(i*M_PI/m_approximationDegree);
@@ -85,8 +85,8 @@ void IntervalApproximator<D>::preComputeEvaluationPointsPreTransform()
     }
 }
 
-template<Dimension D>
-void IntervalApproximator<D>::preComputeDivideByTwoPoints()
+template<int Rank>
+void IntervalApproximator<Rank>::preComputeDivideByTwoPoints()
 {
     size_t divisor, number;
     size_t fixedNums = power(m_approximationDegree+1, m_rank-1);
@@ -131,8 +131,8 @@ void IntervalApproximator<D>::preComputeDivideByTwoPoints()
     }
 }
 
-template<Dimension D>
-void IntervalApproximator<D>::preComputePartialToFullTransition()
+template<int Rank>
+void IntervalApproximator<Rank>::preComputePartialToFullTransition()
 {
     //Set up the needed variables
     std::vector<size_t> inputSpot(m_rank);
@@ -160,8 +160,8 @@ void IntervalApproximator<D>::preComputePartialToFullTransition()
     }
 }
 
-template <Dimension D>
-void IntervalApproximator<D>::approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, bool _findInfNorm)
+template <int Rank>
+void IntervalApproximator<Rank>::approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, bool _findInfNorm)
 {
     m_timer.startTimer(m_timerIntervalApproximatorIndex);
 
@@ -205,23 +205,23 @@ void IntervalApproximator<D>::approximate(const Function::SharedFunctionPtr _fun
         m_output[m_divideByTwoPoints[i]] /= 2;
     }
     
-    /*Print input and output. TODO: Remove when I'm confident things work.
-    std::cout<<"Input:\n";
-    printInputArray();
-    std::cout<<"Output:\n";
-    printOutputArray();*/
+    //Print input and output. TODO: Remove when I'm confident things work.
+    /*std::cout<<"Input:\n";
+    printInputArray();*/
+    //std::cout<<"Output:\n";
+    //printOutputArray();
     
     m_timer.stopTimer(m_timerIntervalApproximatorIndex);
 }
 
-template<Dimension D>
-void IntervalApproximator<D>::printOutputArray()
+template<int Rank>
+void IntervalApproximator<Rank>::printOutputArray()
 {
     std::cout<<"No printing for ND!\n";
 }
 
-template<Dimension D>
-void IntervalApproximator<D>::printInputArray()
+template<int Rank>
+void IntervalApproximator<Rank>::printInputArray()
 {
     std::cout<<"No printing for ND!\n";
 }

@@ -17,7 +17,7 @@
 #include "Utilities/MultiPool.hpp"
 #include "Utilities/ConcurrentStack.hpp"
 
-template <Dimension D>
+template <int Rank>
 class ThreadedSolver {
 public:
     ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, const GeneralParameters& _generalParameters, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters);
@@ -49,7 +49,7 @@ private:
     RootTracker                                             m_rootTracker;
     
     
-    std::vector<std::unique_ptr<SubdivisionSolver<D>>>      m_subdivisionSolvers;
+    std::vector<std::unique_ptr<SubdivisionSolver<Rank>>>      m_subdivisionSolvers;
     
     SolveParameters*                                        m_firstSolveParameters;
 };

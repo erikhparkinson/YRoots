@@ -19,16 +19,16 @@
 #include "Functions/Function.hpp"
 #include "Utilities/Timer.hpp"
 
-template<Dimension D>
+template<int Rank>
 void runSolve(std::vector<std::vector<Function::SharedFunctionPtr> >& _functions, const GeneralParameters& _generalParameters, Interval& _interval, const SubdivisionParameters& _subdivisionParameters) {
     Timer& m_timer = Timer::getInstance();
-    size_t mainConstructorIndex = -1;
-    size_t mainSolveIndex = -1;
+    static size_t mainConstructorIndex = -1;
+    static size_t mainSolveIndex = -1;
     m_timer.registerTimer(mainConstructorIndex, "Main Constructor");
     m_timer.registerTimer(mainSolveIndex, "Main Solve");
 
     m_timer.startTimer(mainConstructorIndex);
-    ThreadedSolver<D> threadedSolver(_functions, _generalParameters, _interval, _subdivisionParameters);
+    ThreadedSolver<Rank> threadedSolver(_functions, _generalParameters, _interval, _subdivisionParameters);
     m_timer.stopTimer(mainConstructorIndex);
     m_timer.startTimer(mainSolveIndex);
     threadedSolver.solve();
@@ -48,34 +48,28 @@ void mainSolver(const std::string& inputFileName) {
     if(!inputParser.getGeneralParameters().useTimer) {
         Timer::disable();
     }
+    else {
+        Timer::enable();
+    }
     #endif
     
     //Solve
     switch(functions[0].size()) {
-        case 0: {
+        case 0:
             printAndThrowRuntimeError("No functions found!");
             break;
-        }
         case 1:
-        {
-            runSolve<Dimension::One>(functions, generalParameters, interval, subdivisionParameters);
+            runSolve<1>(functions, generalParameters, interval, subdivisionParameters);
             break;
-        }
         case 2:
-        {
-            runSolve<Dimension::Two>(functions, generalParameters, interval, subdivisionParameters);
+            runSolve<2>(functions, generalParameters, interval, subdivisionParameters);
             break;
-        }
         case 3:
-        {
-            runSolve<Dimension::Three>(functions, generalParameters, interval, subdivisionParameters);
+            runSolve<3>(functions, generalParameters, interval, subdivisionParameters);
             break;
-        }
         default:
-        {
-            runSolve<Dimension::NDim>(functions, generalParameters, interval, subdivisionParameters);
+            runSolve<-1>(functions, generalParameters, interval, subdivisionParameters);
             break;
-        }
     }
 
 }

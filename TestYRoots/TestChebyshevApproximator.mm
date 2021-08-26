@@ -32,8 +32,8 @@
     size_t approximationDegree = 3;
     
     Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
-    ChebyshevApproximation<Dimension::One> chebApproximation(1);
-    ChebyshevApproximator<Dimension::One> chebyshevApproximator(1, approximationDegree, chebApproximation);
+    ChebyshevApproximation<1> chebApproximation(1);
+    ChebyshevApproximator<1> chebyshevApproximator(1, approximationDegree, chebApproximation);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0);
@@ -57,8 +57,8 @@
     size_t approximationDegree = 3;
     
     Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
-    ChebyshevApproximation<Dimension::Two> chebApproximation(2);
-    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(2, approximationDegree, chebApproximation);
+    ChebyshevApproximation<2> chebApproximation(2);
+    ChebyshevApproximator<2> chebyshevApproximator(2, approximationDegree, chebApproximation);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(1.0); currentInterval.upperBounds.push_back(1.0);
@@ -92,8 +92,8 @@
     size_t approximationDegree = 10;
     
     Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
-    ChebyshevApproximation<Dimension::Two> chebApproximation(2);
-    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(2, approximationDegree, chebApproximation);
+    ChebyshevApproximation<2> chebApproximation(2);
+    ChebyshevApproximator<2> chebyshevApproximator(2, approximationDegree, chebApproximation);
     Interval currentInterval;
     currentInterval.lowerBounds.push_back(-1.0); currentInterval.lowerBounds.push_back(-1.0);
     currentInterval.upperBounds.push_back(-.5); currentInterval.upperBounds.push_back(-.5);
@@ -119,8 +119,8 @@
     }
 
     Function::SharedFunctionPtr function = std::make_shared<Function>("", functionString, variablesNames);
-    ChebyshevApproximation<Dimension::Two> chebApproximation(2);
-    ChebyshevApproximator<Dimension::Two> chebyshevApproximator(rank, approximationDegree, chebApproximation);
+    ChebyshevApproximation<2> chebApproximation(2);
+    ChebyshevApproximator<2> chebyshevApproximator(rank, approximationDegree, chebApproximation);
     Interval currentInterval;
     for(size_t i = 0; i < rank; i++) {
         currentInterval.lowerBounds.push_back(-1.0);

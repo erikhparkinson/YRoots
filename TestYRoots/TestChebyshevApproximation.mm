@@ -68,7 +68,7 @@ void fillApproximationTestChebyshevApproximation(double number) {
     m_rank = 1;
     m_approximationDegree = 10;
     allocateMemoryTestChebyshevApproximation();
-    ChebyshevApproximation<Dimension::One> approximation(m_rank);
+    ChebyshevApproximation<1> approximation(m_rank);
     
     //Initialize the coefficients as all ones
     for(size_t i = 0; i < m_arrayLength; i++) {
@@ -121,7 +121,7 @@ void fillApproximationTestChebyshevApproximation(double number) {
     m_rank = 2;
     m_approximationDegree = 9;
     allocateMemoryTestChebyshevApproximation();
-    ChebyshevApproximation<Dimension::Two> approximation(m_rank);
+    ChebyshevApproximation<2> approximation(m_rank);
     
     //Initialize the coefficients as all ones
     for(size_t i = 0; i < m_arrayLength; i++) {
@@ -175,7 +175,7 @@ void fillApproximationTestChebyshevApproximation(double number) {
     for(m_rank = 1; m_rank < 5; m_rank++) {
         m_approximationDegree = 9;
         allocateMemoryTestChebyshevApproximation();
-        ChebyshevApproximation<Dimension::NDim> approximation(m_rank);
+        ChebyshevApproximation<-1> approximation(m_rank);
         
         double testMultipler = power(10.0, m_rank-1);
         

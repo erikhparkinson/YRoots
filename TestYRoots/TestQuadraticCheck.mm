@@ -10,21 +10,21 @@
 #include "TestUtils.hpp"
 #include "IntervalChecking/IntervalChecker.hpp"
 
-template <Dimension D>
-class IntervalCheckerMock : public IntervalChecker<D> {
+template <int Rank>
+class IntervalCheckerMock : public IntervalChecker<Rank> {
 public:
     IntervalCheckerMock(size_t _rank, IntervalTracker& _intervalTracker, size_t _threadNum, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool) :
-    IntervalChecker<D>(_rank, _intervalTracker, _threadNum, _intervalsToRun, _solveParametersPool)
+    IntervalChecker<Rank>(_rank, _intervalTracker, _threadNum, _intervalsToRun, _solveParametersPool)
     {
 
     }
     
-    void runQuadraticCheck(ChebyshevApproximation<D>& _approximation) {
-        IntervalChecker<D>::runQuadraticCheck(_approximation);
+    void runQuadraticCheck(ChebyshevApproximation<Rank>& _approximation) {
+        IntervalChecker<Rank>::runQuadraticCheck(_approximation);
     }
     
     std::vector<bool>& get_m_intervalMask() {
-        return IntervalChecker<D>::m_intervalMask;
+        return IntervalChecker<Rank>::m_intervalMask;
     }
 };
 
@@ -69,18 +69,19 @@ void allocateMemoryTestQuadraticCheck()
 - (void)test1DBasic {
     //Set up the Mock Class
     size_t rank = 1;
-    IntervalTracker intervalTracker(rank, 0, false, false, 4.0);
+    GeneralParameters params;
+    IntervalTracker intervalTracker(rank, params, 4.0);
     size_t threadNum = 0;
     ConcurrentStack<SolveParameters> intervalsToRun(1);
     SolveParameters defualtParams;
     ObjectPool<SolveParameters> solveParametersPool(defualtParams, 32);
-    IntervalCheckerMock<Dimension::One> intervalChecker(rank, intervalTracker, threadNum, intervalsToRun, solveParametersPool);
+    IntervalCheckerMock<1> intervalChecker(rank, intervalTracker, threadNum, intervalsToRun, solveParametersPool);
 
     //Set up the Chebyshev approximation
     m_rank = 1;
     m_approximationDegree = 10;
     allocateMemoryTestQuadraticCheck();
-    ChebyshevApproximation<Dimension::One> chebApproximation(m_rank);
+    ChebyshevApproximation<1> chebApproximation(m_rank);
     chebApproximation.setApproximation(m_approximationDegree, m_sideLength, m_approximation, 1, false, 0);
 
     //Initialize the coefficients as all ones
@@ -98,18 +99,19 @@ void allocateMemoryTestQuadraticCheck()
 - (void)testQuadCheckTiming {
     //Set up the Mock Class
     size_t rank = 1;
-    IntervalTracker intervalTracker(rank, 0, false, false, 4.0);
+    GeneralParameters params;
+    IntervalTracker intervalTracker(rank, params, 4.0);
     size_t threadNum = 0;
     ConcurrentStack<SolveParameters> intervalsToRun(1);
     SolveParameters defualtParams;
     ObjectPool<SolveParameters> solveParametersPool(defualtParams, 32);
-    IntervalCheckerMock<Dimension::One> intervalChecker(rank, intervalTracker, threadNum, intervalsToRun, solveParametersPool);
+    IntervalCheckerMock<1> intervalChecker(rank, intervalTracker, threadNum, intervalsToRun, solveParametersPool);
 
     //Set up the Chebyshev approximation
     m_rank = 1;
     m_approximationDegree = 10;
     allocateMemoryTestQuadraticCheck();
-    ChebyshevApproximation<Dimension::One> chebApproximation(m_rank);
+    ChebyshevApproximation<1> chebApproximation(m_rank);
     chebApproximation.setApproximation(m_approximationDegree, m_sideLength, m_approximation, 1, false, 0);
 
     //Initialize the coefficients as all ones

@@ -10,14 +10,14 @@
 #define IntervalApproximator1D_ipp
 
 template<>
-void IntervalApproximator<Dimension::One>::preComputeDivideByTwoPoints()
+void IntervalApproximator<1>::preComputeDivideByTwoPoints()
 {
     m_divideByTwoPoints.push_back(0);
     m_divideByTwoPoints.push_back(m_approximationDegree);
 }
 
 template<>
-void IntervalApproximator<Dimension::One>::printOutputArray()
+void IntervalApproximator<1>::printOutputArray()
 {
     for(size_t i = 0; i <= m_approximationDegree; i++) {
         std::cout<<m_output[i]<<" ";
@@ -26,7 +26,7 @@ void IntervalApproximator<Dimension::One>::printOutputArray()
 }
 
 template<>
-void IntervalApproximator<Dimension::One>::printInputArray()
+void IntervalApproximator<1>::printInputArray()
 {
     for(size_t i = 0; i <= m_approximationDegree; i++) {
         std::cout<<m_input[i]<<" ";

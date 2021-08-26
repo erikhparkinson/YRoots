@@ -9,8 +9,10 @@
 #ifndef ChebyshevApproximatorND_ipp
 #define ChebyshevApproximatorND_ipp
 
-template <Dimension D>
-ChebyshevApproximator<D>::ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree, ChebyshevApproximation<D>& _approximation):
+#include "Utilities/ErrorTracker.hpp"
+
+template <int Rank>
+ChebyshevApproximator<Rank>::ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree, ChebyshevApproximation<Rank>& _approximation):
 m_rank(_rank),
 m_maxApproximationDegree(2*_maxApproximationDegree), //We will always double the approximation given
 m_approximation(_approximation)
@@ -44,7 +46,7 @@ m_approximation(_approximation)
             nextChangeDegree /= 2;
             use1 = !use1;
         }
-        m_intervalApproximators[degree-1] = ::make_unique<IntervalApproximator<D> >(m_rank, degree, m_input, use1 ? m_output1 : m_output2, m_kinds, partialArrayLength);
+        m_intervalApproximators[degree-1] = ::make_unique<IntervalApproximator<Rank> >(m_rank, degree, m_input, use1 ? m_output1 : m_output2, m_kinds, partialArrayLength);
     }
     
     //Initialize m_absApproxErrorCalcInterval
@@ -55,8 +57,8 @@ m_approximation(_approximation)
     m_timer.registerTimer(m_timerAbsApproxErrorCalcIndex, "Cheb Approximator Abs Approx Estimate");
 }
 
-template <Dimension D>
-ChebyshevApproximator<D>::~ChebyshevApproximator()
+template <int Rank>
+ChebyshevApproximator<Rank>::~ChebyshevApproximator()
 {
     //Interval approximators must be cleared first to destroy the fftw plans
     m_intervalApproximators.clear();
@@ -70,8 +72,8 @@ ChebyshevApproximator<D>::~ChebyshevApproximator()
 }
 
 
-template <Dimension D>
-void ChebyshevApproximator<D>::approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree)
+template <int Rank>
+void ChebyshevApproximator<Rank>::approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree)
 {
     m_timer.startTimer(m_timerFullApproximateIndex);
     if(_approximationDegree > m_intervalApproximators.size()) {
@@ -99,38 +101,26 @@ void ChebyshevApproximator<D>::approximate(const Function::SharedFunctionPtr _fu
     m_timer.stopTimer(m_timerFullApproximateIndex);
 }
 
-template <Dimension D>
-double ChebyshevApproximator<D>::getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree)
+template <int Rank>
+double ChebyshevApproximator<Rank>::getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval)
 {
     m_timer.startTimer(m_timerAbsApproxErrorCalcIndex);
 
-    m_firstApproximator = _approximationDegree-1;
-    m_secondApproximator = 2*_approximationDegree-1;
-    m_sideLength1 = 2*_approximationDegree;
-    m_sideLength2 = 4*_approximationDegree;
-    m_approxLength1 = _approximationDegree+1;
-    m_approxLength2 = 2*_approximationDegree+1;
-    
-    //Get an interval
-    const double linearization_size = 1e-14; //Make sure this isn't too small. Otherwise, we could get an interval where everything in it evaluates to the same point.
+    std::vector<double> evalPoints;
     for(size_t i = 0; i < m_rank; i++) {
         const double rand = 0.51234127384517283654; //TODO: Rand uniform [0,1]. Make sure the random point is not 0!
         const double randomPoint = _currentInterval.lowerBounds[i] + rand * (_currentInterval.upperBounds[i] - _currentInterval.lowerBounds[i]);
-        m_absApproxErrorCalcInterval.lowerBounds[i] = randomPoint * (1+linearization_size);
-        m_absApproxErrorCalcInterval.upperBounds[i] = randomPoint * (1-linearization_size);
+        evalPoints.push_back(randomPoint);
     }
-
-    m_intervalApproximators[m_firstApproximator]->approximate(_function, m_absApproxErrorCalcInterval, false);
-    m_intervalApproximators[m_secondApproximator]->approximate(_function, m_absApproxErrorCalcInterval, false);
-    calculateApproximationError();
+    ErrorTracker result = _function->evaluate<ErrorTracker>(evalPoints);
     
     m_timer.stopTimer(m_timerAbsApproxErrorCalcIndex);
 
-    return m_approximationError*10;
+    return result.error * 10; //TODO: Figure out if 10 is the right number to use here.
 }
 
-template <Dimension D>
-void ChebyshevApproximator<D>::calculateApproximationError()
+template <int Rank>
+void ChebyshevApproximator<Rank>::calculateApproximationError()
 {
     double* approximation1 = m_intervalApproximators[m_firstApproximator]->getOutput();
     double* approximation2 = m_intervalApproximators[m_secondApproximator]->getOutput();

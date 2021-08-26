@@ -10,7 +10,7 @@
 #define IntervalChecker1D_ipp
 
 template <>
-void IntervalChecker<Dimension::One>::runQuadraticCheck(ChebyshevApproximation<Dimension::One>& _approximation)
+void IntervalChecker<1>::runQuadraticCheck(ChebyshevApproximation<1>& _approximation)
 {
     //The quadratic part is a(2x^2-1)+bx+c
     double* array = _approximation.getArray();
@@ -54,65 +54,6 @@ void IntervalChecker<Dimension::One>::runQuadraticCheck(ChebyshevApproximation<D
                 m_intervalMask[1] = m_intervalMask[1] && newBool;
             }
         }
-    }
-}
-
-template <>
-double IntervalChecker<Dimension::One>::getBoundingInterval(std::vector<ChebyshevApproximation<Dimension::One> >& _chebyshevApproximations) {
-    return std::numeric_limits<double>::max();
-    
-    //Constants for this function
-    const double MIN_MOVE = 0.001;
-
-    double* array = _chebyshevApproximations[0].getArray();
-    size_t arraySize = _chebyshevApproximations[0].getPartialSideLength();
-    
-    //Get the Lipshitz constant
-    double lipshitzConstant = getLipshitzConstant1D(array, arraySize);
-    
-    double error = _chebyshevApproximations[0].getApproximationError();
-    double a = -1;
-    double b = 1;
-    
-    //Get the intitial evaluations
-    double evalA = std::abs(evaluateCheb1D(array, arraySize, a));
-    double evalB = std::abs(evaluateCheb1D(array, arraySize, b));
-
-    //If the lipshitzConstant is 0, then we can throw it out if we get an eval above the error.
-    if(lipshitzConstant == 0) {
-        if(evalA > error || evalB > error) {
-            return 0.0;
-        }
-        return std::numeric_limits<double>::max();
-    }
-    
-    //Run the values
-    bool makingProgress = true;
-    while (a < b && makingProgress) {
-        makingProgress = false;
-        
-        if(evalA > error) {
-            double move = (evalA - error) / lipshitzConstant;
-            a += move;
-            makingProgress |= (move > MIN_MOVE);
-            evalA = std::abs(evaluateCheb1D(array, arraySize, a));
-        }
-        if(evalB > error) {
-            double move = (evalB - error) / lipshitzConstant;
-            b -= move;
-            makingProgress |= (move > MIN_MOVE);
-            evalB = std::abs(evaluateCheb1D(array, arraySize, b));
-        }
-    }
-
-    //Return the results
-    if(a > b) {
-        return 0.0;
-    }
-    else {
-        m_boundingInterval.lowerBounds[0] = a;
-        m_boundingInterval.upperBounds[0] = b;
-        return b - a;
     }
 }
 

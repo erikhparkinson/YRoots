@@ -13,21 +13,21 @@
 #include "Approximation/ChebyshevApproximation.hpp"
 #include "Utilities/Timer.hpp"
 
-template <Dimension D>
+template <int Rank>
 class ChebyshevApproximator
 {
 public:
-    ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree, ChebyshevApproximation<D>& _approximation);
+    ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree, ChebyshevApproximation<Rank>& _approximation);
     ~ChebyshevApproximator();
     
     void approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree);
-    double getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree);
+    double getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval);
 
     bool hasSignChange() {
         return m_signChange;
     }
     
-    ChebyshevApproximation<D>& getApproximation() {
+    ChebyshevApproximation<Rank>& getApproximation() {
         return m_approximation;
     }
     
@@ -44,7 +44,7 @@ private:
     fftw_r2r_kind*                          m_kinds;
     double*                                 m_inputPartial;
     
-    std::vector<std::unique_ptr<IntervalApproximator<D>>>    m_intervalApproximators;
+    std::vector<std::unique_ptr<IntervalApproximator<Rank>>>    m_intervalApproximators;
     size_t                                  m_firstApproximator;
     size_t                                  m_secondApproximator;
     size_t                                  m_sideLength1;
@@ -58,17 +58,17 @@ private:
     
     Interval                                m_absApproxErrorCalcInterval;
     
-    ChebyshevApproximation<D>&              m_approximation;
+    ChebyshevApproximation<Rank>&              m_approximation;
     
     static size_t           m_timerFullApproximateIndex;
     static size_t           m_timerAbsApproxErrorCalcIndex;
     Timer&                  m_timer = Timer::getInstance();
 };
 
-template<Dimension D>
-size_t ChebyshevApproximator<D>::m_timerFullApproximateIndex = -1;
-template<Dimension D>
-size_t ChebyshevApproximator<D>::m_timerAbsApproxErrorCalcIndex = -1;
+template<int Rank>
+size_t ChebyshevApproximator<Rank>::m_timerFullApproximateIndex = -1;
+template<int Rank>
+size_t ChebyshevApproximator<Rank>::m_timerAbsApproxErrorCalcIndex = -1;
 
     
 #include "ChebyshevApproximatorND.ipp"

@@ -9,6 +9,7 @@
 #import <XCTest/XCTest.h>
 #include "TestUtils.hpp"
 #include "Functions/Function.hpp"
+#include "Utilities/ErrorTracker.hpp"
 
 @interface TestFunction : XCTestCase
 
@@ -24,6 +25,12 @@
 
 }
 
+- (void)testErrorTracker {
+    ErrorTracker value(0);
+    ErrorTracker result = cos(value);
+    XCTAssert(withinEpslion(result.value, 1.0));
+}
+
 - (void)testFunction1DBasic {
     std::vector<double> inputPoints;
     std::vector<std::string> variableNames;
@@ -33,7 +40,7 @@
         Function tempFunction("", functionString, variableNames);
         std::vector<double> inputPoints;
         inputPoints.push_back(evalPoint);
-        double result = tempFunction.evaluate(inputPoints);
+        double result = tempFunction.evaluate<double>(inputPoints);
         if(!withinEpslion(result, correct)) {
             std::cout<<"Fail: " << functionString << "\t" <<result << "\t" << correct << "\n";
         }
@@ -92,32 +99,32 @@
     Function tempFunction("", functionString, variableNames);
     inputPoints.push_back(3);
     inputPoints.push_back(8);
-    double result = tempFunction.evaluate(inputPoints);
+    double result = tempFunction.evaluate<double>(inputPoints);
     XCTAssert(withinEpslion(result, 19));
 
     functionString = "5+2*x0^3*x1^2";
     Function tempFunction2("", functionString, variableNames);
-    result = tempFunction2.evaluate(inputPoints);
+    result = tempFunction2.evaluate<double>(inputPoints);
     XCTAssert(withinEpslion(result, 3461));
 
     functionString = "5+2*x0^2*x1^2*x0";
     Function tempFunction3("", functionString, variableNames);
-    result = tempFunction3.evaluate(inputPoints);
+    result = tempFunction3.evaluate<double>(inputPoints);
     XCTAssert(withinEpslion(result, 3461));
 
     functionString = "5+2*T2(x0)*T2(x0)";
     Function tempFunction4("", functionString, variableNames);
-    result = tempFunction4.evaluate(inputPoints);
+    result = tempFunction4.evaluate<double>(inputPoints);
     XCTAssert(withinEpslion(result, 583));
 
     functionString = "5+2*T2(x0)*(T2(x1)*T2(x0))";
     Function tempFunction5("", functionString, variableNames);
-    result = tempFunction5.evaluate(inputPoints);
+    result = tempFunction5.evaluate<double>(inputPoints);
     XCTAssert(withinEpslion(result, 73411));
 
     functionString = "5+2*T2(x0)*(T2(x0)*T2(x1))";
     Function tempFunction6("", functionString, variableNames);
-    result = tempFunction6.evaluate(inputPoints);
+    result = tempFunction6.evaluate<double>(inputPoints);
     XCTAssert(withinEpslion(result, 73411));
 }
 
@@ -165,7 +172,7 @@
                 for(size_t i = 0; i < numPoints; i++) {
                     evalPoints[0] = grid[0][i];
                     evalPoints[1] = grid[1][j];
-                    double eval = tempFunction.evaluate(evalPoints);
+                    double eval = tempFunction.evaluate<double>(evalPoints);
                     if(!withinEpslion(eval, results[j*numPoints + i])) {
                         std::cout << eval << "\t" << results[j*numPoints + i] << "\t" << std::abs(eval-results[j*numPoints + i]) << "\n";
                     }
@@ -193,7 +200,7 @@
         size_t trials = 1000000;
         std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
         for(size_t i = 0; i < trials; i++) {
-            result = tempFunction.evaluate(inputPoints);
+            result = tempFunction.evaluate<double>(inputPoints);
         }
         std::chrono::time_point<std::chrono::high_resolution_clock> end = std::chrono::high_resolution_clock::now();
 

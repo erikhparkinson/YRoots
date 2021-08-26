@@ -18,12 +18,12 @@
 #include "SolutionTracking/IntervalTracker.hpp"
 #include "SolutionTracking/RootTracker.hpp"
 
-template <Dimension D>
+template <int Rank>
 class LinearSolver {
 public:
     LinearSolver(size_t _threadNum, size_t _rank, IntervalTracker& _intervalTracker, RootTracker& _rootTracker);
     
-    void solve(std::vector<ChebyshevApproximation<D> >& _chebyshevApproximations, Interval& _interval, double _goodZerosTol);
+    void solve(std::vector<ChebyshevApproximation<Rank> >& _chebyshevApproximations, Interval& _interval, double _goodZerosTol);
 
 private:
     size_t                  m_threadNum;
@@ -31,9 +31,9 @@ private:
     IntervalTracker&        m_intervalTracker;
     RootTracker&            m_rootTracker;
     
-    Eigen::MatrixXd         m_linears;
-    Eigen::VectorXd         m_constants;
-    Eigen::VectorXd         m_result;
+    typename EigenTypes<Rank>::Matrix m_linearTerms;
+    typename EigenTypes<Rank>::Vector m_constantTerms;
+    typename EigenTypes<Rank>::Vector m_result;
     
     std::vector<std::complex<double> >     m_root;
 };

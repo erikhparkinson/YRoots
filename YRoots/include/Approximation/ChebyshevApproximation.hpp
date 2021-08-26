@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include "Utilities/utilities.hpp"
 
-template <Dimension D>
+template <int Rank>
 class ChebyshevApproximation
 {
 public:

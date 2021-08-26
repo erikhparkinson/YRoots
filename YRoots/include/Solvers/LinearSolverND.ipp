@@ -9,21 +9,20 @@
 #ifndef LinearSolverND_ipp
 #define LinearSolverND_ipp
 
-template <Dimension D>
-LinearSolver<D>::LinearSolver(size_t _threadNum, size_t _rank, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
+template <int Rank>
+LinearSolver<Rank>::LinearSolver(size_t _threadNum, size_t _rank, IntervalTracker& _intervalTracker, RootTracker& _rootTracker) :
 m_threadNum(_threadNum),
 m_rank(_rank),
 m_intervalTracker(_intervalTracker),
-m_rootTracker(_rootTracker)
-{
-    m_linears = Eigen::MatrixXd::Zero(m_rank, m_rank);
-    m_constants = Eigen::VectorXd::Zero(m_rank);
-    m_result = Eigen::VectorXd::Zero(m_rank);
-    m_root.resize(m_rank);
-}
+m_rootTracker(_rootTracker),
+m_linearTerms(m_rank, m_rank),
+m_constantTerms(m_rank),
+m_result(m_rank),
+m_root(m_rank)
+{}
 
-template <Dimension D>
-void LinearSolver<D>::solve(std::vector<ChebyshevApproximation<D> >& _chebyshevApproximations, Interval& _interval, double _goodZerosTol) {
+template <int Rank>
+void LinearSolver<Rank>::solve(std::vector<ChebyshevApproximation<Rank> >& _chebyshevApproximations, Interval& _interval, double _goodZerosTol) {
     //The i,j spot in the m_linears matrix is the jth linear term of the ith approximation
     //The ith spot in the m_constants vector is the 0th spot in the ith approximation.
     
@@ -34,20 +33,20 @@ void LinearSolver<D>::solve(std::vector<ChebyshevApproximation<D> >& _chebyshevA
         size_t spot = 1;
         size_t sideLength = _chebyshevApproximations[i].getSideLength();
         for(size_t j = 0; j < m_rank; j++) { //Iterate through the linear terms in the approximation
-            m_linears(i,j) = _chebyshevApproximations[i].getArray()[spot] / _chebyshevApproximations[i].getInfNorm();
+            m_linearTerms(i,j) = _chebyshevApproximations[i].getArray()[spot] / _chebyshevApproximations[i].getInfNorm();
             spot *= sideLength;
         }
         //Set the constant term
-        m_constants(i) = -_chebyshevApproximations[i].getArray()[0] / _chebyshevApproximations[i].getInfNorm();
+        m_constantTerms(i) = -_chebyshevApproximations[i].getArray()[0] / _chebyshevApproximations[i].getInfNorm();
     }
 
-    m_result = m_linears.colPivHouseholderQr().solve(m_constants);
+    m_result = m_linearTerms.colPivHouseholderQr().solve(m_constantTerms); //TODO: What if this is singular!!!
     for(size_t i = 0; i < m_rank; i++) {
         m_root[i] = m_result[i];
     }
 
-    m_intervalTracker.storeResult(m_threadNum, _interval, SolveMethod::LinearSolve);
-    m_rootTracker.storeRoot(m_threadNum, m_root, _interval, SolveMethod::LinearSolve, std::nan(""), _goodZerosTol);
+    const bool hasRoot = m_rootTracker.storeRoot(m_threadNum, m_root, _interval, SolveMethod::LinearSolve, std::nan(""), _goodZerosTol);
+    m_intervalTracker.storeResult(m_threadNum, _interval, SolveMethod::LinearSolve, hasRoot);
 }
 
 #endif /* LinearSolverND_ipp */
