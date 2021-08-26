@@ -1,8 +1,19 @@
 # YRoots
 Implementing BYU's YRoots Rootfinding code in C++
 
+# FFTW
+Before running YRoots you must have the FFTW (fastest fourier transform in the west) library installed. To do so, download the most recent version from http://www.fftw.org/download.html. Then inside of the downloaded folder open a terminal and run
+
+`./configure <absolute path to YRoots/YRoots/FFTW>`
+
+`make`
+
+`make install`
+
+This should create the YRoots/YRoots/FFTW directory with the needed files and you are now ready to run YRoots!
+
 # Running
-Download the codebase as a zip file, then open a command line and in the main folder run `make`.
+To run YRoots, open a terminal in the YRoots directory and run `make`.
 This will create the executable `yroots-solver`.
 YRoots can be run from the command line as `./yroots <input file>`. If no input file is given `input.txt` is assumed.
 
