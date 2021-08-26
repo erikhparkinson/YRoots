@@ -135,6 +135,7 @@ public:
     }
     
     static void enable() {
+        getInstance().clearClaims();
         m_enabled = true;
     }
     

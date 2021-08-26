@@ -40,7 +40,7 @@ m_signChange(false)
     //Crete the plan
     //Options FFTW_EXHAUSTIVE, FFTW_PATIENT, FFTW_MEASURE, FFTW_ESTIMATE. See http://www.fftw.org/fftw3_doc/Planner-Flags.html#Planner-Flags.
     m_timer.startTimer(m_timerPlanIndex);
-    m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
+    m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_PATIENT | FFTW_DESTROY_INPUT);
     m_timer.stopTimer(m_timerPlanIndex);
 
     //Create the precomputed points.

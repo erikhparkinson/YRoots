@@ -43,6 +43,7 @@ private:
     double*                                 m_output2;
     fftw_r2r_kind*                          m_kinds;
     double*                                 m_inputPartial;
+    const std::string                       m_fftwWisdomFile;
     
     std::vector<std::unique_ptr<IntervalApproximator<Rank>>>    m_intervalApproximators;
     size_t                                  m_firstApproximator;

@@ -10,7 +10,7 @@
 #define IntervalApproximator_hpp
 
 #include <iostream>
-#include "FFTW/include/fftw3.h"
+#include "fftw3.h"
 #include "Functions/Function.hpp"
 #include "Utilities/utilities.hpp"
 
