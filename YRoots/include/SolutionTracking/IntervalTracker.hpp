@@ -35,7 +35,7 @@ public:
     m_trackRootIntervals(_generalParameters.trackRootIntervals),
     m_trackProgress(_generalParameters.trackProgress),
     m_totalArea(totalArea),
-    m_unitIntervalArea(power(2, _rank)),
+    m_unitIntervalArea(power(2, m_rank)),
     m_lastAreaSolved(0),
     m_updatingProgressBar(0),
     m_printedTooDeepWarning(false)
@@ -104,18 +104,18 @@ public:
             for(size_t intervalNum = 0; intervalNum < m_intervalResults[threadNum].size(); intervalNum++) {
                 //Log the Lower Bound
                 file<<"[";
-                for(size_t i = 0; i < m_intervalResults[threadNum][intervalNum].m_interval.lowerBounds.size(); i++) {
+                for(size_t i = 0; i < m_rank; i++) {
                     file<<std::setprecision(precision)<<m_intervalResults[threadNum][intervalNum].m_interval.lowerBounds[i];
-                    if(i + 1 < m_intervalResults[threadNum][intervalNum].m_interval.lowerBounds.size()){
+                    if(i + 1 < m_rank){
                         file<<",";
                     }
                 }
                 file<<"],";
                 //Log the Upper Bound
                 file<<"[";
-                for(size_t i = 0; i < m_intervalResults[threadNum][intervalNum].m_interval.upperBounds.size(); i++) {
+                for(size_t i = 0; i < m_rank; i++) {
                     file<<std::setprecision(precision)<<m_intervalResults[threadNum][intervalNum].m_interval.upperBounds[i];
-                    if(i + 1 < m_intervalResults[threadNum][intervalNum].m_interval.upperBounds.size()){
+                    if(i + 1 < m_rank){
                         file<<",";
                     }
                 }

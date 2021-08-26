@@ -21,7 +21,7 @@ public:
     ~ChebyshevApproximator();
     
     void approximate(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree);
-    double getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree);
+    double getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval);
 
     bool hasSignChange() {
         return m_signChange;

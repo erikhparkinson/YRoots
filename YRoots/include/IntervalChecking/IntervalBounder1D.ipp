@@ -10,7 +10,7 @@
 #define IntervalBounder1D_h
 
 template<>
-double IntervalBounder<1>::updateBoundingIntervalLinearErrorSolve(std::vector<ChebyshevApproximation<1> >& _chebyshevApproximations) {
+double IntervalBounder<1>::updateBoundingIntervalLinearErrorSolve(std::vector<ChebyshevApproximation<1> >& _chebyshevApproximations, const std::vector<bool>& _allowedToReduceDim) {
     //The Constant array information
     const double* array = _chebyshevApproximations[0].getArray();
     const size_t arraySize = _chebyshevApproximations[0].getPartialSideLength();
@@ -23,18 +23,18 @@ double IntervalBounder<1>::updateBoundingIntervalLinearErrorSolve(std::vector<Ch
     }
     
     //A Linear system ax + b +- e has solutions in [-b/a +- e/a]
-    double linearSystemCenter = array[0] / array[1];
+    double linearSystemCenter = -array[0] / array[1];
     double linearSystemWidth = std::abs((error + postLinearError)/ array[1]);
 
     //Update the Boudning Interval with the bounds from solving the linear system.
     m_boundingInterval.lowerBounds[0] = std::max(m_boundingInterval.lowerBounds[0], linearSystemCenter - linearSystemWidth);
-    m_boundingInterval.upperBounds[0] = std::max(m_boundingInterval.upperBounds[0], linearSystemCenter + linearSystemWidth);
+    m_boundingInterval.upperBounds[0] = std::min(m_boundingInterval.upperBounds[0], linearSystemCenter + linearSystemWidth);
     
     return m_boundingInterval.upperBounds[0] - m_boundingInterval.lowerBounds[0];
 }
 
 template <>
-double IntervalBounder<1>::updateBoundingIntervalLipshitzSolve(std::vector<ChebyshevApproximation<1> >& _chebyshevApproximations) {
+double IntervalBounder<1>::updateBoundingIntervalLipshitzSolve(std::vector<ChebyshevApproximation<1> >& _chebyshevApproximations, const std::vector<bool>& _allowedToReduceDim) {
     //Constants for this function
     const double MIN_MOVE = 1e-3;
 
@@ -91,13 +91,26 @@ double IntervalBounder<1>::updateBoundingIntervalLipshitzSolve(std::vector<Cheby
 }
 
 template <>
-double IntervalBounder<1>::computeBoundingInterval(std::vector<ChebyshevApproximation<1> >& _chebyshevApproximations) {
+double IntervalBounder<1>::computeBoundingInterval(std::vector<ChebyshevApproximation<1> >& _chebyshevApproximations, const std::vector<bool>& _allowedToReduceDim) {
+    //Reset the bounding interval to [-1,1]
+    m_boundingInterval.lowerBounds[0] = -1.0;
+    m_boundingInterval.upperBounds[0] = 1.0;
     m_boundingInterval.areaFound = false;
-    if(updateBoundingIntervalLinearErrorSolve(_chebyshevApproximations) == 0) {
+    //Run the Linear Error Solve
+    m_timer.startTimer(m_timerLinearErrorSolveIndex);
+    double size = updateBoundingIntervalLinearErrorSolve(_chebyshevApproximations, _allowedToReduceDim);
+    m_timer.stopTimer(m_timerLinearErrorSolveIndex);
+    if(size == 0) {
         return 0.0;
     }
+    //Reset the area Found
     m_boundingInterval.areaFound = false;
-    return updateBoundingIntervalLipshitzSolve(_chebyshevApproximations);
+    //Run the Lipshitz Solve
+    m_timer.startTimer(m_timerLipshitzSolveIndex);
+    size = updateBoundingIntervalLipshitzSolve(_chebyshevApproximations, _allowedToReduceDim);
+    m_timer.stopTimer(m_timerLipshitzSolveIndex);
+
+    return size;
 }
 
 #endif /* IntervalBounder1D_h */

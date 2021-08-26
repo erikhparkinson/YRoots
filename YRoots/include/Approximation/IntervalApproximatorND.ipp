@@ -205,11 +205,11 @@ void IntervalApproximator<Rank>::approximate(const Function::SharedFunctionPtr _
         m_output[m_divideByTwoPoints[i]] /= 2;
     }
     
-    /*Print input and output. TODO: Remove when I'm confident things work.
-    std::cout<<"Input:\n";
-    printInputArray();
-    std::cout<<"Output:\n";
-    printOutputArray();*/
+    //Print input and output. TODO: Remove when I'm confident things work.
+    /*std::cout<<"Input:\n";
+    printInputArray();*/
+    //std::cout<<"Output:\n";
+    //printOutputArray();
     
     m_timer.stopTimer(m_timerIntervalApproximatorIndex);
 }

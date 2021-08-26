@@ -176,7 +176,7 @@ ErrorTracker pow(ErrorTracker x, ErrorTracker y) {
     const double eval = pow(x.value, y.value);
     const double lipshitzConstantX = std::abs(y.value * eval / x.value); //TODO: Make a more rigorous Lipshitz Constant
     const double lipshitzConstantY = std::abs(log(x.value) * eval); //TODO: Make a more rigorous Lipshitz Constant
-    return ErrorTracker(eval, std::abs(eval)*machineEpsilon + x.error * lipshitzConstantX + y.error * lipshitzConstantY);
+    return ErrorTracker(eval, std::abs(eval)*machineEpsilon + x.error * lipshitzConstantX + (y.error == 0 ? 0 : y.error * lipshitzConstantY));
 }
 
 #endif //ErrorTracker_h

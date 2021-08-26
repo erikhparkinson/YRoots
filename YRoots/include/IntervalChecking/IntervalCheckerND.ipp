@@ -13,6 +13,7 @@ template <int Rank>
 IntervalChecker<Rank>::IntervalChecker(size_t _rank, IntervalTracker& _intervalTracker, size_t _threadNum, ConcurrentStack<SolveParameters>& _intervalsToRun, ObjectPool<SolveParameters>& _solveParametersPool):
 m_rank(_rank),
 m_intervalTracker(_intervalTracker),
+m_allowedToReduceDimension(m_rank, true),
 m_threadNum(_threadNum),
 m_intervalsToRun(_intervalsToRun),
 m_solveParametersPool(_solveParametersPool),
@@ -69,11 +70,20 @@ bool IntervalChecker<Rank>::runIntervalChecks(ChebyshevApproximation<Rank>& _app
 template <int Rank>
 void IntervalChecker<Rank>::runSubintervalChecks(std::vector<ChebyshevApproximation<Rank> >& _chebyshevApproximations, SolveParameters* _currentParameters, size_t _numGoodApproximations)
 {
+    //Find out the dimensions we don't want to reduce the size in.
+    double maxSize = 0.0;
+    for(size_t i = 0; i < m_rank; i++) {
+        maxSize = std::max(maxSize, _currentParameters->interval.upperBounds[i] - _currentParameters->interval.lowerBounds[i]);
+    }
+    for(size_t i = 0; i < m_rank; i++) { //We can reduce is it's within 1e3. TODO: Make this a parameter?
+        m_allowedToReduceDimension[i] =  _currentParameters->interval.upperBounds[i] - _currentParameters->interval.lowerBounds[i] > maxSize * 1e-3;
+    }
+    
     //TODO: Do I need this or should I just use the size in the Interval???
     double boundingIntervalSize = std::numeric_limits<double>::max();
     if(_numGoodApproximations == m_rank) {
         m_timer.startTimer(m_timerBoundingIntervalIndex);
-        double boundingIntervalSize = m_intervalBounder.computeBoundingInterval(_chebyshevApproximations);
+        boundingIntervalSize = m_intervalBounder.computeBoundingInterval(_chebyshevApproximations, m_allowedToReduceDimension);
         m_timer.stopTimer(m_timerBoundingIntervalIndex);
     }
     

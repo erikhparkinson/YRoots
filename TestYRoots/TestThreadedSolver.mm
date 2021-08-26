@@ -52,7 +52,7 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
 }
 
 - (void) testMain {
-    return;
+    //return;
     Timer::enable();
 
     //Get the file names
@@ -244,7 +244,7 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
             for(FoundRoot& root : foundRoots) {
                 double rootModPiX = fmod(power(root.root[0], powerNumX), M_PI);
                 double rootModPiY = fmod(power(root.root[1], powerNumY), M_PI);
-                XCTAssert(withinEpslion(rootModPiX, M_PI/2) && withinEpslion(rootModPiY, M_PI/2));
+                XCTAssert(withinEpslion(rootModPiX, M_PI/2, 1e-8) && withinEpslion(rootModPiY, M_PI/2, 1e-8));
             }
             XCTAssert(expectedRoots == foundRoots.size());
             
@@ -515,6 +515,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
 }
 
 - (void)testRandomStuffTiming {
+    return;
     //Vars to run the test on
     std::vector<double> approximation(10000,0.0);
     size_t rank = 2;

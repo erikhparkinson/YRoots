@@ -58,7 +58,8 @@ protected:
     std::vector<bool>       m_intervalMask;
     std::vector<bool>       m_throwOutMask;
     Interval                m_tempInterval;
-        
+    std::vector<bool>       m_allowedToReduceDimension;
+
     //Multithreading objects
     size_t                              m_threadNum;
     ConcurrentStack<SolveParameters>&   m_intervalsToRun;

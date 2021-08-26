@@ -263,12 +263,16 @@ private:
                     printAndThrowRuntimeError("Parser Error! Incorrect Interval Format! Should have 2 Numbers!");
                 }
                 else {
-                    m_interval.lowerBounds.push_back(parseConstantNum(intervalNums[0]));
-                    m_interval.upperBounds.push_back(parseConstantNum(intervalNums[1]));
+                    //Actually solve the an interval slightly bigger than what the user gave in case they have roots on the boundary.
+                    //TODO: Make this a parameter as well, so users can change it (if their function isn't defined this far outside their interval for example.)
+                    const double intervalScaling = 1+1e-10;
+                    m_interval.lowerBounds.push_back(intervalScaling * parseConstantNum(intervalNums[0]));
+                    m_interval.upperBounds.push_back(intervalScaling * parseConstantNum(intervalNums[1]));
                 }
             }
             parseSpot++;
         }
+        
         printAndThrowRuntimeError("Parser Error! No INTERVAL_END Found!");
     }
 

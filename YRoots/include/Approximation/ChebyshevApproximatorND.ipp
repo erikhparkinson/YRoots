@@ -102,7 +102,7 @@ void ChebyshevApproximator<Rank>::approximate(const Function::SharedFunctionPtr 
 }
 
 template <int Rank>
-double ChebyshevApproximator<Rank>::getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval, size_t _approximationDegree)
+double ChebyshevApproximator<Rank>::getAbsApproxTol(const Function::SharedFunctionPtr _function, const Interval& _currentInterval)
 {
     m_timer.startTimer(m_timerAbsApproxErrorCalcIndex);
 

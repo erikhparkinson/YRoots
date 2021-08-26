@@ -68,11 +68,8 @@ void SubdivisionSolver<Rank>::solve(SolveParameters* _parameters)
     
     if(m_subdivisionParameters.check_eval_error) {
         for(size_t funcNum = 0; funcNum < m_functions.size(); funcNum++) {
-            //break;
-            size_t const degToUse = 2;
-            size_t numVals1 = 1; //power(degToUse*2,2) - power(degToUse,2);
-            size_t numVals2 = power(_parameters->goodDegrees[funcNum]*2,2) - power(_parameters->goodDegrees[funcNum],2);
-            m_minApproxTols[funcNum] = numVals2 * m_chebyshevApproximators[funcNum]->getAbsApproxTol(m_functions[funcNum], _parameters->interval, degToUse) / numVals1;
+            size_t numVals = power(_parameters->goodDegrees[funcNum]*2,2) - power(_parameters->goodDegrees[funcNum],2);
+            m_minApproxTols[funcNum] = numVals * m_chebyshevApproximators[funcNum]->getAbsApproxTol(m_functions[funcNum], _parameters->interval);
         }
     }
     

@@ -104,7 +104,7 @@ public:
         
         //Compute the resisuals of the root
         if(m_computeResiduals) {
-            evaluateResiduals(thisRoot, m_allFunctions[threadNum], threadNum);
+            evaluateResiduals(thisRoot, m_allFunctions[threadNum]);
         }
 
         return true;
@@ -131,11 +131,11 @@ public:
         
         //Compute the resisuals of the root
         if(m_computeResiduals) {
-            evaluateResiduals(thisRoot, m_allFunctions[threadNum], threadNum);
+            evaluateResiduals(thisRoot, m_allFunctions[threadNum]);
         }
     }
     
-    void evaluateResiduals(FoundRoot& _currRoot, std::vector<Function::SharedFunctionPtr>& _functions, size_t _threadNum) {
+    void evaluateResiduals(FoundRoot& _currRoot, std::vector<Function::SharedFunctionPtr>& _functions) {
         for(size_t i = 0; i < _functions.size(); i++) {
             ErrorTracker result = _functions[i]->evaluate<ErrorTracker>(_currRoot.root);
             _currRoot.residuals.push_back(result.value);

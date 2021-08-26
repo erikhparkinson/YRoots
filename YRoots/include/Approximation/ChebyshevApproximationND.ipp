@@ -177,6 +177,9 @@ bool ChebyshevApproximation<Rank>::isLinear() {
 
 template <int Rank>
 double ChebyshevApproximation<Rank>::getSumAbsVal() {
+    if(!m_absValWasSummed){
+        sumAbsValues();
+    }
     return m_sumAbsVal;
 }
 
