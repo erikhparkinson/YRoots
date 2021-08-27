@@ -229,16 +229,30 @@ double IntervalBounder<2>::getExtremeAbsVal(const Eigen::VectorXd& poly, const I
         return optimizeLine1(poly, boundingInterval.lowerBounds[1-dim], boundingInterval.upperBounds[1-dim]);
     }
     else {
-        return optimizeLine0(poly, boundingInterval.lowerBounds[1-dim], boundingInterval.upperBounds[1-dim]);
+        return optimizeLine0(poly);
     }
 }
 
 template<int Rank>
 double IntervalBounder<Rank>::getExtremeAbsVal(const Eigen::VectorXd& poly, const Interval& boundingInterval, size_t dim) {
-    //Just does the constant term check for now. TODO: Make this do an ND Linear check. Template the Rank 2 case for cubic check.
+    //TODO: Think about making this an ND Quadratic check.
     double value = std::abs(poly(0));
+    //Loop over everything
     for(int i = 1; i < poly.size(); i++) {
-        value -= std::abs(poly(i));
+        //Bound anything with linear terms by the max's of the linear.
+        double multiplier = 1.0;
+        size_t tempVal = i;
+        for(size_t d = 0; d < m_rank; d++) {
+            if(d == dim) {
+                continue;
+            }
+            if(tempVal % m_preconditionPolysDegree == 1) {
+                multiplier *= std::max(std::abs(boundingInterval.lowerBounds[d]), std::abs(boundingInterval.upperBounds[d]));
+            }
+            tempVal /= m_preconditionPolysDegree;
+        }
+        //Subtract the coefficient
+        value -= multiplier * std::abs(poly(i));
     }
         
     return value > 0.0 ? value : 0.0;

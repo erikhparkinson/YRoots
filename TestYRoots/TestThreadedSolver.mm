@@ -482,7 +482,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     testNames.push_back("test_Rosenbrock");
     testNames.push_back("test_Trefethen");
     testNames.push_back("test_4");
-    //testNames.push_back("test_5"); //Add this in once I have ND quad check or Lipshitz stuff.
+    testNames.push_back("test_5");
 
     for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
         const std::string testName = testNames[testNum];

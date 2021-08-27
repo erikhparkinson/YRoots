@@ -182,7 +182,12 @@ public:
         _infoToPopulate.precomputed = true;
         
         //Both cases we need to know the childEvalSize
-        _infoToPopulate.childEvalSize = power(_gridSize, m_numUsedDimensions);
+        if(!m_isTopFunction){
+            _infoToPopulate.childEvalSize = power(_gridSize, m_numUsedDimensions);
+        }
+        else {
+            _infoToPopulate.childEvalSize = power(_gridSize, m_hasDimension.size());
+        }
 
         //Make sure the m_partialEvaluations is big enough
         if(m_partialEvaluations.size() <= _infoToPopulate.childEvalSize) {
@@ -233,7 +238,7 @@ public:
                 do {
                     //Zero out the current spot and continue
                     tempDimCount[dimToInc++] = 0;
-                    //Go the the nest spot
+                    //Go the the next spot
                     if(!m_isTopFunction){
                         while(!m_hasDimension[dimToInc] && dimToInc < m_dimension) {
                             dimToInc++;
