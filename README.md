@@ -2,7 +2,7 @@
 Implementing BYU's YRoots Rootfinding code in C++
 
 # FFTW
-Before running YRoots you must have the FFTW (fastest fourier transform in the west) library installed. To do so, download the most recent version from http://www.fftw.org/download.html. Then inside of the downloaded folder open a terminal and run
+Before running YRoots you must have the FFTW (fastest fourier transform in the west) library installed. To do so, download the most recent version from http://www.fftw.org/download.html. Then open a terminal and run the following three commands while in the directory of the FFTW download.
 
 `./configure --prefix <absolute path to YRoots/YRoots/FFTW>`
 
