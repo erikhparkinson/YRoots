@@ -15,6 +15,7 @@ template <int Rank>
 ChebyshevApproximator<Rank>::ChebyshevApproximator(size_t _rank, size_t _maxApproximationDegree, ChebyshevApproximation<Rank>& _approximation):
 m_rank(_rank),
 m_maxApproximationDegree(2*_maxApproximationDegree), //We will always double the approximation given
+m_fftwWisdomFile("YRoots/FFTW/bin/fftwWisdom.txt"),
 m_approximation(_approximation)
 {
     size_t sideLength1 = m_maxApproximationDegree;
@@ -30,6 +31,8 @@ m_approximation(_approximation)
     m_output2 = fftw_alloc_real(arrayLength2);
     m_kinds = (fftw_r2r_kind*) malloc(m_rank * sizeof (fftw_r2r_kind));
     m_inputPartial = fftw_alloc_real(partialArrayLength);
+    //Import Wisdom
+    fftw_import_wisdom_from_filename(m_fftwWisdomFile.c_str());
 
     //Define the kinds
     for(size_t i = 0; i < m_rank; i++) {
@@ -69,6 +72,9 @@ ChebyshevApproximator<Rank>::~ChebyshevApproximator()
     fftw_free(m_output1);
     fftw_free(m_output2);
     fftw_free(m_input);
+    
+    //Export Wisdom
+    fftw_export_wisdom_to_filename(m_fftwWisdomFile.c_str());
 }
 
 
@@ -140,7 +146,6 @@ void ChebyshevApproximator<Rank>::calculateApproximationError()
     size_t spotToInc = 0;
     m_approximationError += std::abs(approximation1[0] - approximation2[0]);
     while (spotToInc < m_rank) {
-        bool firstPass = true;
         while(++inputSpot[spotToInc] < m_approxLength2) {
             
             size_t spot1 = 0;
@@ -158,10 +163,9 @@ void ChebyshevApproximator<Rank>::calculateApproximationError()
                 m_approximationError += std::abs(approximation2[spot2]);
             }
             
-            if(firstPass && spotToInc != 0) {
+            if(spotToInc != 0) {
                 spotToInc = 0;
             }
-            firstPass = false;
         }
         inputSpot[spotToInc] = 0;
         spotToInc++;

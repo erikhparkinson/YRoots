@@ -482,7 +482,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     testNames.push_back("test_Rosenbrock");
     testNames.push_back("test_Trefethen");
     testNames.push_back("test_4");
-    //testNames.push_back("test_5"); //Add this in once I have ND quad check or Lipshitz stuff.
+    testNames.push_back("test_5");
 
     for(size_t testNum = 0; testNum < testNames.size(); testNum++) {
         const std::string testName = testNames[testNum];
@@ -540,7 +540,6 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         size_t spotToInc = 0;
         sumAbsVal += std::abs(approximation[0]);
         while (spotToInc < rank) {
-            bool firstPass = true;
             while(++inputSpot[spotToInc] < partialSideLength) {
                 size_t spot = 0;
                 for (size_t i = 0; i < rank; i++) {
@@ -549,10 +548,9 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
                 std::cout<<"Spot " << spot << "\n";
                 sumAbsVal += std::abs(approximation[spot]);
                 
-                if(firstPass && spotToInc != 0) {
+                if(spotToInc != 0) {
                     spotToInc = 0;
                 }
-                firstPass = false;
             }
             inputSpot[spotToInc] = 0;
             spotToInc++;

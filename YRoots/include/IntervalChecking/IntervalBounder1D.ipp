@@ -11,6 +11,9 @@
 
 template<>
 double IntervalBounder<1>::updateBoundingIntervalLinearErrorSolve(std::vector<ChebyshevApproximation<1> >& _chebyshevApproximations, const std::vector<bool>& _allowedToReduceDim) {
+    if(unlikely(!_allowedToReduceDim[0])) {
+        return std::numeric_limits<double>::max();
+    }
     //The Constant array information
     const double* array = _chebyshevApproximations[0].getArray();
     const size_t arraySize = _chebyshevApproximations[0].getPartialSideLength();
@@ -35,6 +38,10 @@ double IntervalBounder<1>::updateBoundingIntervalLinearErrorSolve(std::vector<Ch
 
 template <>
 double IntervalBounder<1>::updateBoundingIntervalLipshitzSolve(std::vector<ChebyshevApproximation<1> >& _chebyshevApproximations, const std::vector<bool>& _allowedToReduceDim) {
+    if(unlikely(!_allowedToReduceDim[0])) {
+        return std::numeric_limits<double>::max();
+    }
+
     //Constants for this function
     const double MIN_MOVE = 1e-3;
 

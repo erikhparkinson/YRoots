@@ -63,7 +63,6 @@ void ChebyshevApproximation<Rank>::sumAbsValues() {
         size_t spotToInc = 0;
         m_sumAbsVal += std::abs(m_approximation[0]);
         while (spotToInc < m_rank) {
-            bool firstPass = true;
             while(++inputSpot[spotToInc] < m_partialSideLength) {
                 size_t spot = 0;
                 for (size_t i = 0; i < m_rank; i++) {
@@ -71,10 +70,9 @@ void ChebyshevApproximation<Rank>::sumAbsValues() {
                 }
                 m_sumAbsVal += std::abs(m_approximation[spot]);
                 
-                if(firstPass && spotToInc != 0) {
+                if(spotToInc != 0) {
                     spotToInc = 0;
                 }
-                firstPass = false;
             }
             inputSpot[spotToInc] = 0;
             spotToInc++;
@@ -117,7 +115,6 @@ void ChebyshevApproximation<Rank>::setDegreeSpots(size_t index) {
     size_t spotToInc = 0;
     m_degreeSpots[index][0].push_back(0);
     while (spotToInc < m_rank) {
-        bool firstPass = true;
         while(++inputSpot[spotToInc] <= degree) {
             //Find the array index and sum of the tuple
             size_t arrayIndex = 0;
@@ -129,10 +126,9 @@ void ChebyshevApproximation<Rank>::setDegreeSpots(size_t index) {
             //Find the sum of the tuple
             m_degreeSpots[index][tupleSum].push_back(arrayIndex);
             
-            if(firstPass && spotToInc != 0) {
+            if(spotToInc != 0) {
                 spotToInc = 0;
             }
-            firstPass = false;
         }
         inputSpot[spotToInc] = 0;
         spotToInc++;

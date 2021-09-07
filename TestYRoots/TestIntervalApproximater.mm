@@ -13,7 +13,7 @@
 #include <chrono>
 #include "TestUtils.hpp"
 #include "Approximation/IntervalApproximator.hpp"
-#include "Functions/PowerBasisPolynomial.hpp"
+#include "Functions/Polynomial.hpp"
 
 @interface TestIntervalApproximater : XCTestCase
 

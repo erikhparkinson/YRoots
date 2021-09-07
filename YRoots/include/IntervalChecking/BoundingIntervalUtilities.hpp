@@ -63,7 +63,7 @@ double getOptimizeLineReturnValue(double minVal, double maxVal, double error) {
     }
 }
 
-double optimizeLine0(const Eigen::VectorXd& poly, double low, double high) {
+double optimizeLine0(const Eigen::VectorXd& poly) {
     double value = poly(0);
     double error = 0.0;
     for(int i = 1; i < poly.size(); i++) {
@@ -74,7 +74,7 @@ double optimizeLine0(const Eigen::VectorXd& poly, double low, double high) {
 
 double optimizeLine1(const Eigen::VectorXd& poly, double low, double high) {
     if(unlikely(poly(1) == 0.0)) {
-        return optimizeLine0(poly, low, high);
+        return optimizeLine0(poly);
     }
     
     double b = poly(0);

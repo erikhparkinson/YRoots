@@ -263,6 +263,4 @@
     std::cout << "\nCreating function: " << functionString << " takes " << formatTimePretty(nanos/trials) << ".\n\n";
 }
 
-
-
 @end

@@ -2,11 +2,11 @@ CC=g++
 CXXFILES = YRoots/main.cpp
 CXXTESTFILES = TestYRoots/TestMain.mm
 
-IDIR = -IYRoots/include -IYRoots/3rdParty
-LDIR = -LYRoots/lib
+IDIR = -IYRoots/include -IYRoots/3rdParty -IYRoots/FFTW/include -I/usr/local/include
+LDIR = -L/usr/local/include -LYRoots/FFTW/lib
 IDIRTEST = -ITestYRoots
 
-LIBS = -lfftw3 -lm
+LIBS = -lfftw3 -lm -pthread
 CXXFLAGS = -std=c++11 -Wall -O3
 MACROS = -Wextra -DUSE_TIMING
 
