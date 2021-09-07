@@ -146,7 +146,6 @@ void ChebyshevApproximator<Rank>::calculateApproximationError()
     size_t spotToInc = 0;
     m_approximationError += std::abs(approximation1[0] - approximation2[0]);
     while (spotToInc < m_rank) {
-        bool firstPass = true;
         while(++inputSpot[spotToInc] < m_approxLength2) {
             
             size_t spot1 = 0;
@@ -164,10 +163,9 @@ void ChebyshevApproximator<Rank>::calculateApproximationError()
                 m_approximationError += std::abs(approximation2[spot2]);
             }
             
-            if(firstPass && spotToInc != 0) {
+            if(spotToInc != 0) {
                 spotToInc = 0;
             }
-            firstPass = false;
         }
         inputSpot[spotToInc] = 0;
         spotToInc++;

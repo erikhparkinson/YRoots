@@ -56,3 +56,4 @@ double*             m_approximation;
 #include "TestIntervalChecker.mm"
 #include "TestFunction.mm"
 #include "TestQuadraticCheck.mm"
+#include "testPolynomial.mm"

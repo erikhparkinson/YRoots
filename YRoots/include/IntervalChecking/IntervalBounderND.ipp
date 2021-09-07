@@ -119,7 +119,6 @@ void IntervalBounder<Rank>::preconditionPolynomials(std::vector<ChebyshevApproxi
         size_t spotToInc = 0;
         polynomials(polyNum, 0) = approx[0];
         while (spotToInc < m_rank) {
-            bool firstPass = true;
             while(++inputSpot[spotToInc] < maxPartialSideLength) {
                 size_t spot1 = 0;
                 size_t spot2 = 0;
@@ -131,10 +130,9 @@ void IntervalBounder<Rank>::preconditionPolynomials(std::vector<ChebyshevApproxi
                 }
                 polynomials(polyNum, spot1) = validSpot ? approx[spot2] : 0.0;
                 
-                if(firstPass && spotToInc != 0) {
+                if(spotToInc != 0) {
                     spotToInc = 0;
                 }
-                firstPass = false;
             }
             inputSpot[spotToInc] = 0;
             spotToInc++;

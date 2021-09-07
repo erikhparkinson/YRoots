@@ -75,10 +75,9 @@ private:
     double          m_infNorm;
     bool            m_signChange;
     
-    static size_t           m_timerInitIndex;
-    static size_t           m_timerPlanIndex;
     static size_t           m_timerIntervalApproximatorIndex;
     static size_t           m_timerFFT;
+    static size_t           m_timerEvalGrid;
     Timer&                  m_timer = Timer::getInstance();
 };
 
@@ -87,9 +86,7 @@ size_t IntervalApproximator<Rank>::m_timerIntervalApproximatorIndex = -1;
 template<int Rank>
 size_t IntervalApproximator<Rank>::m_timerFFT = -1;
 template<int Rank>
-size_t IntervalApproximator<Rank>::m_timerInitIndex = -1;
-template<int Rank>
-size_t IntervalApproximator<Rank>::m_timerPlanIndex = -1;
+size_t IntervalApproximator<Rank>::m_timerEvalGrid = -1;
 
 #include "IntervalApproximator1D.ipp"
 #include "IntervalApproximator2D.ipp"

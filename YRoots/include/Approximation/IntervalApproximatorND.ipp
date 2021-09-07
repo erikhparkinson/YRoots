@@ -23,10 +23,6 @@ m_kinds(_kinds),
 m_infNorm(0),
 m_signChange(false)
 {
-    m_timer.registerTimer(m_timerInitIndex, "Interval Approximator Init");
-    m_timer.registerTimer(m_timerPlanIndex, "Interval Approximator Planning");
-    m_timer.startTimer(m_timerInitIndex);
-    
     m_inputPartial.resize(_inputPartialSize);
     
     //Alllocate memory
@@ -39,9 +35,7 @@ m_signChange(false)
 
     //Crete the plan
     //Options FFTW_EXHAUSTIVE, FFTW_PATIENT, FFTW_MEASURE, FFTW_ESTIMATE. See http://www.fftw.org/fftw3_doc/Planner-Flags.html#Planner-Flags.
-    m_timer.startTimer(m_timerPlanIndex);
     m_plan =  fftw_plan_r2r(int(m_rank), m_dimensions, m_input, m_output, m_kinds, FFTW_PATIENT | FFTW_DESTROY_INPUT);
-    m_timer.stopTimer(m_timerPlanIndex);
 
     //Create the precomputed points.
     m_evaluationPointsPreTransform.resize(m_rank);
@@ -62,8 +56,7 @@ m_signChange(false)
         
     m_timer.registerTimer(m_timerIntervalApproximatorIndex, "Interval Approximator");
     m_timer.registerTimer(m_timerFFT, "FFT");
-    
-    m_timer.stopTimer(m_timerInitIndex);
+    m_timer.registerTimer(m_timerEvalGrid, "Evaluate Grid");
 }
 
 template <int Rank>
@@ -141,7 +134,6 @@ void IntervalApproximator<Rank>::preComputePartialToFullTransition()
     size_t spotToInc = 0;
     m_partialToFullTransition.push_back(0);
     while (spotToInc < m_rank) {
-        bool firstPass = true;
         while(++inputSpot[spotToInc] < m_sideLength) {
             size_t temp = 1;
             size_t result = 0;
@@ -150,10 +142,9 @@ void IntervalApproximator<Rank>::preComputePartialToFullTransition()
                 temp *= (m_approximationDegree+1);
             }
             m_partialToFullTransition.push_back(result);
-            if(firstPass && spotToInc != 0) {
+            if(spotToInc != 0) {
                 spotToInc = 0;
             }
-            firstPass = false;
         }
         inputSpot[spotToInc] = 0;
         spotToInc++;
@@ -176,8 +167,10 @@ void IntervalApproximator<Rank>::approximate(const Function::SharedFunctionPtr _
             
     //Evaluate the functions at the points
     double divisor = static_cast<double>(power(m_approximationDegree, m_rank));
+    m_timer.startTimer(m_timerEvalGrid);
     _function->evaluateGrid(m_evaluationPoints, m_inputPartial);
-    
+    m_timer.stopTimer(m_timerEvalGrid);
+
     if(_findInfNorm) {
         m_infNorm = 0;
         bool hasPos = false;
@@ -206,10 +199,10 @@ void IntervalApproximator<Rank>::approximate(const Function::SharedFunctionPtr _
     }
     
     //Print input and output. TODO: Remove when I'm confident things work.
-    /*std::cout<<"Input:\n";
-    printInputArray();*/
-    //std::cout<<"Output:\n";
-    //printOutputArray();
+//    std::cout<<"Input:\n";
+//    printInputArray();
+//    std::cout<<"Output:\n";
+//    printOutputArray();
     
     m_timer.stopTimer(m_timerIntervalApproximatorIndex);
 }

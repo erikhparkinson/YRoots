@@ -12,8 +12,11 @@
 #include <math.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
+#include <algorithm>
 #include "Utilities/utilities.hpp"
 #include "Utilities/Timer.hpp"
+#include "Functions/Polynomial.hpp"
 
 enum FunctionType {
     SIN, //Syntax: sin(x)
@@ -67,6 +70,9 @@ struct EvaluateGridInfo {
     bool precomputed = false;
     std::vector<std::vector<size_t> > childEvalIndexes;
     size_t childEvalSize;
+    
+    //For Copying over the top level of top functions that aren't full dimension
+    std::vector<size_t> topResultMap;
 };
 
 #define SIGNCHECKSUM(isPositive, result, number) (isPositive ? result += number : result -= number)
@@ -87,30 +93,33 @@ public:
     m_functionString(_functionString),
     m_functionName(_functionName),
     m_variableNames(_variableNames),
-    m_dimension(_variableNames.size())
+    m_polynomial(_variableNames.size()),
+    m_rank(_variableNames.size())
     {
         //Parse the function
         functionParse(m_functionString);
-        
-        m_timer.registerTimer(m_timerEvaluateGridIndex, "Evaluate Grid");
     }
     
     void defineFunctionDimensions() {
         //Populate m_hasDimension
-        m_hasDimension.resize(m_dimension);
+        m_hasDimension.resize(m_rank);
         switch(m_functionType) {
             case FunctionType::CONSTANT:
                 break;
             case FunctionType::VARIABLE:
                 m_hasDimension[m_varIndex] = true;
                 break;
-            case FunctionType::POWER_BASIS_MONOMIAL: //TODO: Write this for monomials and polynomials
+            case FunctionType::POWER_BASIS_MONOMIAL:
+                m_monomial.prepEvaluation();
+                m_hasDimension = m_monomial.getHasDimension();
                 break;
-            case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:
+            case FunctionType::CHEBYSHEV_BASIS_MONOMIAL: //TODO: Write this for Chebyshev Monomials
                 break;
             case FunctionType::POWER_BASIS_POLYNOMIAL:
+                m_polynomial.prepEvaluation();
+                m_hasDimension = m_polynomial.getHasDimension();
                 break;
-            case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
+            case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL: //TODO: Write this for Chebyshev Polynomials
                 break;
             default: {
                 //Everything that is a base function should be in the case statements above.
@@ -137,7 +146,7 @@ public:
         switch(m_functionType) {
             case FunctionType::CONSTANT:
             case FunctionType::VARIABLE:
-            case FunctionType::POWER_BASIS_MONOMIAL: //TODO: Write the specialized base calls for monomials and polynomials
+            case FunctionType::POWER_BASIS_MONOMIAL:
             case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:
             case FunctionType::POWER_BASIS_POLYNOMIAL:
             case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
@@ -166,28 +175,13 @@ public:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
         }
-        
-        //The top function can only be simple if it has every dimension
-        if(m_isTopFunction && m_evaluateGridType == EvaluateGridType::SIMPLE) {
-            for(size_t i = 0; i < m_hasDimension.size(); i++) {
-                if(!m_hasDimension[i]) {
-                    m_evaluateGridType = EvaluateGridType::COMBINE;
-                    break;
-                }
-            }
-        }
     }
     
     void prepEvaluatGrid(size_t _gridSize, EvaluateGridInfo& _infoToPopulate) {
         _infoToPopulate.precomputed = true;
         
-        //Both cases we need to know the childEvalSize
-        if(!m_isTopFunction){
-            _infoToPopulate.childEvalSize = power(_gridSize, m_numUsedDimensions);
-        }
-        else {
-            _infoToPopulate.childEvalSize = power(_gridSize, m_hasDimension.size());
-        }
+        //Get the childEvalSize
+        _infoToPopulate.childEvalSize = power(_gridSize, m_numUsedDimensions);
 
         //Make sure the m_partialEvaluations is big enough
         if(m_partialEvaluations.size() <= _infoToPopulate.childEvalSize) {
@@ -199,12 +193,10 @@ public:
             _infoToPopulate.childEvalIndexes.resize(_infoToPopulate.childEvalSize);
             
             //Start on the first dimensions
-            std::vector<size_t> tempDimCount(m_dimension);
+            std::vector<size_t> tempDimCount(m_rank);
             size_t dimToInc = 0;
-            if(!m_isTopFunction){
-                while(!m_hasDimension[dimToInc] && dimToInc < m_dimension) {
-                    dimToInc++;
-                }
+            while(!m_hasDimension[dimToInc] && dimToInc < m_rank) {
+                dimToInc++;
             }
             
             size_t firstUsedDim = dimToInc;
@@ -239,13 +231,11 @@ public:
                     //Zero out the current spot and continue
                     tempDimCount[dimToInc++] = 0;
                     //Go the the next spot
-                    if(!m_isTopFunction){
-                        while(!m_hasDimension[dimToInc] && dimToInc < m_dimension) {
-                            dimToInc++;
-                        }
+                    while(!m_hasDimension[dimToInc] && dimToInc < m_rank) {
+                        dimToInc++;
                     }
                     //Check if it overflows as well
-                    if(dimToInc < m_dimension) {
+                    if(dimToInc < m_rank) {
                         tempDimCount[dimToInc]++;
                     }
                     else {
@@ -257,59 +247,75 @@ public:
                 dimToInc = firstUsedDim;
             }
         }
+        
+        if(m_isTopFunction && m_numUsedDimensions != m_rank) {
+            const size_t numResultPoints = power(_gridSize, m_rank);
+            _infoToPopulate.topResultMap.resize(numResultPoints);
+            
+            //Start on the first dimension
+            std::vector<size_t> tempDimCount(m_rank);
+            size_t dimToInc = 0;
+            
+            size_t currIndexSpot = 0;
+            //Iterate through the combinations
+            bool finishedLoop = false;
+            while (!finishedLoop) {
+                //Iterate in the current dimension
+                while(tempDimCount[dimToInc] < _gridSize) {
+                    size_t indexToUse = 0;
+                    size_t dimMultiplier = 1;
+                    for(size_t currDim = 0; currDim < m_hasDimension.size(); currDim++) {
+                        if(m_hasDimension[currDim]) {
+                            indexToUse += dimMultiplier * tempDimCount[currDim];
+                            dimMultiplier *= _gridSize;
+                        }
+                    }
+                    _infoToPopulate.topResultMap[currIndexSpot] = indexToUse;
+
+                    //Continue the loop
+                    currIndexSpot++;
+                    tempDimCount[dimToInc]++;
+                }
+                
+                //Increment the dimension
+                do {
+                    //Zero out the current spot and continue
+                    tempDimCount[dimToInc++] = 0;
+                    //Go the the next spot
+                    if(dimToInc < m_rank) {
+                        tempDimCount[dimToInc]++;
+                    }
+                    else {
+                        finishedLoop = true;
+                        break;
+                    }
+                }
+                while(tempDimCount[dimToInc] == _gridSize); //Check if the next spot overflows
+                dimToInc = 0;
+            }
+        }
     }
     
-    void evaluateGridBase(const std::vector<std::vector<double> >& _grid) {
+    void evaluateGridBase(const std::vector<std::vector<double> >& _grid, std::vector<double>& _results) {
         switch(m_functionType) {
             case FunctionType::CONSTANT:
-                m_partialEvaluations[0] =  m_value;
+                _results[0] =  m_value;
                 break;
             case FunctionType::VARIABLE:
                 for(size_t i = 0; i < _grid[0].size(); i++) {
-                    m_partialEvaluations[i] =  m_value * _grid[m_varIndex][i];
+                    _results[i] =  m_value * _grid[m_varIndex][i];
                 }
                 break;
-            case FunctionType::POWER_BASIS_MONOMIAL: //TODO: Write the specialized base calls for monomials and polynomials
+            case FunctionType::POWER_BASIS_MONOMIAL:
+                m_monomial.evaluateGrid(_grid, _results);
                 break;
-            case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:
-                break;
+            //case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:  //TODO: Write the specialized base call for CHEBYSHEV_BASIS_MONOMIAL
+            //    break;
             case FunctionType::POWER_BASIS_POLYNOMIAL:
+                m_polynomial.evaluateGrid(_grid, _results);
                 break;
-            case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
-                break;
-            default:
-                printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid base! Fix Switch Statement!");
-                break;
-        }
-    }
-
-    void evaluateGridBaseTop(const std::vector<std::vector<double> >& _grid, std::vector<double>& _results) {
-        size_t gridSize = _grid[0].size();
-        size_t numEvals = power(gridSize, _grid.size());;
-        
-        switch(m_functionType) {
-            case FunctionType::CONSTANT:
-                for(size_t i = 0; i < numEvals; i++) {
-                    _results[i] =  m_value;
-                }
-                break;
-            case FunctionType::VARIABLE: {
-                //TODO: this could probably be more efficient.
-                size_t varGridSize = power(gridSize, m_varIndex);
-                for(size_t i = 0; i < numEvals; i++) {
-                    size_t index = (i/varGridSize)%gridSize;
-                    _results[i] =  _grid[m_varIndex][index];
-                }
-                break;
-            }
-            case FunctionType::POWER_BASIS_MONOMIAL: //TODO: Write the specialized base calls for monomials and polynomials
-                break;
-            case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:
-                break;
-            case FunctionType::POWER_BASIS_POLYNOMIAL:
-                break;
-            case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
-                break;
+            //case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:  //TODO: Write the specialized base call for CHEBYSHEV_BASIS_POLYNOMIAL
+            //    break;
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid base! Fix Switch Statement!");
                 break;
@@ -441,7 +447,7 @@ public:
 
         switch(m_evaluateGridType) {
             case EvaluateGridType::BASE:
-                evaluateGridBase(_grid);
+                evaluateGridBase(_grid, m_partialEvaluations);
                 break;
             case EvaluateGridType::SIMPLE:
                 evaluateGridSimple(gridSize, m_partialEvaluations);
@@ -456,6 +462,7 @@ public:
     }
 
     void evaluateGridMain(const std::vector<std::vector<double> >& _grid, std::vector<double>& _results) {
+        assert(m_isTopFunction); //This should only be called by the top function.
         //Prep the evaluate grid info if it hasn't already been done
         size_t gridSize = _grid[0].size();
         if(unlikely(m_evaluateGridInfo.size() <= gridSize)) {
@@ -464,26 +471,36 @@ public:
         if(unlikely(!m_evaluateGridInfo[gridSize].precomputed)) {
             prepEvaluatGrid(gridSize, m_evaluateGridInfo[gridSize]);
         }
-
+        
+        //If we are not using all the dimensions, run the evaluations with m_partialEvaluations, then copy it into _results after
+        const bool usesAllDims = m_numUsedDimensions == m_rank;
+        std::vector<double>& resultSpot = usesAllDims ? _results : m_partialEvaluations;
+        
         switch(m_evaluateGridType) {
             case EvaluateGridType::BASE:
-                evaluateGridBaseTop(_grid, _results);
+                evaluateGridBase(_grid, resultSpot);
                 break;
             case EvaluateGridType::SIMPLE:
-                evaluateGridSimple(gridSize, _results);
+                evaluateGridSimple(gridSize, resultSpot);
                 break;
             case EvaluateGridType::COMBINE:
-                evaluateGridCombine(gridSize, _results);
+                evaluateGridCombine(gridSize, resultSpot);
                 break;
             default:
                 printAndThrowRuntimeError("Unknown Function Type Encountered in evaluate grid main! Fix Switch Statement!");
                 break;
         }
+        
+        if(!usesAllDims) { //Copy from m_partialEvaluations into _results.
+            //For every dim that isn't used,
+            for(size_t i = 0; i < m_evaluateGridInfo[gridSize].topResultMap.size(); i++) {
+                _results[i] = m_partialEvaluations[m_evaluateGridInfo[gridSize].topResultMap[i]];
+            }
+        }
     }
     
     void evaluateGrid(const std::vector<std::vector<double> >& _grid, std::vector<double>& _results) {
         //Evaluates the grid so that the evaluation of (grid[0][i], grid[1][j]) is in _results[j+grid.size() + i]
-        m_timer.startTimer(m_timerEvaluateGridIndex);
         
         //Create the function tree to evaluate.
         if(unlikely(!m_isTopFunction)) {
@@ -500,7 +517,6 @@ public:
         
         //Now call this top function.
         evaluateGridMain(_grid, _results);
-        m_timer.stopTimer(m_timerEvaluateGridIndex);
         return;
 
         //This is the old code, it can still be run with the assert statement to  gives the same results.
@@ -525,15 +541,15 @@ public:
         //assert(_results[evalSpot++] == evaluate<double>(inputPoints));
         _results[evalSpot++] = evaluate<double>(inputPoints);
         while (spotToInc < dimension) {
-            bool firstPass = true;
             while(++inputSpot[spotToInc] < numPoints) {
                 inputPoints[spotToInc] = _grid[spotToInc][inputSpot[spotToInc]];
-                //assert(_results[evalSpot++] == evaluate<double>(inputPoints));
+                double diff = std::abs(_results[evalSpot] - evaluate<double>(inputPoints));
+                double relativeDiff = diff / std::abs(_results[evalSpot]);
+                //assert(relativeDiff < 1e-5); evalSpot++;
                 _results[evalSpot++] = evaluate<double>(inputPoints);
-                if(firstPass && spotToInc != 0) {
+                if(spotToInc != 0) {
                     spotToInc = 0;
                 }
-                firstPass = false;
             }
             inputSpot[spotToInc] = 0;
             inputPoints[spotToInc] = _grid[spotToInc][0];
@@ -571,17 +587,17 @@ public:
             case FunctionType::CONSTANT:
                 return static_cast<ReturnType>(m_value);
             case FunctionType::POWER_BASIS_POLYNOMIAL:
-                break;
-            case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
-                break;
+                return m_polynomial.evaluate<ReturnType>(_inputPoints);
+            //case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL:
+            //    break;
             case FunctionType::SUM:
                 return sumEval<ReturnType>(_inputPoints);
             case FunctionType::PRODUCT:
                 return productEval<ReturnType>(_inputPoints);
             case FunctionType::POWER_BASIS_MONOMIAL:
-                return powerMonomialEval<ReturnType>(_inputPoints);
-            case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:
-                return chebyshevMonomialEval<ReturnType>(_inputPoints);
+                return m_monomial.evaluate<ReturnType>(_inputPoints);
+            //case FunctionType::CHEBYSHEV_BASIS_MONOMIAL:
+            //    return chebyshevMonomialEval<ReturnType>(_inputPoints);
             case FunctionType::CHEBYSHEV:
                 return static_cast<ReturnType>(m_value) * chebPower(m_subfunctions[0]->evaluate<ReturnType>(_inputPoints), m_varIndex);
             case FunctionType::VARIABLE:
@@ -644,399 +660,417 @@ private:
     }
         
     void simplifyExpressions() {
-    //TODO: To Update everything to shared ptrs, it is important to never change a function besdides the
-    //one you are currently in. Otherwise it will be changing other copies of the function that are unrelated.
-    
-    //TODO: I think the only place that is an issue is with sums and products. So if a function appears the same
-    //twice in a sum I should remove both and make a new function that is 2*<that function> (parens needed?)
-    //If a function appears twice in a product then I should remove both and make a new function that is <that function>^2
-    
-    //TODO: If I have a monomial raised to a power I should be able to simplify that.
-    
-    
-    //Pull any constants out of a sum
-    if(m_functionType == FunctionType::SUM) {
+        //TODO: To Update everything to shared ptrs, it is important to never change a function besdides the
+        //one you are currently in. Otherwise it will be changing other copies of the function that are unrelated.
+        
+        //TODO: I think the only place that is an issue is with sums and products. So if a function appears the same
+        //twice in a sum I should remove both and make a new function that is 2*<that function> (parens needed?)
+        //If a function appears twice in a product then I should remove both and make a new function that is <that function>^2
+        
+        //TODO: If I have a monomial raised to a power I should be able to simplify that.
+        
+        
         //Pull any constants out of a sum
-        size_t funcIndex = 0;
-        while(funcIndex < m_subfunctions.size()) {
-            if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT) {
-                SIGNCHECKSUM(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
-                m_subfunctions.erase(m_subfunctions.begin() + funcIndex);
-                m_operatorSigns.erase(m_operatorSigns.begin() + funcIndex);
-            }
-            else {
-                funcIndex++;
-            }
-        }
-        //If the size of the sum is 0 it is now a constant
-        if(m_subfunctions.size() == 0) {
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-    
-    //Pull any constants out of a product. Check if we multiply or divide!
-    if(m_functionType == FunctionType::PRODUCT) {
-        //Pull any constants out of a product
-        size_t funcIndex = 0;
-        while(funcIndex < m_subfunctions.size()) {
-            if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT) {
-                SIGNCHECKPRODUCT(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
-                m_subfunctions.erase(m_subfunctions.begin() + funcIndex);
-                m_operatorSigns.erase(m_operatorSigns.begin() + funcIndex);
-            }
-            else {
-                funcIndex++;
-            }
-        }
-        //If the size of the product is 0 it is now a constant
-        if(m_subfunctions.size() == 0) {
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-    
-    //Check for a constant LOG
-    if(m_functionType == FunctionType::LOG) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= log(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a constant LOG10
-    if(m_functionType == FunctionType::LOG10) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= log10(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a constant LOG2
-    if(m_functionType == FunctionType::LOG2) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= log2(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant SIN
-    if(m_functionType == FunctionType::SIN) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= sin(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant COS
-    if(m_functionType == FunctionType::COS) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= cos(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant TAN
-    if(m_functionType == FunctionType::TAN) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= tan(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant SINH
-    if(m_functionType == FunctionType::SINH) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= sinh(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant COSH
-    if(m_functionType == FunctionType::COSH) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= cosh(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant TANH
-    if(m_functionType == FunctionType::TANH) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= tanh(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant SQRT
-    if(m_functionType == FunctionType::SQRT) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= sqrt(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant EXP
-    if(m_functionType == FunctionType::EXP) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= exp(m_subfunctions[0]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-
-    //Check for a contant POWER
-    if(m_functionType == FunctionType::POWER) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT) {
-            m_value *= pow(m_subfunctions[0]->getValue(), m_subfunctions[1]->getValue());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-        }
-    }
-    
-    //Check powers with ones and zeros
-    if(m_functionType == FunctionType::POWER) {
-        //Check if it is something to the POWER of 0
-        if(m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[1]->getValue() == 0.0) {
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-            m_value = 1;
-        }
-        //Check if it is something to the POWER of 1
-        else if(m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[1]->getValue() == 1.0) {
-            //TODO: Find a way to do this without copying. Maybe just reparse the subfunction string?
-            
-            //std::shared_ptr tempFunctionPtr(m_subfunctions[0]);
-            //copyFunction(*tempFunctionPtr.get());
-        }
-        //Check it is 0 to the POWER of something
-        else if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[0]->getValue() == 0.0) {
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-            m_value = 0;
-        }
-        //Check it is 1 to the POWER of something
-        else if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[0]->getValue() == 1.0) {
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CONSTANT;
-            m_value = 1;
-        }
-    }
-
-    //TODO: Think about how to do monomials and polynomials
-        
-    //Check if a POWER is a POWER_BASIS_MONOMIAL
-    /*if(m_functionType == FunctionType::POWER) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::VARIABLE && m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT) {
-            size_t power = static_cast<size_t>(m_subfunctions[1]->getValue());
-            if(power == m_subfunctions[0]->getValue()) {
-                m_varIndexes.push_back(m_subfunctions[0]->getVarIndex());
-                m_varPowers.push_back(power);
-                m_subfunctions.erase(m_subfunctions.begin());
-                m_subfunctions.erase(m_subfunctions.begin());
-                m_functionType = FunctionType::POWER_BASIS_MONOMIAL;
-            }
-        }
-    }
-    
-    //Check if a CHEBYSHEV is a CHEBYSHEV_BASIS_MONOMIAL
-    if(m_functionType == FunctionType::CHEBYSHEV) {
-        if(m_subfunctions[0]->getFunctionType() == FunctionType::VARIABLE) {
-            m_varIndexes.push_back(m_subfunctions[0]->getVarIndex());
-            m_varPowers.push_back(m_varIndex);
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CHEBYSHEV_BASIS_MONOMIAL;
-        }
-    }*/
-    
-    //TODO: Fix this so we never change a child function. Ths causes issue as they are shared_ptrs and so will
-    //be changing other functions as well.
-    /*
-    //Check if a PRODUCT has multiple POWER_BASIS_MONOMIAL or VARIABLE in it
-    if(m_functionType == FunctionType::PRODUCT) {
-        //Check if there is a first POWER_BASIS_MONOMIAL or VARIABLE.
-        size_t funcIndex = 0;
-        bool foundMonoimal = false;
-        while(funcIndex < m_subfunctions.size()) {
-            if((m_subfunctions[funcIndex]->getFunctionType() == FunctionType::POWER_BASIS_MONOMIAL || m_subfunctions[funcIndex]->getFunctionType() == FunctionType::VARIABLE) && m_operatorSigns[funcIndex]) {
-                foundMonoimal = true;
-                break;
-            }
-            else {
-                funcIndex++;
-            }
-        }
-        
-        //Merge other ones into it
-        if(foundMonoimal) {
-            size_t funcIndex2 = funcIndex + 1;
-            while(funcIndex2 < m_subfunctions.size()) {
-                if((m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::POWER_BASIS_MONOMIAL || m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::VARIABLE) && m_operatorSigns[funcIndex2]) {
-                    m_subfunctions[funcIndex]->mergePowerMonomialProduct(m_subfunctions[funcIndex2]);
-                    m_subfunctions.erase(m_subfunctions.begin() + funcIndex2);
+        if(m_functionType == FunctionType::SUM) {
+            //Pull any constants out of a sum
+            size_t funcIndex = 0;
+            while(funcIndex < m_subfunctions.size()) {
+                if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT) {
+                    SIGNCHECKSUM(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
+                    m_subfunctions.erase(m_subfunctions.begin() + funcIndex);
+                    m_operatorSigns.erase(m_operatorSigns.begin() + funcIndex);
                 }
                 else {
-                    funcIndex2++;
+                    funcIndex++;
+                }
+            }
+            //If the size of the sum is 0 it is now a constant
+            if(m_subfunctions.size() == 0) {
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+        
+        //Pull any constants out of a product. Check if we multiply or divide!
+        if(m_functionType == FunctionType::PRODUCT) {
+            //Pull any constants out of a product
+            size_t funcIndex = 0;
+            while(funcIndex < m_subfunctions.size()) {
+                if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT) {
+                    SIGNCHECKPRODUCT(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
+                    m_subfunctions.erase(m_subfunctions.begin() + funcIndex);
+                    m_operatorSigns.erase(m_operatorSigns.begin() + funcIndex);
+                }
+                else {
+                    funcIndex++;
+                }
+            }
+            //If the size of the product is 0 it is now a constant
+            if(m_subfunctions.size() == 0) {
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+        
+        //Check for a constant LOG
+        if(m_functionType == FunctionType::LOG) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= log(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a constant LOG10
+        if(m_functionType == FunctionType::LOG10) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= log10(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a constant LOG2
+        if(m_functionType == FunctionType::LOG2) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= log2(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant SIN
+        if(m_functionType == FunctionType::SIN) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= sin(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant COS
+        if(m_functionType == FunctionType::COS) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= cos(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant TAN
+        if(m_functionType == FunctionType::TAN) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= tan(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant SINH
+        if(m_functionType == FunctionType::SINH) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= sinh(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant COSH
+        if(m_functionType == FunctionType::COSH) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= cosh(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant TANH
+        if(m_functionType == FunctionType::TANH) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= tanh(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant SQRT
+        if(m_functionType == FunctionType::SQRT) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= sqrt(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant EXP
+        if(m_functionType == FunctionType::EXP) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= exp(m_subfunctions[0]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+
+        //Check for a contant POWER
+        if(m_functionType == FunctionType::POWER) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT) {
+                m_value *= pow(m_subfunctions[0]->getValue(), m_subfunctions[1]->getValue());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+            }
+        }
+        
+        //Check powers with ones and zeros
+        if(m_functionType == FunctionType::POWER) {
+            //Check if it is something to the POWER of 0
+            if(m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[1]->getValue() == 0.0) {
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+                m_value = 1;
+            }
+            //Check if it is something to the POWER of 1
+            else if(m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[1]->getValue() == 1.0) {
+                //TODO: Find a way to do this without copying. Maybe just reparse the subfunction string?
+                
+                //std::shared_ptr tempFunctionPtr(m_subfunctions[0]);
+                //copyFunction(*tempFunctionPtr.get());
+            }
+            //Check it is 0 to the POWER of something
+            else if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[0]->getValue() == 0.0) {
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+                m_value = 0;
+            }
+            //Check it is 1 to the POWER of something
+            else if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[0]->getValue() == 1.0) {
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_subfunctions.erase(m_subfunctions.begin());
+                m_functionType = FunctionType::CONSTANT;
+                m_value = 1;
+            }
+        }
+
+        //TODO: Think about how to do monomials and polynomials
+        //return; //TODO: Remove this when we want to run polynomials
+        
+        //Check if a POWER is a POWER_BASIS_MONOMIAL
+        if(m_functionType == FunctionType::POWER) {
+            if(m_subfunctions[0]->getFunctionType() == FunctionType::VARIABLE && m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT) {
+                size_t power = static_cast<size_t>(m_subfunctions[1]->getValue());
+                m_monomial.clear(m_rank);
+                if(power == m_subfunctions[1]->getValue()) {
+                    m_monomial.spot[m_subfunctions[0]->getVarIndex()] = power;
+                    m_monomial.coeff = m_subfunctions[0]->getValue();
+                    m_subfunctions.erase(m_subfunctions.begin());
+                    m_subfunctions.erase(m_subfunctions.begin());
+                    m_functionType = FunctionType::POWER_BASIS_MONOMIAL;
                 }
             }
         }
         
-        //If the size of the product is 1 and it had a POWER_BASIS_MONOMIAL it is now a POWER_BASIS_MONOMIAL
-        if(m_subfunctions.size() == 1 && foundMonoimal) {
-            m_value *= m_subfunctions[0]->getValue();
-            m_varIndexes = m_subfunctions[0]->getVarIndexes();
-            m_varPowers = m_subfunctions[0]->getVarPowers();
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::POWER_BASIS_MONOMIAL;
-        }
-    }
-    
-    //Check if a PRODUCT has multiple CHEBYSHEV_BASIS_MONOMIAL in it
-    if(m_functionType == FunctionType::PRODUCT) {
-        //Check if there is a first CHEBYSHEV_BASIS_MONOMIAL.
-        size_t funcIndex = 0;
-        bool foundMonoimal = false;
-        while(funcIndex < m_subfunctions.size()) {
-            if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CHEBYSHEV_BASIS_MONOMIAL && m_operatorSigns[funcIndex]) {
-                foundMonoimal = true;
-                break;
-            }
-            else {
-                funcIndex++;
-            }
-        }
-        
-        //Merge other ones into it
-        if(foundMonoimal) {
-            size_t funcIndex2 = funcIndex + 1;
-            while(funcIndex2 < m_subfunctions.size()) {
-                if(m_subfunctions[funcIndex2]->getFunctionType() == FunctionType::CHEBYSHEV_BASIS_MONOMIAL && m_operatorSigns[funcIndex2]) {
-                    //We can't merge CHEBYSHEV_BASIS_MONOMIAL if it has the same mons
-                    if(m_subfunctions[funcIndex]->mergeChebyshevMonomialProduct(m_subfunctions[funcIndex2])) {
-                        m_subfunctions.erase(m_subfunctions.begin() + funcIndex2);
+        //Check if a PRODUCT is composed of only POWER_BASIS_MONOMIALs, VARIABLEs and CONSTANTs. Then it should be just one big POWER_BASIS_MONOMIAL.
+        if(m_functionType == FunctionType::PRODUCT) {
+            //Check if everything is POWER_BASIS_MONOMIAL or VARIABLE
+            bool isMonomial = true;
+            bool isPolynomial = true;
+            int polySpot = -1;
+            for(size_t funcNum = 0; funcNum < m_subfunctions.size(); funcNum++) {
+                const FunctionType subType = m_subfunctions[funcNum]->getFunctionType();
+                const bool monStuff = subType == FunctionType::POWER_BASIS_MONOMIAL || subType == FunctionType::VARIABLE;
+                const bool polyStuff = subType == FunctionType::POWER_BASIS_POLYNOMIAL || monStuff;
+                isMonomial &= monStuff && m_operatorSigns[funcNum]; //Make sure it's not a division
+                isPolynomial &= polyStuff && m_operatorSigns[funcNum]; //Make sure it's not a division
+                if(subType == FunctionType::POWER_BASIS_POLYNOMIAL) {
+                    if(polySpot == -1) { //Allow one polynomial
+                        polySpot = funcNum;
                     }
                     else {
-                        funcIndex2++;
+                        isPolynomial = false;
                     }
                 }
-                else {
-                    funcIndex2++;
+            }
+            //Create the new POWER_BASIS_MONOMIAL
+            if(isMonomial) {
+                m_monomial.clear(m_rank);
+                m_monomial.coeff = m_value;
+                for(size_t funcNum = 0; funcNum < m_subfunctions.size(); funcNum++) {
+                    switch(m_subfunctions[funcNum]->getFunctionType()) {
+                    case FunctionType::POWER_BASIS_MONOMIAL: {
+                        //Update the coefficient.
+                        m_monomial *= m_subfunctions[funcNum]->getMonomial();
+                        break;
+                    }
+                    case FunctionType::VARIABLE: {
+                        //Update the coefficient.
+                        m_monomial.coeff *= m_subfunctions[funcNum]->getValue();
+                        //Increment the index at the correct spot by 1
+                        m_monomial.spot[m_subfunctions[funcNum]->getVarIndex()] += 1;
+                        break;
+                    }
+                    case FunctionType::CONSTANT: {
+                        //Update the coefficient.
+                        m_monomial.coeff *= m_subfunctions[funcNum]->getValue();
+                        break;
+                    }
+                    default: {
+                        printAndThrowRuntimeError("Error converting product to Power Basis Monomial!");
+                        break;
+                    }
+                    }
                 }
+                m_functionType = FunctionType::POWER_BASIS_MONOMIAL;
+                m_subfunctions.clear();
             }
-        }
-        
-        //If the size of the product is 1 and it had a CHEBYSHEV_BASIS_MONOMIAL it is now a CHEBYSHEV_BASIS_MONOMIAL
-        if(m_subfunctions.size() == 1 && foundMonoimal) {
-            m_value *= m_subfunctions[0]->getValue();
-            m_varIndexes = m_subfunctions[0]->getVarIndexes();
-            m_varPowers = m_subfunctions[0]->getVarPowers();
-            m_subfunctions.erase(m_subfunctions.begin());
-            m_functionType = FunctionType::CHEBYSHEV_BASIS_MONOMIAL;
-        }
-    }
-        */
-    
-    
-    //Check if a SUM has multiple POWER_BASIS_MONOMIAL, VARIABLE, and CONSTANT in it
-    //TODO: Decide then this should be turned to a POWER_BASIS_POLYNOMIAL
-    
-    //The advantage of a POLYNOMIAL is that it does about 2 operations per monomial it holds
-    //A sum of polynomials has to do the log reduction which is much slower, plus the function
-    //Call and switch statement. Overall maybe 10 operations or so? But also probably slower ones.
-    //I'd guess the change boundary is when it is between 1-10% full. Try something and then run timings
-            
-    //Check if a SUM has multiple CHEBYSHEV_BASIS_MONOMIAL and CONSTANT in it
-    //TODO: Decide then this should be turned to a CHEBYSHEV_BASIS_POLYNOMIAL
-
-    
-    
-    //TODO: Turn Sums of Monomials into Polynomials if that would make it more efficient
-    //TODO: Check Sum Types to see if they should be polynomials!
-    //Grab every element of the sum that is a monomial or chebyshev monomial and decide if it is worth pulling out.
-    //Note: For a non-dense system it won't be. EX 1 + x^100 + y^100 is much better just being computed as three monomials then
-    //Using Horners Method on it because of all of the 0's.
-    //After pulling out the polys, if only normal or cheb poly exists, make that the type
-    //Otherwise, it is sum type. Make the normal and cheb polys part of the sum
-    //TODO: In that case make a seperate constructor that takes in the pre-parsed monomials
-    
-    
-    //TODO: At the end go through and see if any Functions are equal to each other, if so make them the same shared ptr.
-    //Make a Tree, constants and variables are level 0 and everything else is level 1 + max of sublevels.
-    //When evaluating go through and evaluate each function in level 0 then 1, etc.
-    //For evaluate grid pass in the size of the max vector needed. Then have each function store the values in a grid.
-    
-    //TODO: There should be no constants left at the end of this function! That should all be assimilated into the others.
-    //Unless the whole function is one big constant I guess.
-}
-    
-    /*void mergePowerMonomialProduct(SharedFunctionPtr functionPtr) {
-        //TODO: Delete this function?
-        
-        //Multiply two power basis monomials
-        m_value *= functionPtr->getValue();
-        std::vector<size_t>& otherPowers = functionPtr->getVarPowers();
-        std::vector<size_t>& otherIndexes = functionPtr->getVarIndexes();
-        
-        for(size_t otherIndex = 0; otherIndex < otherPowers.size(); otherIndex++) {
-            bool found = false;
-            for(size_t thisIndex = 0; thisIndex < m_varPowers.size(); thisIndex++) {
-                if(m_varIndexes[thisIndex] == otherIndexes[otherIndex]) {
-                    m_varPowers[thisIndex] += otherPowers[otherIndex];
-                    found = true;
-                    break;
+            else if(isPolynomial) {
+                m_polynomial = m_subfunctions[polySpot]->getPolynomial();
+                //Multiply by the constant term
+                if(m_value != 1.0) {
+                    Monomial toAdd;
+                    toAdd.spot.resize(m_rank, 0);
+                    toAdd.coeff = m_value;
+                    m_polynomial.multiplyMonomial(toAdd);
                 }
-            }
-            if(!found) {
-                m_varIndexes.push_back(otherIndexes[otherIndex]);
-                m_varPowers.push_back(otherPowers[otherIndex]);
-            }
-        }
-        //Turn a VARIABLE into a POWER_BASIS_MONOMIAL
-        m_functionType = FunctionType::POWER_BASIS_MONOMIAL;
-    }
-    
-    bool mergeChebyshevMonomialProduct(SharedFunctionPtr functionPtr) {
-        //TODO: Delete this function?
-
-        //Multiply two power basis monomials
-        m_value *= functionPtr->getValue();
-        std::vector<size_t>& otherPowers = functionPtr->getVarPowers();
-        std::vector<size_t>& otherIndexes = functionPtr->getVarIndexes();
-        
-        std::vector<size_t> thisPowers = m_varPowers;
-        std::vector<size_t> thisIndexes = m_varIndexes;
-
-        for(size_t otherIndex = 0; otherIndex < otherPowers.size(); otherIndex++) {
-            bool found = false;
-            for(size_t thisIndex = 0; thisIndex < thisPowers.size(); thisIndex++) {
-                if(thisIndexes[thisIndex] == otherIndexes[otherIndex]) {
-                    return false;
+                //Multiply by everything else
+                for(size_t funcNum = 0; funcNum < m_subfunctions.size(); funcNum++) {
+                    if(funcNum == polySpot) {
+                        continue;
+                    }
+                    switch(m_subfunctions[funcNum]->getFunctionType()) {
+                    case FunctionType::POWER_BASIS_MONOMIAL: {
+                        //Update the coefficient.
+                        m_polynomial.multiplyMonomial(m_subfunctions[funcNum]->getMonomial());
+                        break;
+                    }
+                    case FunctionType::VARIABLE: {
+                        //Multiply this as a monomial
+                        Monomial toAdd;
+                        toAdd.spot.resize(m_rank, 0);
+                        toAdd.spot[m_subfunctions[funcNum]->getVarIndex()] = 1;
+                        toAdd.coeff = m_subfunctions[funcNum]->getValue();
+                        m_polynomial.multiplyMonomial(toAdd);
+                        break;
+                    }
+                    case FunctionType::CONSTANT: {
+                        //Multiply this as a monomial
+                        Monomial toAdd;
+                        toAdd.spot.resize(m_rank, 0);
+                        toAdd.coeff = m_subfunctions[funcNum]->getValue();
+                        m_polynomial.multiplyMonomial(toAdd);
+                        break;
+                    }
+                    default: {
+                        printAndThrowRuntimeError("Error converting product to Power Basis Monomial!");
+                        break;
+                    }
+                    }
                 }
-            }
-            if(!found) {
-                thisIndexes.push_back(otherIndexes[otherIndex]);
-                thisPowers.push_back(otherPowers[otherIndex]);
+                m_functionType = FunctionType::POWER_BASIS_POLYNOMIAL;
+                m_subfunctions.clear();
             }
         }
+        
+        //Check if a sum is composed of only POWER_BASIS_POLYNOMIALs, POWER_BASIS_MONOMIALs and VARIABLEs. The it is a POWER_BASIS_POLYNOMIAL.
+        if(m_functionType == FunctionType::SUM) {
+            //Check if everything is POWER_BASIS_MONOMIAL or VARIABLE
+            bool isPolynomial = true;
+            for(size_t funcNum = 0; funcNum < m_subfunctions.size(); funcNum++) {
+                isPolynomial &= (m_subfunctions[funcNum]->getFunctionType() == FunctionType::POWER_BASIS_MONOMIAL || m_subfunctions[funcNum]->getFunctionType() == FunctionType::VARIABLE || m_subfunctions[funcNum]->getFunctionType() == FunctionType::POWER_BASIS_POLYNOMIAL);
+            }
+            if(isPolynomial) {
+                //Add the monomials to the polynomial
+                m_polynomial.clear();
+                //Add the constant term.
+                Monomial toAdd;
+                if(m_value != 0.0) {
+                    toAdd.spot.resize(m_rank, 0);
+                    toAdd.coeff = m_value;
+                    m_polynomial.addMonomial(toAdd);
+                }
+                //Add the monomials
+                for(size_t funcNum = 0; funcNum < m_subfunctions.size(); funcNum++) {
+                    switch(m_subfunctions[funcNum]->getFunctionType()) {
+                    case FunctionType::POWER_BASIS_POLYNOMIAL: {
+                        //Add all the monomials.
+                        if(!m_operatorSigns[funcNum]) { //Flip the signs on the coeffs
+                            for(const Monomial& m : m_subfunctions[funcNum]->getPolynomial().getMonomials()) {
+                                toAdd = m;
+                                toAdd.coeff *= -1;
+                                m_polynomial.addMonomial(toAdd);
+                            }
+                        }
+                        else {
+                            m_polynomial.addMonomials(m_subfunctions[funcNum]->getPolynomial().getMonomials());
+                        }
+                        break;
+                    }
+                    case FunctionType::POWER_BASIS_MONOMIAL: {
+                        //Add the monomial.
+                        toAdd = m_subfunctions[funcNum]->getMonomial();
+                        if(!m_operatorSigns[funcNum]) {
+                            toAdd.coeff *= -1;
+                        }
+                        m_polynomial.addMonomial(toAdd);
+                        break;
+                    }
+                    case FunctionType::VARIABLE: {
+                        //Add it as a monomial.
+                        toAdd.clear(m_rank);
+                        toAdd.coeff = m_subfunctions[funcNum]->getValue() * (m_operatorSigns[funcNum] ? 1.0 : -1.0); //Get the sign based on the +-
+                        toAdd.spot[m_subfunctions[funcNum]->getVarIndex()] = 1;
+                        m_polynomial.addMonomial(toAdd);
+                        break;
+                    }
+                    default: {
+                        printAndThrowRuntimeError("Error converting product to Power Basis Monomial!");
+                        break;
+                    }
+                    }
+                }
+                m_functionType = FunctionType::POWER_BASIS_POLYNOMIAL;
+                m_subfunctions.clear();
+            }
+        }
+        
+        if(m_functionType == FunctionType::POWER_BASIS_MONOMIAL) {
+            m_monomial.prepEvaluation();
+        }
+        
+        //TODO: A product with 1 POWER_BASIS_POLYNOMIAL and POWER_BASIS_MONOMIALs and VARIABLEs
+        
+        
+        //Check if a SUM has multiple POWER_BASIS_MONOMIAL, VARIABLE, and CONSTANT in it
+        //TODO: Decide then this should be turned to a POWER_BASIS_POLYNOMIAL
+        
+        //The advantage of a POLYNOMIAL is that it does about 2 operations per monomial it holds
+        //A sum of polynomials has to do the log reduction which is much slower, plus the function
+        //Call and switch statement. Overall maybe 10 operations or so? But also probably slower ones.
+        //I'd guess the change boundary is when it is between 1-10% full. Try something and then run timings
+                
+        //Check if a SUM has multiple CHEBYSHEV_BASIS_MONOMIAL and CONSTANT in it
+        //TODO: Decide then this should be turned to a CHEBYSHEV_BASIS_POLYNOMIAL
 
-        //Finalize
-        m_varPowers = thisPowers;
-        m_varIndexes = thisIndexes;
-        return true;
+        
+        
+        //TODO: Turn Sums of Monomials into Polynomials if that would make it more efficient
+        //TODO: Check Sum Types to see if they should be polynomials!
+        //Grab every element of the sum that is a monomial or chebyshev monomial and decide if it is worth pulling out.
+        //Note: For a non-dense system it won't be. EX 1 + x^100 + y^100 is much better just being computed as three monomials then
+        //Using Horners Method on it because of all of the 0's.
+        //After pulling out the polys, if only normal or cheb poly exists, make that the type
+        //Otherwise, it is sum type. Make the normal and cheb polys part of the sum
+        //TODO: In that case make a seperate constructor that takes in the pre-parsed monomials
+        
+        
+        //TODO: At the end go through and see if any Functions are equal to each other, if so make them the same shared ptr.
+        //Make a Tree, constants and variables are level 0 and everything else is level 1 + max of sublevels.
+        //When evaluating go through and evaluate each function in level 0 then 1, etc.
+        //For evaluate grid pass in the size of the max vector needed. Then have each function store the values in a grid.
+        
+        //TODO: There should be no constants left at the end of this function! That should all be assimilated into the others.
+        //Unless the whole function is one big constant I guess.
     }
-    */
+        
     void removeExtraParenthesis(std::string& _functionString) {
         //Loop that removes parenthesis
         while(_functionString.length() > 0 && _functionString[0] == CHAR::LEFT_PAREN) {
@@ -1381,8 +1415,6 @@ private:
             if(m_variableNames[i] == _functionString) {
                 m_functionType = FunctionType::VARIABLE;
                 m_varIndex = i;
-                m_varIndexes.push_back(i);
-                m_varPowers.push_back(1);
                 return;
             }
         }
@@ -1599,24 +1631,6 @@ private:
     
 //Specialized Function Evals
     template<typename ReturnType>
-    ReturnType powerMonomialEval(const std::vector<double>& _inputPoints) {
-        ReturnType result = m_value;
-        for(size_t i = 0; i < m_varIndexes.size(); i++) {
-            result *= power((ReturnType)_inputPoints[m_varIndexes[i]], m_varPowers[i]);
-        }
-        return result;
-    }
-
-    template<typename ReturnType>
-    ReturnType chebyshevMonomialEval(const std::vector<double>& _inputPoints) {
-        ReturnType result = m_value;
-        for(size_t i = 0; i < m_varIndexes.size(); i++) {
-            result *= chebPower((ReturnType)_inputPoints[m_varIndexes[i]], m_varPowers[i]);
-        }
-        return result;
-    }
-    
-    template<typename ReturnType>
     ReturnType sumEval(const std::vector<double>& _inputPoints) {
         assert(m_subfunctions.size() == m_operatorSigns.size());
         ReturnType result = m_value;
@@ -1690,14 +1704,6 @@ public:
     
 //Getters
 public:
-    std::vector<size_t>& getVarIndexes() {
-        return m_varIndexes;
-    }
-    
-    std::vector<size_t>& getVarPowers() {
-        return m_varPowers;
-    }
-
     const std::vector<bool>& getOperatorSigns() const {
         return m_operatorSigns;
     }
@@ -1714,14 +1720,6 @@ public:
         return m_varIndex;
     }
     
-    const std::vector<size_t>& getVarIndexes() const {
-        return m_varIndexes;
-    }
-    
-    const std::vector<size_t>& getVarPowers() const {
-        return m_varPowers;
-    }
-
     const std::string& getFunctionString() const {
         return m_functionString;
     }
@@ -1732,6 +1730,14 @@ public:
 
     const std::vector<std::string>& getVariableNames() const {
         return m_variableNames;
+    }
+
+    const Monomial& getMonomial() const {
+        return m_monomial;
+    }
+
+    const Polynomial& getPolynomial() const {
+        return m_polynomial;
     }
     
     bool isTopFunction() const {
@@ -1750,8 +1756,8 @@ public:
         return m_hasDimension;
     }
 
-    size_t getDimension() const {
-        return m_dimension;
+    size_t getRank() const {
+        return m_rank;
     }
 
     size_t getNumUsedDimensions() const {
@@ -1826,12 +1832,12 @@ public:
     m_functionType(other.getFunctionType()),
     m_value(other.getValue()),
     m_varIndex(other.getVarIndex()),
-    m_varIndexes(other.getVarIndexes()),
-    m_varPowers(other.getVarPowers()),
     m_functionString(other.getFunctionString()),
     m_functionName(other.getFunctionName()),
     m_variableNames(other.getVariableNames()),
-    m_dimension(other.getDimension()),
+    m_monomial(other.getMonomial()),
+    m_polynomial(other.getPolynomial()),
+    m_rank(other.getRank()),
     m_hasDimension(other.getHasDimension()),
     m_numUsedDimensions(other.getNumUsedDimensions()),
     m_partialEvaluations(other.getPartialEvals()),
@@ -1947,43 +1953,35 @@ private:
     
     //For VARIABLE: The variable index
     size_t                                      m_varIndex;
-    
-    //For POWER_BASIS_MONOMIAL and CHEBYSHEV_BASIS_MONOMIAL: The variable indexes
-    std::vector<size_t>                         m_varIndexes;
-    std::vector<size_t>                         m_varPowers;
-        
+            
     //Variable Names and Subfunctions Names
     std::string                                 m_functionString;
     std::string                                 m_functionName;
     std::vector<std::string>                    m_variableNames;
     
+    //For Polynomials
+    Monomial                                    m_monomial;
+    Polynomial                                  m_polynomial;
+    
     //For evaluate grid
-    size_t                                      m_dimension;
+    size_t                                      m_rank;
     std::vector<bool>                           m_hasDimension;
     size_t                                      m_numUsedDimensions;
     std::vector<double>                         m_partialEvaluations;
     std::vector<EvaluateGridInfo>               m_evaluateGridInfo;
     EvaluateGridType                            m_evaluateGridType;
-    
-    static size_t           m_timerEvaluateGridIndex;
-    Timer&                  m_timer = Timer::getInstance();
-    
+        
     static                  std::unordered_set<std::string> s_claimedConstantNames;
     static                  std::unordered_set<std::string> s_claimedFunctionNames;
     static                  std::unordered_set<std::string> s_claimedVariableNames;
 };
 
-std::vector<Function::FunctionMap>    Function::s_allFunctions;
-std::vector<Function::FunctionMap>    Function::s_allFunctionNames;
-size_t                      Function::m_timerEvaluateGridIndex = -1;
+std::vector<Function::FunctionMap>  Function::s_allFunctions;
+std::vector<Function::FunctionMap>  Function::s_allFunctionNames;
 
-//Create the s_claimedConstantNames, e, and pi, things that nothing else can be named.
-//TOOD: And pi, as well as all function names that we parse. So cos, sin, ...
-//      Maybe just have this be a lowercase list? And then when we check if something is in this list, take the lowercase of it?
-//      Have a static function called nameAllowed() that checks this.
-//          We should also check the a function isn't called a variable name.
 std::unordered_set<std::string> Function::s_claimedConstantNames({"e","pi",});
 std::unordered_set<std::string> Function::s_claimedFunctionNames({"sin","cos","tan","sinh","cosh","tanh","sqrt","exp","log","log2","log10"});
 std::unordered_set<std::string> Function::s_claimedVariableNames;
+
 
 #endif /* Function_h */
