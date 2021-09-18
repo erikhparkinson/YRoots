@@ -1869,7 +1869,7 @@ public:
     
 private:
     static void checkNameNotClaimed(const std::string& _name, const std::string& _type) {
-        if(s_claimedVariableNames.find(_name) != s_claimedVariableNames.end()) {
+        if(s_claimedVariableNames.find(_name) != s_claimedVariableNames.end() && _type != "Variable Name") {
             printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Variable Name.");
         }
         else if(s_allFunctionNames[0].find(_name) != s_allFunctionNames[0].end()) {
@@ -1893,6 +1893,7 @@ public:
         
         //Claim the variable names
         for(size_t i = 0; i < _variableNames.size(); i++) {
+            checkNameNotClaimed( _variableNames[i], "Variable Name");
             s_claimedVariableNames.insert(_variableNames[i]);
         }
         
