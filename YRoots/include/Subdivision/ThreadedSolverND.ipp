@@ -10,14 +10,14 @@
 #define ThreadedSolverND_ipp
 
 template <int Rank>
-ThreadedSolver<Rank>::ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, const GeneralParameters& _generalParameters, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters) :
+ThreadedSolver<Rank>::ThreadedSolver(std::vector<std::vector<Function::SharedFunctionPtr>>& _functions, const GeneralParameters& _generalParameters, Interval& _startInterval, const SubdivisionParameters& _subdivisionParameters, const VariableSubsitutionInfo& _variableSubsitutionInfo) :
 m_allFunctions(_functions),
 m_numThreads(_generalParameters.numThreads),
 m_killThreads(false),
 m_numRunningThreads(0),
 m_intervalsToRun(m_numThreads),
 m_intervalTracker(_functions[0].size(), _generalParameters, _startInterval.getArea()),
-m_rootTracker(m_numThreads, m_allFunctions, _generalParameters)
+m_rootTracker(m_numThreads, m_allFunctions, _generalParameters, _variableSubsitutionInfo)
 {
     if(m_numThreads == 0) {
         printAndThrowRuntimeError("Can't run with 0 threads!");

@@ -14,4 +14,4 @@ all:
 	$(CC) -o yroots_solver $(CXXFLAGS) $(IDIR) $(LDIR) $(CXXFILES) $(LIBS) $(MACROS)
 
 test:
-	$(CC) -o yroots_test $(CXXFLAGS) $(IDIR) &(IDIRTEST) $(LDIR) $(CXXTESTFILES) $(LIBS) $(MACROS)
+	$(CC) -o yroots_test $(CXXFLAGS) $(IDIR) $(IDIRTEST) $(LDIR) $(CXXTESTFILES) $(LIBS) $(MACROS)

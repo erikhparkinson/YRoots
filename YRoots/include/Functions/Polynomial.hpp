@@ -245,10 +245,13 @@ struct PolynomialDimensionEvalInfo {
 
 class Polynomial {
 public:
-    Polynomial (size_t _rank) :
-    m_rank(_rank),
+    Polynomial() :
     m_readyToEval(false)
     {}
+    
+    void setRank(size_t _rank) {
+        m_rank = _rank;
+    }
 
     double evaluateSlow(const std::vector<double>& _values) { //Only use for testing and verifying
         double result = 0;
@@ -494,7 +497,12 @@ private:
         //Maybe I should have multiple eval functions, depending on if it's dense or not?
         //  Having that on every row would mean a switch statement on each of those which wouldn't be too slow, but all that could
         //  hurt the branch prediction and have other issues.
-        //  For now probably not worth worrying about.
+        //      I guess each dimension would be evaluated differently, maybe it's sparse in the first dimension, but then dense in the final dimension?
+        
+        //TODO: Check what the most efficient evaluation method would be, between what it currently has, maybe the above method, and then
+        //just summing up the monomials for really sparse stuff. Prep the eval for all of them, time it quick, and then have a switch statement
+        //to determine which was to actually evaluate it?
+        //  It's possible it would depend on the size of the grid, but maybe not.
     }
     
 private:

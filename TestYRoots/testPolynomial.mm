@@ -28,7 +28,8 @@
 }
 
 - (void)testPoly1 {
-    Polynomial myPoly(1);
+    Polynomial myPoly;
+    myPoly.setRank(1);
     std::vector<Monomial> monomials;
     Monomial monomial;
     monomial.spot.resize(1);
@@ -50,7 +51,8 @@
 }
 
 - (void)testPoly2 {
-    Polynomial myPoly(2);
+    Polynomial myPoly;
+    myPoly.setRank(2);
     std::vector<Monomial> monomials;
     Monomial monomial;
     monomial.spot.resize(2);
@@ -85,7 +87,8 @@
 }
 
 - (void)testPoly3 {
-    Polynomial myPoly(2);
+    Polynomial myPoly;
+    myPoly.setRank(2);
     std::vector<Monomial> monomials;
     Monomial monomial;
     monomial.spot.resize(2);
@@ -162,7 +165,8 @@ double randomUniform2() { //Random uniform [-1,1].
                 for(size_t testNum = 0; testNum < loopsPerTest; testNum++) {
                     //std::cout<<"Testing Loop: " << testNum << "\n";
                     //Create the objects
-                    Polynomial myPoly(rank);
+                    Polynomial myPoly;
+                    myPoly.setRank(rank);
                     Monomial myMonomial;
                     myMonomial.spot.resize(rank);
                     
@@ -237,7 +241,8 @@ double randomUniform2() { //Random uniform [-1,1].
     const size_t rank = 2;
     
     //Create the objects
-    Polynomial myPoly(rank);
+    Polynomial myPoly;
+    myPoly.setRank(rank);
     Monomial myMonomial;
     myMonomial.spot.resize(rank);
     

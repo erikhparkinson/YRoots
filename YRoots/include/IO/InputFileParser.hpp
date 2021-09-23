@@ -27,7 +27,8 @@ public:
         m_timer.registerTimer(m_timerInputParserIndex, "Input Parser");
     }
     
-    void parse() {
+    void parse(bool _allowVariableRemoval = true) {
+        m_allowVariableRemoval = _allowVariableRemoval;
         m_timer.startTimer(m_timerInputParserIndex);
 
         //Read the whole file into a string
@@ -103,6 +104,10 @@ public:
     
     const GeneralParameters& getGeneralParameters() const {
         return m_generalParameters;
+    }
+    
+    const VariableSubsitutionInfo& getVariableSubstitutionInfo() const {
+        return m_variableSubstitutionInfo;
     }
     
 private:
@@ -195,6 +200,7 @@ private:
             }
             else if(parameterString[0] == "approximationDegree") {
                 m_subdivisionParameters.approximationDegree = parseInteger(parameterString[1]);
+                m_subdivisionParameters.lockDegree(); //Don't set the default later by rank.
                 if(m_subdivisionParameters.approximationDegree < 1) {
                     printAndThrowRuntimeError("Parameter Error! minGoodZerosTol must be >= 1!");
                 }
@@ -219,6 +225,9 @@ private:
             }
             else if(parameterString[0] == "useTimer") {
                 m_generalParameters.useTimer = parseBool(parameterString[1]);
+            }
+            else if(parameterString[0] == "allowVariableRemoval") {
+                m_allowVariableRemoval = parseBool(parameterString[1]);
             }
             else {
                 printAndThrowRuntimeError("Parser Error! Unrecognized Parameter " + parameterString[0] + "!");
@@ -296,6 +305,9 @@ private:
             printAndThrowRuntimeError("Parser Error! #Functions != #Variables!");
         }
         
+        m_variableSubstitutionInfo.originalInterval = m_interval;
+        m_variableSubstitutionInfo.originalVariables = variableNames;
+        
         //Get the individual functions
         bool foundEnd = false;
         m_functions.resize(m_generalParameters.numThreads);
@@ -317,6 +329,59 @@ private:
             printAndThrowRuntimeError("Parser Error! No FUNCTIONS_END Found!");
         }
         
+        //Check if we can solve for any variables!
+        bool removedVar = m_allowVariableRemoval;
+        while (removedVar && functionNames.size() > 1) {
+            removedVar = false;
+            Function::defineFunctionDimensionsAllFunctions();
+            //Get all the solveable variables for each function
+            std::vector<std::unordered_set<size_t> > solveableVarsList;
+            std::unordered_set<size_t> allSolveableVars;
+            for(size_t funcNum = 0; funcNum < functionNames.size(); funcNum++) {
+                Function::SharedFunctionPtr function = Function::getThreadFunctionByName(0, functionNames[funcNum]);
+                std::unordered_set<size_t> solveableVars = function->getSolvableVariables();
+                solveableVarsList.push_back(solveableVars);
+                for(size_t index : solveableVars) {
+                    allSolveableVars.insert(index);
+                    //std::cout<<"Can solve for variable " << index << " in function " << functionNames[funcNum] << "\n";
+                }
+            }
+            //Figure out which var to solve for. Right now just solve for the one that the least number of functions can find.
+            //TODO: Improve this!
+            if(allSolveableVars.size() > 0) {
+                size_t bestIndex = 0;
+                size_t functionToSolve = 0;
+                size_t leastNumberSolves = std::numeric_limits<size_t>::max();
+                for(size_t index : allSolveableVars) { //Check each variable
+                    size_t numSolutions = 0;
+                    size_t firstSolveableFunction = 0;
+                    for(size_t i = 0; i < solveableVarsList.size(); i++) { //Check which functions can solve for it
+                        if(solveableVarsList[i].find(index) != solveableVarsList[i].end()) {
+                            if(numSolutions == 0) { //Store the first function that can solve for it
+                                firstSolveableFunction = i;
+                            }
+                            numSolutions++;
+                        }
+                    }
+                    if(numSolutions < leastNumberSolves) {
+                        bestIndex = index;
+                        leastNumberSolves = numSolutions;
+                        functionToSolve = firstSolveableFunction;
+                    }
+                }
+                //Solve for bestIndex using functionToSolve
+                Function::SharedFunctionPtr functionToSubstitute = Function::getThreadFunctionByName(0, functionNames[functionToSolve]);
+                Function::substituteVariable(functionToSubstitute, bestIndex);
+                functionNames.erase(functionNames.begin() + functionToSolve);
+                m_interval.lowerBounds.erase(m_interval.lowerBounds.begin() + bestIndex);
+                m_interval.upperBounds.erase(m_interval.upperBounds.begin() + bestIndex);
+                removedVar = true;
+            }
+        }
+                
+        //Check for polynomial structure
+        Function::checkForPolynomialsAllFunctions();
+        
         //Duplicate the functions for all the threads
         Function::addThreadFunctions(m_generalParameters.numThreads);
         
@@ -326,6 +391,8 @@ private:
                 m_functions[threadNum].push_back(Function::getThreadFunctionByName(threadNum, functionNames[funcNum]));
             }
         }
+        
+        m_subdivisionParameters.setDegree(m_interval.lowerBounds.size());
     }
     
 private:
@@ -336,7 +403,9 @@ private:
     Interval m_interval;
     SubdivisionParameters m_subdivisionParameters;
     GeneralParameters     m_generalParameters;
-    
+    VariableSubsitutionInfo m_variableSubstitutionInfo;
+    bool                    m_allowVariableRemoval;
+
     static size_t           m_timerInputParserIndex;
     Timer&                  m_timer = Timer::getInstance();
 };

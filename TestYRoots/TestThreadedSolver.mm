@@ -75,12 +75,15 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
     
     SubdivisionParameters subdivisionParameters;
     GeneralParameters generalParameters;
+    VariableSubsitutionInfo varSubInfo;
+    varSubInfo.originalInterval = startInterval;
+    varSubInfo.originalVariables = variablesNames;
 
     std::cout<<"\n";
     for(size_t numThreads = 1; numThreads <= 4; numThreads++) {
         generalParameters.numThreads = numThreads;
         std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-        ThreadedSolver<1> solver(functions, generalParameters, startInterval, subdivisionParameters);
+        ThreadedSolver<1> solver(functions, generalParameters, startInterval, subdivisionParameters, varSubInfo);
             
         size_t trials = 1;
         std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
@@ -114,6 +117,7 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
     
     SubdivisionParameters subdivisionParameters;
     GeneralParameters generalParameters;
+    VariableSubsitutionInfo varSubInfo;
 
     std::cout<<"\n";
     for(size_t testNum = 0; testNum < upperBounds.size(); testNum++) {
@@ -135,10 +139,13 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
             startInterval.lowerBounds.push_back(0.5);
             startInterval.upperBounds.push_back(upperBound);
 
+            varSubInfo.originalInterval = startInterval;
+            varSubInfo.originalVariables = variablesNames;
+
             //Set up the solver
             generalParameters.numThreads = numThreads;
             std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-            ThreadedSolver<1> solver(functions, generalParameters, startInterval, subdivisionParameters);
+            ThreadedSolver<1> solver(functions, generalParameters, startInterval, subdivisionParameters, varSubInfo);
                 
             //Solve it
             size_t trials = 1;
@@ -189,6 +196,7 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
     
     SubdivisionParameters subdivisionParameters;
     GeneralParameters generalParameters;
+    VariableSubsitutionInfo varSubInfo;
 
     std::cout<<"\n";
     for(size_t testNum = 0; testNum < upperBoundsX.size(); testNum++) {
@@ -220,10 +228,13 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
             startInterval.upperBounds.push_back(upperBoundX);
             startInterval.upperBounds.push_back(upperBoundY);
 
+            varSubInfo.originalInterval = startInterval;
+            varSubInfo.originalVariables = variablesNames;
+
             //Set up the solver
             generalParameters.numThreads = numThreads;
             std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, numThreads);
-            ThreadedSolver<2> solver(functions, generalParameters, startInterval, subdivisionParameters);
+            ThreadedSolver<2> solver(functions, generalParameters, startInterval, subdivisionParameters, varSubInfo);
                 
             //Solve it
             size_t trials = 1;
@@ -276,12 +287,15 @@ std::vector<std::vector<Function::SharedFunctionPtr> > createAllFunctions(const 
     
     SubdivisionParameters subdivisionParameters;
     GeneralParameters generalParameters;
+    VariableSubsitutionInfo varSubInfo;
+    varSubInfo.originalInterval = startInterval;
+    varSubInfo.originalVariables = variablesNames;
 
     generalParameters.numThreads = 1;
     
     //Set up the solver
     std::vector<std::vector<Function::SharedFunctionPtr> > functions = createAllFunctions(functionStrings, variablesNames, generalParameters.numThreads);
-    ThreadedSolver<2> solver(functions, generalParameters, startInterval, subdivisionParameters);
+    ThreadedSolver<2> solver(functions, generalParameters, startInterval, subdivisionParameters, varSubInfo);
     
     //Solve it
     size_t trials = 1;
@@ -329,7 +343,7 @@ double distanceBetweenPoints(const std::vector<double>& p1, const std::vector<do
 }
 
 bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRootsFile, std::vector<Function::SharedFunctionPtr>& functions) {
-    //const double maxDistanceAllowed = 1e-5;
+    const double maxDistanceAllowed = 1e-5;
     const double maxResidualAllowed = 1e-5;
 
     std::vector<std::vector<double> > myRoots = parseRootsFile(_yrootsFile);
@@ -377,9 +391,9 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
     //Check the distances and residuals
     double maxResidual = 0;
     for(size_t rootSpot = 0; rootSpot < numRoots; rootSpot++) {
-        /*if(distances[rootSpot] > maxDistanceAllowed) {
+        if(distances[rootSpot] > maxDistanceAllowed) {
             return false;
-        }*/
+        }
         for(size_t i = 0; i < functions.size(); i++) {
             maxResidual = std::max(maxResidual, yrootsResiduals[rootSpot][i]);
             if(yrootsResiduals[rootSpot][i] > maxResidualAllowed) {
@@ -460,7 +474,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         //Grab functions
         Function::clearSavedFunctions();
         InputFileParser inputParser(testInputFile);
-        inputParser.parse();
+        inputParser.parse(false);
         std::vector<Function::SharedFunctionPtr>& functions = inputParser.getFunctions()[0];
 
         //Check it
@@ -505,7 +519,7 @@ bool compareTestFiles(const std::string& _yrootsFile, const std::string& _chebRo
         //Grab functions
         Function::clearSavedFunctions();
         InputFileParser inputParser(testInputFile);
-        inputParser.parse();
+        inputParser.parse(false);
         std::vector<Function::SharedFunctionPtr>& functions = inputParser.getFunctions()[0];
 
         //Check it

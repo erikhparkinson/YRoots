@@ -82,9 +82,11 @@ class Function {
 public:
     typedef std::shared_ptr<Function> SharedFunctionPtr;
     typedef std::unordered_map<std::string, SharedFunctionPtr> FunctionMap;
+    typedef std::unordered_map<size_t, SharedFunctionPtr> FunctionIDMap;
 
     //The _functionString is copied in the constructor because it get's modified in the function parsing
     Function(const std::string& _functionName, std::string _functionString, const std::vector<std::string>& _variableNames) :
+    m_functionID(s_nextFunctionID++),
     m_isTopFunction(false),
     m_functionLevel(0),
     m_functionType(FunctionType::UNKNOWN),
@@ -93,7 +95,6 @@ public:
     m_functionString(_functionString),
     m_functionName(_functionName),
     m_variableNames(_variableNames),
-    m_polynomial(_variableNames.size()),
     m_rank(_variableNames.size())
     {
         //Parse the function
@@ -103,6 +104,7 @@ public:
     void defineFunctionDimensions() {
         //Populate m_hasDimension
         m_hasDimension.resize(m_rank);
+        std::fill(m_hasDimension.begin(), m_hasDimension.end(), false);
         switch(m_functionType) {
             case FunctionType::CONSTANT:
                 break;
@@ -110,17 +112,15 @@ public:
                 m_hasDimension[m_varIndex] = true;
                 break;
             case FunctionType::POWER_BASIS_MONOMIAL:
-                m_monomial.prepEvaluation();
                 m_hasDimension = m_monomial.getHasDimension();
                 break;
-            case FunctionType::CHEBYSHEV_BASIS_MONOMIAL: //TODO: Write this for Chebyshev Monomials
-                break;
+            //case FunctionType::CHEBYSHEV_BASIS_MONOMIAL: //TODO: Write this for Chebyshev Monomials
+            //    break;
             case FunctionType::POWER_BASIS_POLYNOMIAL:
-                m_polynomial.prepEvaluation();
                 m_hasDimension = m_polynomial.getHasDimension();
                 break;
-            case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL: //TODO: Write this for Chebyshev Polynomials
-                break;
+            //case FunctionType::CHEBYSHEV_BASIS_POLYNOMIAL: //TODO: Write this for Chebyshev Polynomials
+            //    break;
             default: {
                 //Everything that is a base function should be in the case statements above.
                 //Everything else uses it's subfunctions
@@ -543,8 +543,8 @@ public:
         while (spotToInc < dimension) {
             while(++inputSpot[spotToInc] < numPoints) {
                 inputPoints[spotToInc] = _grid[spotToInc][inputSpot[spotToInc]];
-                double diff = std::abs(_results[evalSpot] - evaluate<double>(inputPoints));
-                double relativeDiff = diff / std::abs(_results[evalSpot]);
+                //double diff = std::abs(_results[evalSpot] - evaluate<double>(inputPoints));
+                //double relativeDiff = diff / std::abs(_results[evalSpot]);
                 //assert(relativeDiff < 1e-5); evalSpot++;
                 _results[evalSpot++] = evaluate<double>(inputPoints);
                 if(spotToInc != 0) {
@@ -608,6 +608,40 @@ public:
         }
         return 0.0;
     }
+    
+    std::unordered_set<size_t> getSolvableVariables() {
+        std::unordered_set<size_t> canSolve;
+        if(m_functionType == FunctionType::SUM) {
+            std::unordered_set<size_t> noCanSolve;
+            std::vector<double> sums(m_rank, 0.0);
+            //We can solve for something if we have a Variable in the index
+            //We can't solve for something if it exists in any other subfunction
+            for(size_t i = 0; i < m_subfunctions.size(); i++) {
+                if(m_subfunctions[i]->getFunctionType() == FunctionType::VARIABLE) {
+                    canSolve.insert(m_subfunctions[i]->getVarIndex());
+                    sums[m_subfunctions[i]->getVarIndex()] += m_subfunctions[i]->getValue();
+                }
+                else {
+                    for(size_t j = 0; j < m_rank; j++) {
+                        if(m_subfunctions[i]->getHasDimension()[j]) {
+                            noCanSolve.insert(j);
+                        }
+                    }
+                }
+            }
+            //Remove the noCanSolves from canSolves
+            for(size_t index : noCanSolve) {
+                canSolve.erase(index);
+            }
+            //Can't solve if the sum is 0
+            for(size_t i = 0; i < m_rank; i++) {
+                if(std::abs(sums[i]) < 1e-5) {
+                    canSolve.erase(i);
+                }
+            }
+        }
+        return canSolve;
+    }
         
 private:
     void functionParse(std::string _functionString) { //Don't pass by reference, as we change it.
@@ -658,25 +692,51 @@ private:
         //Make simplifications that will make calculations easier in the future.
         simplifyExpressions();
     }
+    
+    void multiplyFunctionByConstant(double _value) {
+        m_value *= _value;
+        //If this is a sum, also mulitply all the subfunctions by oldValue
+        if(m_functionType == FunctionType::SUM) {
+            //First assert that none of the subfunctions are sums.
+            for(size_t i = 0; i < m_subfunctions.size(); i++) {
+                if(m_subfunctions[i]->getFunctionType() == FunctionType::SUM) {
+                    printAndThrowRuntimeError("Failed to Parse Function! Simplify Product Code Error, SUM should not exists as subfunction of SUM anymore!");
+                }
+            }
+            //Copy each function and multiply it
+            for(size_t i = 0; i < m_subfunctions.size(); i++) {
+                std::string newFunctionString = std::to_string(_value) + "*(" + m_subfunctions[i]->getFunctionString() + ")";
+                SharedFunctionPtr newSubfunction = std::make_shared<Function>();
+                s_allFunctions[0][newSubfunction->getFunctionID()] = newSubfunction;
+                newSubfunction->copyFromSubfunctionExceptName(m_subfunctions[i]);
+                newSubfunction->setFunctionString(newFunctionString);
+                newSubfunction->setValue(_value * newSubfunction->getValue());
+                m_subfunctions[i] = newSubfunction;
+            }
+        }
+    }
         
     void simplifyExpressions() {
-        //TODO: To Update everything to shared ptrs, it is important to never change a function besdides the
-        //one you are currently in. Otherwise it will be changing other copies of the function that are unrelated.
-        
-        //TODO: I think the only place that is an issue is with sums and products. So if a function appears the same
-        //twice in a sum I should remove both and make a new function that is 2*<that function> (parens needed?)
-        //If a function appears twice in a product then I should remove both and make a new function that is <that function>^2
-        
-        //TODO: If I have a monomial raised to a power I should be able to simplify that.
-        
-        
-        //Pull any constants out of a sum
-        if(m_functionType == FunctionType::SUM) {
-            //Pull any constants out of a sum
+        //Simplify Sums and Products
+        if(m_functionType == FunctionType::SUM || m_functionType == FunctionType::PRODUCT) {
+            //Pull any constants and inner sums/products out
             size_t funcIndex = 0;
             while(funcIndex < m_subfunctions.size()) {
-                if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT) {
-                    SIGNCHECKSUM(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
+                if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT || m_subfunctions[funcIndex]->getFunctionType() == m_functionType) {
+                    //Pull constants out
+                    if(m_functionType == FunctionType::SUM) {
+                        SIGNCHECKSUM(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
+                    }
+                    else {
+                        SIGNCHECKPRODUCT(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
+                    }
+                    //Pull out the sum/product
+                    for(size_t i = 0; i < m_subfunctions[funcIndex]->getSubfunctions().size(); i++) {
+                        m_subfunctions.push_back(m_subfunctions[funcIndex]->getSubfunctions()[i]);
+                        //Flip the sign if the current one is negative.
+                        m_operatorSigns.push_back(m_subfunctions[funcIndex]->getOperatorSigns()[i] == m_operatorSigns[funcIndex]);
+                    }
+                    //Delete the subfunction
                     m_subfunctions.erase(m_subfunctions.begin() + funcIndex);
                     m_operatorSigns.erase(m_operatorSigns.begin() + funcIndex);
                 }
@@ -684,29 +744,37 @@ private:
                     funcIndex++;
                 }
             }
+            
             //If the size of the sum is 0 it is now a constant
             if(m_subfunctions.size() == 0) {
                 m_functionType = FunctionType::CONSTANT;
             }
         }
-        
-        //Pull any constants out of a product. Check if we multiply or divide!
-        if(m_functionType == FunctionType::PRODUCT) {
-            //Pull any constants out of a product
-            size_t funcIndex = 0;
-            while(funcIndex < m_subfunctions.size()) {
-                if(m_subfunctions[funcIndex]->getFunctionType() == FunctionType::CONSTANT) {
-                    SIGNCHECKPRODUCT(m_operatorSigns[funcIndex], m_value, m_subfunctions[funcIndex]->getValue());
-                    m_subfunctions.erase(m_subfunctions.begin() + funcIndex);
-                    m_operatorSigns.erase(m_operatorSigns.begin() + funcIndex);
+
+        //Simplify Sums
+        if(m_functionType == FunctionType::SUM) {
+            if(m_subfunctions.size() == 1 && m_value == 0) {
+                if(m_subfunctions[0]->getFunctionType() == FunctionType::SUM) {
+                    printAndThrowRuntimeError("Failed to Parse Function! Simplify Sum Code Error, SUM should not exists as subfunction of SUM anymore!");
                 }
                 else {
-                    funcIndex++;
+                    //This is just m_value +- m_subfunctions[0], replace it with +-m_subfunctions[0] as value is 0.
+                    bool negate = !m_operatorSigns[0];
+                    copyFromSubfunctionExceptName(m_subfunctions[0]);
+                    if(negate) {
+                        m_value = -m_value;
+                    }
                 }
             }
-            //If the size of the product is 0 it is now a constant
-            if(m_subfunctions.size() == 0) {
-                m_functionType = FunctionType::CONSTANT;
+        }
+
+        //Simplify Products
+        if(m_functionType == FunctionType::PRODUCT) {
+            if(m_subfunctions.size() == 1 && m_operatorSigns[0]) { //This is just m_value * m_subfunctions[0]
+                //This is just m_value * m_subfunctions[0], replace it with m_subfunctions[0] and multiply the constants together.
+                const double oldValue = m_value;
+                copyFromSubfunctionExceptName(m_subfunctions[0]);
+                multiplyFunctionByConstant(oldValue);
             }
         }
         
@@ -830,10 +898,7 @@ private:
             }
             //Check if it is something to the POWER of 1
             else if(m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[1]->getValue() == 1.0) {
-                //TODO: Find a way to do this without copying. Maybe just reparse the subfunction string?
-                
-                //std::shared_ptr tempFunctionPtr(m_subfunctions[0]);
-                //copyFunction(*tempFunctionPtr.get());
+                copyFromSubfunctionExceptName(m_subfunctions[0]);
             }
             //Check it is 0 to the POWER of something
             else if(m_subfunctions[0]->getFunctionType() == FunctionType::CONSTANT && m_subfunctions[0]->getValue() == 0.0) {
@@ -850,18 +915,22 @@ private:
                 m_value = 1;
             }
         }
-
-        //TODO: Think about how to do monomials and polynomials
-        //return; //TODO: Remove this when we want to run polynomials
         
+        //TODO: At the end go through and see if any Functions are equal to each other, if so make them the same shared ptr.
+        
+        //TODO: There should be no constants left at the end of this function! That should all be assimilated into the others.
+        //Unless the whole function is one big constant I guess.
+    }
+    
+    void checkForPolynomials() {
         //Check if a POWER is a POWER_BASIS_MONOMIAL
         if(m_functionType == FunctionType::POWER) {
             if(m_subfunctions[0]->getFunctionType() == FunctionType::VARIABLE && m_subfunctions[1]->getFunctionType() == FunctionType::CONSTANT) {
-                size_t power = static_cast<size_t>(m_subfunctions[1]->getValue());
+                size_t funcPower = static_cast<size_t>(m_subfunctions[1]->getValue());
                 m_monomial.clear(m_rank);
-                if(power == m_subfunctions[1]->getValue()) {
-                    m_monomial.spot[m_subfunctions[0]->getVarIndex()] = power;
-                    m_monomial.coeff = m_subfunctions[0]->getValue();
+                if(funcPower == m_subfunctions[1]->getValue()) {
+                    m_monomial.spot[m_subfunctions[0]->getVarIndex()] = funcPower;
+                    m_monomial.coeff = m_value * power(m_subfunctions[0]->getValue(), funcPower);
                     m_subfunctions.erase(m_subfunctions.begin());
                     m_subfunctions.erase(m_subfunctions.begin());
                     m_functionType = FunctionType::POWER_BASIS_MONOMIAL;
@@ -1032,45 +1101,18 @@ private:
             }
         }
         
+        //TODO: Make chebyshev basis polynomials as well.
+        
+        //Prep the evaluations
         if(m_functionType == FunctionType::POWER_BASIS_MONOMIAL) {
             m_monomial.prepEvaluation();
         }
-        
-        //TODO: A product with 1 POWER_BASIS_POLYNOMIAL and POWER_BASIS_MONOMIALs and VARIABLEs
-        
-        
-        //Check if a SUM has multiple POWER_BASIS_MONOMIAL, VARIABLE, and CONSTANT in it
-        //TODO: Decide then this should be turned to a POWER_BASIS_POLYNOMIAL
-        
-        //The advantage of a POLYNOMIAL is that it does about 2 operations per monomial it holds
-        //A sum of polynomials has to do the log reduction which is much slower, plus the function
-        //Call and switch statement. Overall maybe 10 operations or so? But also probably slower ones.
-        //I'd guess the change boundary is when it is between 1-10% full. Try something and then run timings
-                
-        //Check if a SUM has multiple CHEBYSHEV_BASIS_MONOMIAL and CONSTANT in it
-        //TODO: Decide then this should be turned to a CHEBYSHEV_BASIS_POLYNOMIAL
-
-        
-        
-        //TODO: Turn Sums of Monomials into Polynomials if that would make it more efficient
-        //TODO: Check Sum Types to see if they should be polynomials!
-        //Grab every element of the sum that is a monomial or chebyshev monomial and decide if it is worth pulling out.
-        //Note: For a non-dense system it won't be. EX 1 + x^100 + y^100 is much better just being computed as three monomials then
-        //Using Horners Method on it because of all of the 0's.
-        //After pulling out the polys, if only normal or cheb poly exists, make that the type
-        //Otherwise, it is sum type. Make the normal and cheb polys part of the sum
-        //TODO: In that case make a seperate constructor that takes in the pre-parsed monomials
-        
-        
-        //TODO: At the end go through and see if any Functions are equal to each other, if so make them the same shared ptr.
-        //Make a Tree, constants and variables are level 0 and everything else is level 1 + max of sublevels.
-        //When evaluating go through and evaluate each function in level 0 then 1, etc.
-        //For evaluate grid pass in the size of the max vector needed. Then have each function store the values in a grid.
-        
-        //TODO: There should be no constants left at the end of this function! That should all be assimilated into the others.
-        //Unless the whole function is one big constant I guess.
+        else if(m_functionType == FunctionType::POWER_BASIS_POLYNOMIAL) {
+            m_polynomial.setRank(m_rank);
+            m_polynomial.prepEvaluation();
+        }
     }
-        
+                
     void removeExtraParenthesis(std::string& _functionString) {
         //Loop that removes parenthesis
         while(_functionString.length() > 0 && _functionString[0] == CHAR::LEFT_PAREN) {
@@ -1306,8 +1348,7 @@ private:
     
     void parseComplexType(std::string& _functionString) {
         //These all start being multiplied by 1. They have the ability to have an m_value multiplied by it so
-        //in simplifyExpressions we could pull constants in the multiply out and put it in m_value.
-        //TODO: Is this a good idea or should I just drop m_value from complex things?
+        //in simplifyExpressions we can pull constants in the multiply out and put it in m_value.
         m_value = 1;
         
         //Parse constants
@@ -1600,6 +1641,7 @@ private:
     void addSubfunction(const std::string& subfunctionString) {
         if(unlikely(s_allFunctions.size() == 0)) {
             s_allFunctions.resize(1);
+            s_allFunctionStrings.resize(1);
             s_allFunctionNames.resize(1);
         }
 
@@ -1613,8 +1655,8 @@ private:
         removeExtraParenthesis(newString);
         
         //Check if this is already a function
-        FunctionMap::const_iterator found = s_allFunctions[0].find(newString);
-        if(found != s_allFunctions[0].end()) {
+        FunctionMap::const_iterator found = s_allFunctionStrings[0].find(newString);
+        if(found != s_allFunctionStrings[0].end()) {
             m_subfunctions.push_back(found->second);
             return;
         }
@@ -1691,6 +1733,59 @@ public:
         //Figure out what dimensions the function exists in.
         defineFunctionDimensions();
     }
+    
+//Recursive functions that we want to be able to call on everything in a bottom up order
+    void simplifyExpressionsRecursive() {
+        for(size_t i = 0; i < m_subfunctions.size(); i++) {
+            m_subfunctions[i]->simplifyExpressionsRecursive();
+        }
+        simplifyExpressions();
+    }
+    static void simplifyExpressionsAllFunctions() {
+        for(FunctionIDMap::const_iterator it = s_allFunctions[0].begin(); it != s_allFunctions[0].end(); it++) {
+            it->second->simplifyExpressionsRecursive();
+        }
+    }
+
+    void checkForPolynomialsRecursive() {
+        for(size_t i = 0; i < m_subfunctions.size(); i++) {
+            m_subfunctions[i]->checkForPolynomialsRecursive();
+        }
+        checkForPolynomials();
+    }
+    static void checkForPolynomialsAllFunctions() {
+        for(FunctionIDMap::const_iterator it = s_allFunctions[0].begin(); it != s_allFunctions[0].end(); it++) {
+            it->second->checkForPolynomialsRecursive();
+        }
+    }
+
+    void defineFunctionDimensionsRecursive() {
+        for(size_t i = 0; i < m_subfunctions.size(); i++) {
+            m_subfunctions[i]->defineFunctionDimensionsRecursive();
+        }
+        defineFunctionDimensions();
+    }
+    static void defineFunctionDimensionsAllFunctions() {
+        for(FunctionIDMap::const_iterator it = s_allFunctions[0].begin(); it != s_allFunctions[0].end(); it++) {
+            it->second->defineFunctionDimensionsRecursive();
+        }
+    }
+
+    void removeVariableRecursive(size_t _index, size_t _startRank) {
+        for(size_t i = 0; i < m_subfunctions.size(); i++) {
+            m_subfunctions[i]->removeVariableRecursive(_index, _startRank);
+        }
+        removeVariable(_index, _startRank);
+    }
+    static void removeVariableAllFunctions(size_t _index) {
+        if(s_allFunctions[0].size() > 0) {
+            size_t startRank = s_allFunctions[0].begin()->second->getRank();
+            for(FunctionIDMap::const_iterator it = s_allFunctions[0].begin(); it != s_allFunctions[0].end(); it++) {
+                it->second->removeVariableRecursive(_index, startRank);
+            }
+        }
+    }
+
         
 //Overloaded Operators
 public:
@@ -1702,8 +1797,23 @@ public:
     friend inline bool operator<=(const Function& lhs, const Function& rhs){ return !(lhs > rhs); }
     friend inline bool operator>=(const Function& lhs, const Function& rhs){ return !(lhs < rhs); }
     
+//Setters
+    void setValue(double _val) {
+        m_value = _val;
+    }
+
+    void setFunctionString(const std::string& _val) {
+        //Setting the function string this way removes it from the map, because it might not be accurate any more.
+        s_allFunctionStrings[0].erase(m_functionString);
+        m_functionString = _val;
+    }
+
 //Getters
 public:
+    const size_t getFunctionID() const {
+        return m_functionID;
+    }
+    
     const std::vector<bool>& getOperatorSigns() const {
         return m_operatorSigns;
     }
@@ -1779,7 +1889,77 @@ public:
     const std::vector<SharedFunctionPtr>& getSubfunctions() const {
         return m_subfunctions;
     }
+    
+    void setToZeroFunction() {
+        m_functionType = FunctionType::CONSTANT;
+        m_value = 0;
+        m_subfunctions.clear();
+    }
         
+    void removeVariable(size_t _index, size_t _startRank) {
+        if(m_rank != _startRank) {
+            return; //The variable has already been removed from this function.
+        }
+        if(m_functionType == FunctionType::VARIABLE) {
+            if(m_varIndex == _index) {
+                //Copy the substituted function into this and multiply by the coeff.
+                double oldValue = m_value;
+                copyFromSubfunctionExceptName(Function::getThreadFunctionByName(0, m_variableNames[_index]));
+                multiplyFunctionByConstant(oldValue);
+                if(m_rank != _startRank) {
+                    return; //The variable has already been removed from the copied function.
+                }
+            }
+            else if (m_varIndex >= _index) {
+                m_varIndex--;
+            }
+        }
+        m_rank--;
+        m_variableNames.erase(m_variableNames.begin() + _index);
+    }
+    
+    void finalizeVariableSubFunction(size_t _index) {
+        //Remove the variable subfunctions that are the variable we are solving for, then multiply everything through by the -1/coeff
+        double totalCoeff = 0.0;
+        size_t subfuncIndex = 0;
+        while(subfuncIndex < m_subfunctions.size()) {
+            if(m_subfunctions[subfuncIndex]->getFunctionType() == FunctionType::VARIABLE && m_subfunctions[subfuncIndex]->getVarIndex() == _index) {
+                totalCoeff += m_subfunctions[subfuncIndex]->getValue();
+                m_subfunctions.erase(m_subfunctions.begin() + subfuncIndex);
+                m_operatorSigns.erase(m_operatorSigns.begin() + subfuncIndex);
+            }
+            else {
+                subfuncIndex++;
+            }
+        }
+        if(std::abs(totalCoeff) < 1e-10) { //We already check if abs(totalCoeff) < 1e-5 when determining if we can solve for it. Double check.
+            printAndThrowRuntimeError("Failed to Parse Function! Code Error: Trying to do a non-stable substitution!");
+        }
+        multiplyFunctionByConstant(-1/totalCoeff);
+        //TODO: Make the actual accurate function string. The print that I am making the subsitution.
+        //  I can probably make a recursive getString() function that would help with this and other spots.
+        //  If the get string decides two function are equal, it should replace one with the other?
+        //      Not sure the best way to do that.
+        const std::string newName = "SUB_FUNC_" + std::to_string(m_functionID);
+        setFunctionString(newName);
+    }
+    
+    static void substituteVariable(SharedFunctionPtr _function, size_t _index) {
+        SharedFunctionPtr substitute = std::make_shared<Function>();
+        s_allFunctions[0][substitute->getFunctionID()] = substitute;
+        substitute->copyFromSubfunctionExceptName(_function);
+        const std::string subVariableName = substitute->getVariableNames()[_index];
+        substitute->finalizeVariableSubFunction(_index);
+        //Remove the variable name and add the function.
+        s_claimedVariableNames.erase(subVariableName);
+        s_allFunctionNames[0][subVariableName] = substitute;
+        //Keep the function and set to zero so any function that has this as a subfunction still works.
+        _function->setToZeroFunction();
+        //Remove the dimensions in other functions and simplify everything
+        Function::removeVariableAllFunctions(_index);
+        Function::simplifyExpressionsAllFunctions();
+    }
+    
     static SharedFunctionPtr getThreadFunctionByName(size_t _threadNum, const std::string& _functionName) {
         if(_threadNum >= s_allFunctionNames.size()) {
             printAndThrowRuntimeError("Functions not copied for thread number " + std::to_string(_threadNum));
@@ -1794,38 +1974,73 @@ public:
         while(s_allFunctions.size() <_requiredThreads) {
             //Add 1 to the vectors
             s_allFunctions.resize(s_allFunctions.size() + 1);
+            s_allFunctionStrings.resize(s_allFunctionStrings.size() + 1);
             s_allFunctionNames.resize(s_allFunctionNames.size() + 1);
             const size_t size = s_allFunctions.size()-1;
             
             //Copy all s_allFunctions.
-            for(FunctionMap::const_iterator it = s_allFunctions[0].begin(); it != s_allFunctions[0].end(); it++) {
+            for(FunctionIDMap::const_iterator it = s_allFunctions[0].begin(); it != s_allFunctions[0].end(); it++) {
                 //Copy this function
                 SharedFunctionPtr currFunction = std::make_shared<Function>(*it->second.get());
                 //Add it to s_allFunctions
-                s_allFunctions[size].insert({it->first,currFunction});
+                s_allFunctions[size].insert({it->first, currFunction});
             }
             
             //Finalize Copy on Everything
-            for(FunctionMap::const_iterator it = s_allFunctions[size].begin(); it != s_allFunctions[size].end(); it++) {
+            for(FunctionIDMap::const_iterator it = s_allFunctions[size].begin(); it != s_allFunctions[size].end(); it++) {
                 //Find the function to copy by string, and copy it
-                std::string funcStringToFind = it->first;
-                FunctionMap::const_iterator found = s_allFunctions[0].find(funcStringToFind);
-                std::shared_ptr<Function> functionToCopy = found->second;
+                FunctionIDMap::const_iterator found = s_allFunctions[0].find(it->first);
+                SharedFunctionPtr functionToCopy = found->second;
                 it->second->finalizeCopy(*functionToCopy.get());
             }
             
-            //Copy s_allFunctionNames
-            for(FunctionMap::const_iterator it = s_allFunctions[size].begin(); it != s_allFunctions[size].end(); it++) {
+            //Copy s_allFunctionNames and s_allFunctionStrings
+            for(FunctionIDMap::const_iterator it = s_allFunctions[size].begin(); it != s_allFunctions[size].end(); it++) {
+                //Copy into s_allFunctionNames
                 const std::string& functionName = it->second->getFunctionName();
-                if(functionName != "") { //The should be every function that has a name.
-                    s_allFunctionNames[s_allFunctionNames.size() - 1][functionName] = it->second;
+                if(s_allFunctionNames[0].find(functionName) != s_allFunctionNames[0].end()) {
+                    s_allFunctionNames[size][functionName] = it->second;
+                }
+                //Copy into s_allFunctionStrings
+                const std::string& functionString = it->second->getFunctionString();
+                if(s_allFunctionStrings[0].find(functionString) != s_allFunctionStrings[0].end()) {
+                    s_allFunctionStrings[size][functionString] = it->second;
                 }
             }
         }
     }
     
+    //Copy
+    //To copy a function
+    Function() : m_functionID(s_nextFunctionID++) {}
+    
+    void copyFromSubfunctionExceptName(SharedFunctionPtr _functionToCopy) {
+        //Copy the new attributes
+        //m_functionID = _functionToCopy->getFunctionID();
+        m_isTopFunction = _functionToCopy->isTopFunction();
+        m_functionLevel = _functionToCopy->getFunctionLevel();
+        m_allFunctionLevels = _functionToCopy->getAllFunctionLevels();
+        m_subfunctions = _functionToCopy->getSubfunctions();
+        m_operatorSigns = _functionToCopy->getOperatorSigns();
+        m_functionType = _functionToCopy->getFunctionType();
+        m_value = _functionToCopy->getValue();
+        m_varIndex = _functionToCopy->getVarIndex();
+        //m_functionString = _functionToCopy->getFunctionString();
+        //m_functionName = _functionToCopy->getFunctionName();
+        m_variableNames = _functionToCopy->getVariableNames();
+        m_monomial = _functionToCopy->getMonomial();
+        m_polynomial = _functionToCopy->getPolynomial();
+        m_rank = _functionToCopy->getRank();
+        m_hasDimension = _functionToCopy->getHasDimension();
+        m_numUsedDimensions = _functionToCopy->getNumUsedDimensions();
+        m_partialEvaluations = _functionToCopy->getPartialEvals();
+        m_evaluateGridInfo = _functionToCopy->getEvaluateGridInfo();
+        m_evaluateGridType = _functionToCopy->getEvaluateGridType();
+    }
+    
     //Copy Constructor that doesn't copy the pointers.
     Function(const Function& other) :
+    m_functionID(other.getFunctionID()),
     m_isTopFunction(other.isTopFunction()),
     m_functionLevel(other.getFunctionLevel()),
     m_operatorSigns(other.getOperatorSigns()),
@@ -1855,7 +2070,7 @@ public:
         for(size_t level = 0; level < functionLevelsToCopy.size(); level++) {
             m_allFunctionLevels[level].resize(functionLevelsToCopy[level].size());
             for(size_t innerLevel = 0; innerLevel < functionLevelsToCopy[level].size(); innerLevel++) {
-                m_allFunctionLevels[level][innerLevel] = s_allFunctions[threadNum][functionLevelsToCopy[level][innerLevel]->getFunctionString()];
+                m_allFunctionLevels[level][innerLevel] = s_allFunctions[threadNum][functionLevelsToCopy[level][innerLevel]->getFunctionID()];
             }
         }
         
@@ -1863,22 +2078,23 @@ public:
         const std::vector<SharedFunctionPtr>& subfunctionsToCopy = other.getSubfunctions();
         m_subfunctions.resize(subfunctionsToCopy.size());
         for(size_t level = 0; level < subfunctionsToCopy.size(); level++) {
-            m_subfunctions[level] = s_allFunctions[threadNum][subfunctionsToCopy[level]->getFunctionString()];
+            m_subfunctions[level] = s_allFunctions[threadNum][subfunctionsToCopy[level]->getFunctionID()];
         }
     }
     
 private:
     static void checkNameNotClaimed(const std::string& _name, const std::string& _type) {
+        const std::string nameLowercase = toLowerString(_name); //Constants and function names aren't case sensative, so check all cases.
         if(s_claimedVariableNames.find(_name) != s_claimedVariableNames.end() && _type != "Variable Name") {
             printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Variable Name.");
         }
         else if(s_allFunctionNames[0].find(_name) != s_allFunctionNames[0].end()) {
             printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Function Name.");
         }
-        else if(s_claimedFunctionNames.find(_name) != s_claimedFunctionNames.end()) {
+        else if(s_claimedFunctionNames.find(nameLowercase) != s_claimedFunctionNames.end()) {
             printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Set Function Name.");
         }
-        else if(s_claimedConstantNames.find(_name) != s_claimedConstantNames.end()) {
+        else if(s_claimedConstantNames.find(nameLowercase) != s_claimedConstantNames.end()) {
             printAndThrowRuntimeError("Illegal " + _type + " Name: " + _name + ". Already a Set Constant Name.");
         }
     }
@@ -1888,6 +2104,7 @@ public:
     static SharedFunctionPtr addFunction(const std::string& _functionName, const std::string& _functionString, const std::vector<std::string>& _variableNames) {
         if(unlikely(s_allFunctions.size() == 0)) {
             s_allFunctions.resize(1);
+            s_allFunctionStrings.resize(1);
             s_allFunctionNames.resize(1);
         }
         
@@ -1903,16 +2120,16 @@ public:
         //Check if we are double adding it
         bool namedFuncAlreadyExists = false;
         if(_functionName != "") {
-            if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
+            if(s_allFunctionStrings[0].find(_functionString) != s_allFunctionStrings[0].end()) {
                 namedFuncAlreadyExists = true;
             }
         }
-        else if(s_allFunctions[0].find(_functionString) != s_allFunctions[0].end()) {
+        else if(s_allFunctionStrings[0].find(_functionString) != s_allFunctionStrings[0].end()) {
             printAndThrowRuntimeError("Trying to add function Twice! Name is " + _functionName + " String is " + _functionString);
         }
         
         if(namedFuncAlreadyExists) {
-            SharedFunctionPtr function = s_allFunctions[0][_functionString];
+            SharedFunctionPtr function = s_allFunctionStrings[0][_functionString];
             s_allFunctionNames[0][_functionName] = function;
             return function;
         }
@@ -1922,7 +2139,8 @@ public:
             if(_functionName != "") {
                 s_allFunctionNames[0][_functionName] = function;
             }
-            s_allFunctions[0][_functionString] = function;
+            s_allFunctionStrings[0][_functionString] = function;
+            s_allFunctions[0][function->getFunctionID()] = function;
             
             return function;
         }
@@ -1930,13 +2148,25 @@ public:
         
     static void clearSavedFunctions() {
         s_allFunctions.clear();
+        s_allFunctionStrings.clear();
         s_allFunctionNames.clear();
+    }
+    
+    static bool isVarariableName(const std::string& _name) {
+        return s_claimedVariableNames.find(_name) != s_claimedVariableNames.end();
     }
 
 private:
+    //Any new variable must be upadted in the copy constructor and have a getter
+    //  It also must be initialized in the constructer at the top if needed.
+    //  And it must be copied in copyFromSubfunctionWithNewName
+    
     //The Top Function and m_allFunctions Map.
-    static std::vector<FunctionMap>             s_allFunctions; //Map from function string to function
+    static std::vector<FunctionMap>             s_allFunctionStrings; //Map from function string to function
     static std::vector<FunctionMap>             s_allFunctionNames; //Map from function name to function
+    static std::vector<FunctionIDMap>           s_allFunctions; //A Map from FunctionID (which is unique) to function
+    
+    const size_t                                m_functionID; //An incrementing number for each function.
     
     bool                                        m_isTopFunction;
     size_t                                      m_functionLevel;
@@ -1972,17 +2202,20 @@ private:
     std::vector<EvaluateGridInfo>               m_evaluateGridInfo;
     EvaluateGridType                            m_evaluateGridType;
         
-    static                  std::unordered_set<std::string> s_claimedConstantNames;
-    static                  std::unordered_set<std::string> s_claimedFunctionNames;
-    static                  std::unordered_set<std::string> s_claimedVariableNames;
+    static std::unordered_set<std::string>      s_claimedConstantNames;
+    static std::unordered_set<std::string>      s_claimedFunctionNames;
+    static std::unordered_set<std::string>      s_claimedVariableNames;
+    static size_t                               s_nextFunctionID;
 };
 
-std::vector<Function::FunctionMap>  Function::s_allFunctions;
-std::vector<Function::FunctionMap>  Function::s_allFunctionNames;
+std::vector<Function::FunctionMap>      Function::s_allFunctionStrings;
+std::vector<Function::FunctionMap>      Function::s_allFunctionNames;
+std::vector<Function::FunctionIDMap>    Function::s_allFunctions;
 
 std::unordered_set<std::string> Function::s_claimedConstantNames({"e","pi",});
 std::unordered_set<std::string> Function::s_claimedFunctionNames({"sin","cos","tan","sinh","cosh","tanh","sqrt","exp","log","log2","log10"});
 std::unordered_set<std::string> Function::s_claimedVariableNames;
 
+size_t                          Function::s_nextFunctionID(0);
 
 #endif /* Function_h */

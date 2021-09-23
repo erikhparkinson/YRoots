@@ -20,7 +20,7 @@
 #include "Utilities/Timer.hpp"
 
 template<int Rank>
-void runSolve(std::vector<std::vector<Function::SharedFunctionPtr> >& _functions, const GeneralParameters& _generalParameters, Interval& _interval, const SubdivisionParameters& _subdivisionParameters) {
+void runSolve(std::vector<std::vector<Function::SharedFunctionPtr> >& _functions, const GeneralParameters& _generalParameters, Interval& _interval, const SubdivisionParameters& _subdivisionParameters, const VariableSubsitutionInfo& _variableSubsitutionInfo) {
     Timer& m_timer = Timer::getInstance();
     static size_t mainConstructorIndex = -1;
     static size_t mainSolveIndex = -1;
@@ -28,7 +28,7 @@ void runSolve(std::vector<std::vector<Function::SharedFunctionPtr> >& _functions
     m_timer.registerTimer(mainSolveIndex, "Main Solve");
 
     m_timer.startTimer(mainConstructorIndex);
-    ThreadedSolver<Rank> threadedSolver(_functions, _generalParameters, _interval, _subdivisionParameters);
+    ThreadedSolver<Rank> threadedSolver(_functions, _generalParameters, _interval, _subdivisionParameters, _variableSubsitutionInfo);
     m_timer.stopTimer(mainConstructorIndex);
     m_timer.startTimer(mainSolveIndex);
     threadedSolver.solve();
@@ -43,9 +43,10 @@ void mainSolver(const std::string& inputFileName) {
     Interval& interval = inputParser.getInterval();
     const GeneralParameters& generalParameters = inputParser.getGeneralParameters();
     const SubdivisionParameters& subdivisionParameters = inputParser.getSubdivisionParameters();
+    const VariableSubsitutionInfo& variableSubsitutionInfo = inputParser.getVariableSubstitutionInfo();
 
     #ifdef USE_TIMING
-    if(!inputParser.getGeneralParameters().useTimer) {
+    if(!generalParameters.useTimer) {
         Timer::disable();
     }
     else {
@@ -59,16 +60,16 @@ void mainSolver(const std::string& inputFileName) {
             printAndThrowRuntimeError("No functions found!");
             break;
         case 1:
-            runSolve<1>(functions, generalParameters, interval, subdivisionParameters);
+            runSolve<1>(functions, generalParameters, interval, subdivisionParameters, variableSubsitutionInfo);
             break;
         case 2:
-            runSolve<2>(functions, generalParameters, interval, subdivisionParameters);
+            runSolve<2>(functions, generalParameters, interval, subdivisionParameters, variableSubsitutionInfo);
             break;
         case 3:
-            runSolve<3>(functions, generalParameters, interval, subdivisionParameters);
+            runSolve<3>(functions, generalParameters, interval, subdivisionParameters, variableSubsitutionInfo);
             break;
         default:
-            runSolve<-1>(functions, generalParameters, interval, subdivisionParameters);
+            runSolve<-1>(functions, generalParameters, interval, subdivisionParameters, variableSubsitutionInfo);
             break;
     }
 

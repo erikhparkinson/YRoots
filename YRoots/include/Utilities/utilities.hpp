@@ -99,6 +99,11 @@ bool isNumericDigit(const char c) {
 }
 
 
+inline void printInfo(const std::string& infoMessage) {
+    //Add a newline before and after to not interfere with the percent tracking.
+    std::cout<<"\n"<<infoMessage<<"\n";
+}
+
 inline void printWarning(const std::string& warningMessage) {
     //Add a newline before and after to not interfere with the percent tracking.
     std::cout<<"\n"<<warningMessage<<"\n";
@@ -109,10 +114,10 @@ inline void printAndThrowRuntimeError(const std::string& errorMessage) {
     throw std::runtime_error(errorMessage);
 }
 
-std::string toLowerSubstring(std::string _input, size_t _start, size_t _numChars) {
+std::string toLowerSubstring(const std::string& _input, size_t _start, size_t _numChars) {
     std::string output;
-    if(unlikely(_start + _numChars >= _input.length())) {
-        printAndThrowRuntimeError("Invalid Subtring!");
+    if(unlikely(_start + _numChars > _input.length())) {
+        printAndThrowRuntimeError("Invalid Substring!");
     }
     else {
         for(size_t i = _start; i < _start + _numChars; i++) {
@@ -120,6 +125,10 @@ std::string toLowerSubstring(std::string _input, size_t _start, size_t _numChars
         }
     }
     return output;
+}
+
+std::string toLowerString(const std::string& _input) {
+    return toLowerSubstring(_input, 0, _input.length());
 }
 
 template<typename T1, typename T2>
@@ -296,6 +305,34 @@ struct SubdivisionParameters {
     size_t approximationDegree = 10; //TODO: Set a default of this per dimension
     size_t targetDegree = 1;
     size_t maxLevel = 50;
+    
+    //Setting the approximationDegree
+    bool approximationDegreeSet = false;
+    void lockDegree() {
+        approximationDegreeSet = true;
+    }
+    void setDegree(size_t _rank) {
+        if(approximationDegreeSet){
+            return;
+        }
+        switch(_rank) {
+            case 1:
+                approximationDegree = 100;
+                break;
+            case 2:
+                approximationDegree = 10;
+                break;
+            case 3:
+                approximationDegree = 7;
+                break;
+            case 4:
+                approximationDegree = 4;
+                break;
+            default:
+                approximationDegree = 2;
+                break;
+        }
+    }
 };
 
 struct GeneralParameters {
@@ -305,6 +342,11 @@ struct GeneralParameters {
     bool useTimer = false;
     bool computeResiduals = false;
     size_t numThreads = 1;
+};
+
+struct VariableSubsitutionInfo {
+    Interval originalInterval;
+    std::vector<std::string> originalVariables;
 };
 
 struct SolveParameters {

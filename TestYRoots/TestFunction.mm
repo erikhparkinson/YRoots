@@ -126,6 +126,28 @@
     Function tempFunction6("", functionString, variableNames);
     result = tempFunction6.evaluate<double>(inputPoints);
     XCTAssert(withinEpslion(result, 73411));
+
+    functionString = "x1**4+(-1)*x1**3+(2*x0**2)*(x1**2)+(3*x0**2)*x1+(x0**4)";
+    Function tempFunction7("", functionString, variableNames);
+    result = tempFunction7.evaluate<double>(inputPoints);
+    XCTAssert(withinEpslion(result, 5033));
+}
+
+- (void) testFunction2DSubfunctions{
+    std::vector<std::string> variableNames;
+    variableNames.push_back("x");
+    variableNames.push_back("y");
+    std::vector<double> inputPoints;
+    inputPoints.push_back(2);
+    inputPoints.push_back(3);
+    double result;
+
+    Function::addFunction("xIn", "2*x", variableNames);
+    Function::addFunction("yIn", "2*(y+.5)", variableNames);
+    Function tempFunction9("", "yIn**10-2*(xIn**8)*(yIn**2)+4*(xIn**4)*yIn-2", variableNames);
+    Function::checkForPolynomialsAllFunctions();
+    result = tempFunction9.evaluate<double>(inputPoints);
+    XCTAssert(withinEpslion(result, 276059887));
 }
 
 - (void)testEvalGrid2D{
